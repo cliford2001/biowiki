@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validación de resultados de variantes con SnpEff y VCFtools</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Variantes" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Validación de resultados de variantes con SnpEff y VCFtools</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Por qué validar variantes es crítico</h2>
+      <p>El análisis de variantes genómicas es una de las piedras angulares de la genómica moderna. Herramientas como GATK, FreeBayes o samtools mpileup generan archivos VCF (Variant Call Format) que contienen miles o millones de posibles variantes. Sin embargo, no todos los llamados son biológicamente plausibles. La <strong>validación de resultados de variantes</strong> es esencial para distinguir verdaderas variaciones del genoma de errores técnicos, contaminaciones o artefactos bioinformáticos.</p>
+      <p>Dos herramientas de código abierto son fundamentales en este proceso: <strong>SnpEff</strong> y <strong>VCFtools</strong>. Mientras que SnpEff se enfoca en la anotación funcional de variantes, VCFtools proporciona un conjunto robusto de herramientas para filtrar, validar y analizar la calidad de los datos VCF. Juntas, permiten un flujo de trabajo sólido para verificar la confiabilidad de los resultados de variantes.</p>
+    </section>
+
+    <section>
+      <h2>Proceso de validación: De la llamada a la confiabilidad</h2>
+      <p>El flujo típico de validación sigue varios pasos clave:</p>
+      <ol>
+        <li>Generación del archivo VCF inicial (post-almacenamiento).</li>
+        <li>Aplicación de filtros de calidad con VCFtools para eliminar variantes de baja confianza.</li>
+        <li>Anotación funcional con SnpEff para identificar variantes relevantes (síntesis de proteínas, variantes sinónimas, frameshifts, etc.).</li>
+        <li>Validación cruzada con frecuencias de alelos, profundidad de secuenciación y perfiles de calidad.</li>
+        <li>Generación de informes resumidos y verificación final del conjunto de datos.</li>
+      </ol>
+      <p>Este proceso no solo mejora la calidad de los datos, sino que también facilita la interpretación biológica de los hallazgos.</p>
+    </section>
+
+    <section>
+      <h2>Uso de SnpEff: Anotación funcional de variantes</h2>
+      <p><strong>SnpEff</strong> es una herramienta de anotación funcional de variantes que asigna efectos a cada variante del VCF. Puede identificar si una variante afecta un gen, cambia la secuencia de aminoácidos, altera el splicing, o está en regiones no codificantes.</p>
+
+      <p>El uso básico de SnpEff requiere un archivo de referencia genómica (por ejemplo, GRCh38 para humanos) y el VCF de entrada. Ejemplo de ejecución:</p>
+
+      <pre><code>java -jar snpEff.jar -v GRCh38.99 input.vcf &gt; annotated.vcf</code></pre>
+
+      <p>La opción <code>-v</code> activa el modo verbose, que muestra detalles sobre el proceso. El archivo de salida incluye una columna <code>ANN</code> con información detallada sobre el efecto funcional, como <code>missense_variant</code>, <code>stop_gained</code>, <code>splice_region_variant</code>, etc.</p>
+    </section>
+
+    <section>
+      <h2>Uso de VCFtools: Validación y análisis estadístico</h2>
+      <p><strong>VCFtools</strong> es una herramienta multifuncional para el análisis de archivos VCF. Permite realizar filtros, calcular estadísticas de calidad, comparar conjuntos de variantes y generar informes de validación.</p>
+
+      <p>Algunos comandos útiles:</p>
+      <ul>
+        <li><strong>Filtrar por calidad:</strong> Eliminar variantes con baja calidad de llamado.
+          <pre><code>vcftools --vcf input.vcf --remove-filtered-all --recode --out filtered</code></pre>
+        </li>
+        <li><strong>Cálculo de frecuencias de alelos:</strong> Identificar variantes raras o comunes.
+          <pre><code>vcftools --vcf input.vcf --freq --out stats</code></pre>
+        </li>
+        <li><strong>Verificar profundidad de secuenciación:</strong> Asegurar que las variantes están bien cubiertas.
+          <pre><code>vcftools --vcf input.vcf --minDP 10 --maxDP 1000 --recode --out depth_filtered</code></pre>
+        </li>
+        <li><strong>Generar informe de calidad:</strong> Resumen de variantes, frecuencias, nulos y errores.
+          <pre><code>vcftools --vcf input.vcf --site-quality --out qc_report</code></pre>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La validación de resultados de variantes no es un paso opcional, sino una necesidad fundamental en cualquier análisis genómico riguroso. <strong>SnpEff</strong> y <strong>VCFtools</strong> son dos pilares del flujo de trabajo: SnpEff proporciona contexto biológico a través de la anotación funcional, mientras que VCFtools permite verificar la calidad técnica de los datos. Combinar ambos permite filtrar errores, priorizar variantes biológicamente relevantes y generar resultados confiables para posteriores análisis de asociación, estudios de enfermedades o validaciones experimentales.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar referencia genómica correcta:</strong> Si el genoma de referencia no coincide con el de los datos (por ejemplo, GRCh37 vs GRCh38), las anotaciones de SnpEff serán incorrectas.</li>
+        <li><strong>Ignorar filtros de profundidad:</strong> Variantes con muy baja o muy alta profundidad pueden ser artefactos. Siempre usar <code>--minDP</code> y <code>--maxDP</code>.</li>
+        <li><strong>Asumir que el VCF está limpio:</strong> Nunca asumir que el archivo de salida de GATK o FreeBayes es confiable sin filtrado previo.</li>
+        <li><strong>No verificar frecuencias de alelos:</strong> Variaciones con frecuencias extremas (muy bajas o muy altas) pueden indicar errores de llamado o contaminación.</li>
+        <li><strong>Usar solo herramientas de análisis sin validación:</strong> Nunca realizar análisis de asociación o expresión diferencial con un VCF sin antes validar su calidad.</li>
+      </ul>
+      <p>Siempre documenta los comandos y filtros aplicados. Esto garantiza reproducibilidad y transparencia científica.</p>
+    </section>
+  </article>
+</body>
+</html>

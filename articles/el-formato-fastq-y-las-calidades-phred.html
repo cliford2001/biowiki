@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El formato FASTQ y las calidades Phred</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>El formato FASTQ y las calidades Phred</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: La base del análisis de secuenciación</h2>
+            <p>El formato FASTQ es el estándar universal para almacenar datos de secuenciación de ADN y ARN de próxima generación (NGS). Su diseño simple pero robusto permite representar de forma eficiente tanto las secuencias de nucleótidos como su calidad estimada, un aspecto crítico en el análisis bioinformático moderno. Sin un manejo correcto de los datos FASTQ, cualquier análisis posterior —ya sea alineamiento, ensamblaje, o detección de variantes— puede verse comprometido por errores sistemáticos o pérdida de información.</p>
+            <p>La métrica clave que distingue al FASTQ de otros formatos de secuencias es la representación de las <strong>calidades Phred</strong>. Este sistema numérico permite cuantificar la confianza en cada base llamada, lo cual es esencial para aplicaciones como el filtrado de lecturas bajas calidad, el ajuste de parámetros de alineamiento, y la estimación de profundidad de cobertura. En este artículo, exploramos en profundidad la estructura del formato FASTQ, el significado y cálculo de las calidades Phred, y cómo herramientas como <strong>STAR</strong>, <strong>Salmon</strong>, <strong>kallisto</strong>, y <strong>samtools</strong> dependen de estos datos.</p>
+        </section>
+
+        <section>
+            <h2>Estructura del formato FASTQ</h2>
+            <p>Cada archivo FASTQ está compuesto por bloques de cuatro líneas consecutivas que representan una única lectura:</p>
+
+            <pre><code>@READ_001
+ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
++
+IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII</code></pre>
+
+            <p>Donde:</p>
+            <ul>
+                <li><strong>@READ_001</strong>: Encabezado que identifica la lectura, generalmente incluye información del flujo de secuenciación y el número de la lectura.</li>
+                <li><strong>ATCG...</strong>: Secuencia de nucleótidos. Puede estar en mayúsculas o minúsculas, pero las letras se interpretan como bases (A, T, C, G).</li>
+                <li><strong>+</strong>: Línea de separación que marca el inicio de los valores de calidad.</li>
+                <li><strong>IIII...</strong>: Cadenas de caracteres ASCII que representan los valores de calidad Phred.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Las calidades Phred: significado y cálculo</h2>
+            <p>Las calidades Phred se calculan mediante la fórmula:</p>
+
+            <pre><code>Q = -10 × log₁₀(P)</code></pre>
+
+            <p>Donde <strong>P</strong> es la probabilidad de que la base llamada sea errónea. Así, un valor Q = 30 indica que la probabilidad de error es 1 en 1000 (10⁻³).</p>
+            
+            <p>Los valores de calidad se almacenan como caracteres ASCII, no como números. Los caracteres se mapean a valores Q mediante el offset:</p>
+
+            <pre><code>Q = ASCII_value - offset</code></pre>
+
+            <p>El offset más común es <strong>33</strong> (Phred+33), aunque algunos formatos antiguos usan <strong>64</strong> (Phred+64). Las herramientas como <strong>fastp</strong>, <strong>sickle</strong>, y <strong>Trimmomatic</strong> requieren que el usuario especifique correctamente el offset para evitar errores en el filtrado.</p>
+        </section>
+
+        <section>
+            <h2>Uso práctico en herramientas bioinformáticas</h2>
+            <p>La calidad de las lecturas influye directamente en el rendimiento de las herramientas más utilizadas en el flujo de trabajo:</p>
+
+            <h3>Alinhamiento con STAR</h3>
+            <p>STAR permite especificar un umbral de calidad para descartar lecturas con calidades promedio muy bajas:</p>
+            <pre><code>STAR --readFilesIn reads.fastq --outFileNamePrefix star_output/ --alignEndsProtruding EndToEnd --outFilterMismatchNmax 2</code></pre>
+            <p>Además, se recomienda realizar un filtrado previo con <strong>fastp</strong> para eliminar lecturas de baja calidad antes del alineamiento.</p>
+
+            <h3>Estimación de expresión con Salmon y kallisto</h3>
+            <p>Estas herramientas de quantificación de expresión transcriptómica (transcriptome quantification) aprovechan las calidades para ajustar la probabilidad de asignación de lecturas a genes. kallisto, en particular, permite usar el archivo FASTQ con calidades Phred+33 directamente en su flujo de trabajo:</p>
+            <pre><code>kallisto index -i transcriptome.idx transcriptome.fasta
+kallisto quant -i transcriptome.idx -o output/ reads_1.fastq reads_2.fastq</code></pre>
+            <p>El algoritmo internamente considera las calidades para mejorar la precisión de los estimados.</p>
+
+            <h3>Filtrado con fastp</h3>
+            <p>La herramienta <strong>fastp</strong> es ampliamente usada para filtrar y adaptar archivos FASTQ:</p>
+            <pre><code>fastp -i reads.fastq -o filtered.fastq -q 20 -u 50 -l 30 -h report.html</code></pre>
+            <p>Este comando filtra lecturas con calidades promedio < 20, elimina secuencias con más de 50 bases de baja calidad, y mantiene solo lecturas >30 pares.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El formato FASTQ es el cimiento del análisis de secuenciación NGS. Su capacidad para almacenar tanto secuencias como calidades Phred de forma compacta y estandarizada lo convierte en una pieza fundamental en todo pipeline bioinformático. Las calidades Phred, calculadas a partir de la probabilidad de error, permiten realizar decisiones informadas sobre el tratamiento de datos, desde el filtrado hasta la asignación de lecturas. Herramientas como <strong>STAR</strong>, <strong>Salmon</strong>, <strong>kallisto</strong>, <strong>fastp</strong>, y <strong>samtools</strong> dependen críticamente de que los datos FASTQ estén correctamente formateados y con un offset de calidad adecuado. Ignorar el manejo de las calidades Phred puede llevar a resultados erróneos, sesgos en la expresión génica, o pérdida de datos valiosos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No verificar el offset de calidad</strong>: Usar un offset incorrecto (33 vs 64) provoca que las calidades se interpreten erróneamente. Siempre verifica el origen de tus datos y usa herramientas como <strong>fastq-dump</strong> (SRA Toolkit) o <strong>zcat</strong> para inspeccionar el primer caracter.</li>
+                <li><strong>Ignorar el filtrado previo</strong>: Enviar datos con muchas lecturas de baja calidad a herramientas de alineamiento o cuantificación puede ralentizar el proceso y degradar los resultados.</li>
+                <li><strong>Usar un solo valor de calidad como corte absoluto</strong>: En lugar de fijar un umbral fijo, considera el promedio de calidad por lectura y la distribución de calidades, lo cual puede detectar problemas más sutiles (por ejemplo, en el extremo 3’).</li>
+                <li><strong>Guardar datos sin calidad</strong>: Siempre conserva los archivos FASTQ originales, y si realizas transformaciones, documenta los cambios en un archivo de metadatos.</li>
+                <li><strong>Usar herramientas que no soportan Phred+33</strong>: Aunque raro, algunas herramientas antiguas o no mantenidas esperan Phred+64. Verifica la documentación de cada herramienta.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

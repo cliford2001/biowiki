@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración de datos multiómicos</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Integración de datos multiómicos</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La integración de datos multiómicos representa un avance fundamental en la biología moderna, permitiendo un entendimiento más profundo de los procesos biológicos complejos mediante la combinación de múltiples tipos de datos biológicos. En lugar de estudiar un solo nivel molecular —como el transcriptoma o el genoma—, esta estrategia integra información de diferentes 'ómicas' (genómica, transcriptómica, proteómica, metabolómica, etc.) para obtener una visión más completa del estado celular y su dinámica. Este enfoque es esencial para abordar preguntas biológicas complejas, como el origen de enfermedades, la respuesta inmune, el desarrollo embrionario o la heterogeneidad tumoral.</p>
+        </section>
+
+        <section>
+            <h2>Conceptos clave</h2>
+            <p>La integración multiómica implica la fusión de datos de diferentes fuentes y escalas, a menudo con diferentes niveles de ruido y dimensionalidad. Las principales técnicas se dividen en dos categorías: <strong>integración de datos de alta dimensionalidad</strong> y <strong>análisis de datos de múltiples modalidades</strong>.</p>
+            <p>En la integración de datos de alta dimensionalidad, se combinan múltiples conjuntos de datos de la misma modalidad (por ejemplo, múltiples estudios de secuenciación de ARN) para aumentar el poder estadístico y reducir el sesgo técnico. En cambio, el análisis multiómico explora interacciones entre distintas capas moleculares, como la correlación entre expresión génica y niveles proteicos, o entre variantes genéticas y expresión (eQTL).</p>
+        </section>
+
+        <section>
+            <h2>Técnicas y herramientas</h2>
+            <p>El desarrollo de métodos robustos ha sido clave para el progreso en esta área. Algunas de las herramientas más utilizadas incluyen:</p>
+            <ul>
+                <li><strong>Seurat</strong> y <strong>Scanpy</strong>: plataformas de análisis de datos de célula única que permiten la integración de múltiples muestras y condiciones, incluso cuando hay variaciones técnicas entre ellas.</li>
+                <li><strong>Harmony</strong>, <strong>BBKNN</strong>, y <strong>Seurat's integration</strong>: métodos diseñados para corregir el 'batch effect' y alinear espacios de representación de datos.</li>
+                <li><strong>DESeq2</strong> y <strong>edgeR</strong>: herramientas estadísticas para el análisis diferencial de expresión génica, útiles en el contexto de integración para identificar genes regulados entre condiciones.</li>
+                <li>Para el alineamiento de lecturas y ensamblado de transcritos, <strong>STAR</strong>, <strong>Salmon</strong>, y <strong>kallisto</strong> son herramientas ampliamente usadas, generando perfiles de expresión que luego se integran.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Ejemplo práctico: Integración de datos de ARN y proteínas</h3>
+            <p>Un ejemplo común consiste en integrar datos de secuenciación de ARN (RNA-seq) con proteómica (MS-based). El flujo de trabajo típico incluye:</p>
+            <pre><code>## Alineamiento con STAR
+STAR --runThreadN 8 \
+     --genomeDir /path/to/genome \
+     --readFilesIn sample1_R1.fastq.gz sample1_R2.fastq.gz \
+     --outFileNamePrefix sample1_
+
+## Estimación de expresión con Salmon
+salmon quant -i index -r reads.fastq.gz -p 8 -o quant/
+
+## Análisis con Seurat
+library(Seurat)
+library(dplyr)
+
+# Cargar datos de ARN y proteínas
+rna.data &lt;- Read10X(data.dir = "./rna/10x/" )
+proteo.data &lt;- Read10X(data.dir = "./proteo/10x/" )
+
+# Crear objetos Seurat
+seurat.rna &lt;- CreateSeuratObject(counts = rna.data)
+seurat.proteo &lt;- CreateSeuratObject(counts = proteo.data)
+
+# Integrar datos
+integrated.data &lt;- IntegrateData(anchorset = anchor.set, 
+                                  anchor.features = feature.set)
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La integración de datos multiómicos es una herramienta poderosa que permite una comprensión más completa de los sistemas biológicos. Al combinar datos de diferentes niveles moleculares, se pueden descubrir nuevas relaciones funcionales, identificar biomarcadores, y mejorar la precisión de modelos predictivos. Su correcta implementación requiere cuidado en el manejo del sesgo técnico, la selección de métodos adecuados (como Seurat o Scanpy), y la validación de resultados biológicamente significativos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar el batch effect:</strong> No corregir diferencias técnicas entre muestras puede generar falsos positivos. Siempre aplicar métodos como BBKNN o Harmony.</li>
+                <li><strong>Integrar datos sin normalización previa:</strong> Asegurarse de que los datos de diferentes fuentes estén en escala comparable (por ejemplo, con log-transformación o escalamiento).</li>
+                <li><strong>Suponer correlación directa:</strong> La correlación entre expresión génica y proteínica no es lineal ni universal. Usar métodos que consideren la regulación post-transcripcional.</li>
+                <li><strong>Usar herramientas sin validar:</strong> Verificar que las herramientas utilizadas (como DESeq2 o edgeR) se ajusten a los datos y a la pregunta biológica.</li>
+                <li><strong>Overfitting:</strong> No sobreinterpretar resultados de integración sin validación externa o biológica.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

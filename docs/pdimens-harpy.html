@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>harpy</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>harpy</h1>
+    <p class="meta">
+      <a href="https://github.com/pdimens/harpy">Repositorio</a> · 21 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>Harpy es una herramienta de bioinformática desarrollada en Python diseñada para procesar datos de lecturas vinculadas (linked-read data), desde secuencias crudas hasta la fase de haplotipos. También es compatible con datos de secuenciación de genoma completo (WGS). Su objetivo es facilitar el análisis de estructura genómica a gran escala, especialmente en el contexto de la resolución de variantes complejas y la reconstrucción de haplotipos a partir de datos de alto rendimiento.</p>
+
+    <h2>Instalación</h2>
+    <p>Harpy se distribuye como paquete Python. Puedes instalarlo usando <code>pip</code>:</p>
+    <pre><code>pip install harpy</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Este es un ejemplo ilustrativo de cómo se podría utilizar harpy en un script de Python. La sintaxis real puede variar según la versión y los requisitos específicos del flujo de datos.</p>
+    <pre><code>import harpy
+
+# Cargar datos de lecturas vinculadas
+data = harpy.load_linked_reads("input_linked_reads.fastq")
+
+# Procesar datos y generar haplotipos
+phased_data = harpy.process(data, reference="hg38")
+
+# Guardar resultados
+phased_data.save("output_haplotypes.vcf")</code></pre>
+    <p><em>Sintaxis ilustrativa; verifica en la documentación oficial del proyecto.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual con harpy incluye los siguientes pasos:</p>
+    <ol>
+      <li>Carga de datos crudos de secuenciación (FASTQ o similar).</li>
+      <li>Preprocesamiento y filtrado de lecturas.</li>
+      <li>Ensamblaje de regiones basadas en datos de lecturas vinculadas.</li>
+      <li>Reconstrucción de haplotipos (phase inference).</li>
+      <li>Generación de archivos de salida en formato VCF o BAM.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="160" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="300" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="440" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        
+        <!-- Etiquetas -->
+        <text x="80" y="45" font-size="14" text-anchor="middle" fill="#0066cc">Datos crudos</text>
+        <text x="220" y="45" font-size="14" text-anchor="middle" fill="#0066cc">Preprocesamiento</text>
+        <text x="360" y="45" font-size="14" text-anchor="middle" fill="#0066cc">Ensamblaje</text>
+        <text x="500" y="45" font-size="14" text-anchor="middle" fill="#0066cc">Fase de haplotipos</text>
+        
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="160" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="280" y1="40" x2="300" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="420" y1="40" x2="440" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Diagrama esquemático del flujo de trabajo típico con harpy: desde datos crudos hasta haplotipos faseados.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Uso de versiones desactualizadas:</strong> Asegúrate de mantener harpy actualizado para aprovechar mejoras de rendimiento y correcciones de errores.</li>
+      <li><strong>Formato de entrada incorrecto:</strong> Verifica que los archivos de entrada (FASTQ, BAM, etc.) estén en el formato esperado por harpy. Usa herramientas como <code>fastqc</code> o <code>samtools</code> para validar los datos antes del análisis.</li>
+      <li><strong>Requisitos de memoria:</strong> El procesamiento de datos de lecturas vinculadas puede ser intensivo en memoria. Asegúrate de contar con suficiente RAM y considera ejecutar el análisis en un entorno con recursos adecuados.</li>
+      <li><strong>Validación de resultados:</strong> Siempre verifica los resultados finales con herramientas de validación como <code>bcftools</code> o <code>vcfcheck</code> para asegurar la integridad de los archivos VCF generados.</li>
+    </ul>
+  </article>
+
+  
+
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">2 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

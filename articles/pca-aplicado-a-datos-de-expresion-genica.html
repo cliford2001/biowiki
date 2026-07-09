@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCA aplicado a datos de expresión génica</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>PCA aplicado a datos de expresión génica</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es el PCA y por qué es esencial en bioinformática?</h2>
+            <p>El Análisis de Componentes Principales (PCA, por sus siglas en inglés) es una técnica estadística no supervisada ampliamente utilizada para reducir la dimensionalidad de grandes conjuntos de datos. En el contexto de la bioinformática, especialmente en el análisis de expresión génica, PCA permite identificar patrones de variabilidad entre muestras, detectar muestras atípicas y visualizar relaciones de similaridad en un espacio de baja dimensión (normalmente 2D o 3D).</p>
+            <p>Los datos de expresión génica, obtenidos mediante tecnologías como RNA-seq, suelen tener miles de genes (variables) por cada muestra (observaciones). Esta alta dimensionalidad dificulta su análisis y visualización directa. PCA transforma estos datos en un conjunto de componentes ortogonales (vectores lineales) que explican la máxima varianza posible, permitiendo resumir la estructura global de los datos con un número reducido de componentes.</p>
+        </section>
+
+        <section>
+            <h2>Aplicación práctica de PCA en RNA-seq</h2>
+            <p>El flujo típico de análisis comienza con la alineación de lecturas de secuenciación (usando herramientas como <code>STAR</code> o <code>kallisto</code>), seguido de la estimación de abundancia de transcritos (con <code>Salmon</code> o <code>featureCounts</code>), y finalmente el cálculo de expresión génica (por ejemplo, con <code>DESeq2</code> o <code>edgeR</code>).</p>
+            <p>Una vez se tiene una matriz de expresión con genes en filas y muestras en columnas, se puede aplicar PCA. El objetivo es identificar si las muestras se agrupan según condiciones biológicas (por ejemplo, tratamiento vs control), o si hay muestras que se desvían significativamente del patrón esperado (posibles contaminaciones, errores de muestreo, o mala calidad).</p>
+        </section>
+
+        <section>
+            <h3>Implementación en R</h3>
+            <p>En R, el paquete <code>ggplot2</code> y <code>stats</code> facilitan la implementación de PCA. Aquí se muestra un ejemplo práctico:</p>
+            <pre><code>library(ggplot2)
+library(dplyr)
+
+# Cargar matriz de expresión (gene_expression.tsv)
+expr_data &lt;- read.table("gene_expression.tsv", header = TRUE, row.names = 1)
+
+# Preprocesar: logaritmo (1 + expresión) para reducir sesgo
+expr_log &lt;- log2(expr_data + 1)
+
+# Aplicar PCA
+pca_result &lt;- prcomp(expr_log, center = TRUE, scale. = TRUE)
+
+# Crear un data frame con los componentes
+pca_df &lt;- data.frame(
+  PC1 = pca_result$x[,1],
+  PC2 = pca_result$x[,2],
+  sample_type = factor(c("Control", "Tratamiento", "Control", "Tratamiento"))
+)
+
+# Visualizar
+ggplot(pca_df, aes(x = PC1, y = PC2, color = sample_type)) +
+  geom_point(size = 3) +
+  labs(title = "PCA de datos de expresión génica", 
+       x = "Componente Principal 1 (45% de varianza)", 
+       y = "Componente Principal 2 (25% de varianza)") +
+  theme_minimal()
+</code></pre>
+        </section>
+
+        <section>
+            <h3>Implementación en Python</h3>
+            <p>En Python, <code>scikit-learn</code> ofrece una implementación robusta y eficiente de PCA:</p>
+            <pre><code>import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Cargar datos de expresión
+expr_data = pd.read_csv("gene_expression.csv", index_col=0)
+
+# Preprocesamiento: aplicar log2(1 + expresión)
+expr_log = np.log2(expr_data + 1)
+
+# Ajustar PCA
+pca = PCA(n_components=2)
+principal_components = pca.fit_transform(expr_log)
+
+# Crear DataFrame
+pca_df = pd.DataFrame(
+    data=principal_components,
+    columns=["PC1", "PC2"],
+    index=expr_data.index
+)
+
+# Añadir etiquetas de muestra
+pca_df["condition"] = ["Control", "Tratamiento", "Control", "Tratamiento"]
+
+# Visualización
+plt.figure(figsize=(8, 6))
+scatter = plt.scatter(pca_df["PC1"], pca_df["PC2"], c=pca_df["condition"].astype('category').cat.codes, cmap='viridis')
+plt.xlabel(f"Componente Principal 1 (varianza explicada: {pca.explained_variance_ratio_[0]:.2%})")
+plt.ylabel(f"Componente Principal 2 (varianza explicada: {pca.explained_variance_ratio_[1]:.2%})")
+plt.title("PCA de datos de expresión génica")
+plt.colorbar(scatter, ticks=[0, 1], label="Condición")
+plt.grid(True)
+plt.show()
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No centrar ni escalar los datos:</strong> Siempre debe usarse <code>center = TRUE</code> y <code>scale. = TRUE</code> en R, o escalar antes en Python. Sin escalamiento, genes con alta expresión dominan el análisis.</li>
+                <li><strong>Ignorar la varianza explicada:</strong> Verificar cuánta varianza explica cada componente. Si el primer componente explica solo un 10%, el PCA puede no ser adecuado.</li>
+                <li><strong>Usar datos sin preprocesar:</strong> Nunca aplicar PCA directamente a valores brutos. Siempre aplicar logaritmo (por ejemplo, log2) para estabilizar la varianza.</li>
+                <li><strong>Interpretar sin contexto biológico:</strong> Un clustering en PCA debe validarse con información de diseño experimental (condiciones, tiempo, etc.). No asumir que cada agrupamiento es biológicamente significativo.</li>
+                <li><strong>Superponer múltiples análisis:</strong> No mezclar PCA con otros métodos (como t-SNE o UMAP) sin comprender sus supuestos. PCA es lineal; otros son no lineales.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Conclusión</h2>
+            <p>El PCA es una herramienta fundamental para explorar datos de expresión génica. Su poder radica en su simplicidad y en su capacidad para revelar estructuras ocultas en grandes matrices de datos. Sin embargo, su correcta aplicación requiere atención a los supuestos estadísticos y a la interpretación biológica. Cuando se usa con cuidado, PCA no solo ayuda a detectar errores de calidad, sino también a formular hipótesis sobre los mecanismos biológicos subyacentes.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alineamiento de RNA-seq con STAR</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Alineamiento de RNA-seq con STAR</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es el alineamiento de RNA-seq y por qué es crucial?</h2>
+            <p>El alineamiento de secuencias de ARN (RNA-seq) es el primer paso fundamental en el análisis de expresión génica a partir de datos de secuenciación de nueva generación. Su objetivo es mapear los fragmentos de cDNA de lecturas cortas (reads) generados por el secuenciador a un genoma de referencia. Este proceso permite determinar qué regiones del genoma se han transcrito, en qué cantidad y con qué variaciones, lo cual es esencial para estudios de expresión diferencial, variantes de splicing, fusiones génicas y otros fenómenos biológicos.</p>
+            <p>Entre las herramientas disponibles, <strong>STAR</strong> (Spliced Transcripts Alignment to a Reference) se ha consolidado como una de las más eficientes y precisas para este propósito. Desarrollado por Alexander Dobin y colaboradores, STAR está diseñado específicamente para manejar los desafíos únicos del alineamiento de ARN, como los intrones, los splicing alternativo y las transcripciones poliadeniladas.</p>
+        </section>
+
+        <section>
+            <h2>¿Por qué STAR es tan eficiente?</h2>
+            <p>STAR combina una estrategia de alineamiento de alta velocidad con un diseño de base de datos de memoria eficiente, lo que permite procesar grandes conjuntos de datos (miles de millones de lecturas) en tiempos razonables. A diferencia de herramientas más antiguas que realizaban un alineamiento global, STAR utiliza una técnica de "indexación de genoma" avanzada que divide el genoma en "seed" de tamaño fijo y almacena todos los posibles sitios de alineamiento en una estructura de árbol invertido. Esto permite una búsqueda rápida y precisa de alineamientos posibles, incluso para lecturas que cruzan intrones.</p>
+            <p>Además, STAR implementa un algoritmo de alineamiento en dos fases: primero alinea las lecturas a posibles ubicaciones en el genoma (con la posibilidad de espacios grandes), y luego refinan el alineamiento con un ajuste de extremos y una verificación de calidad. Esta estrategia reduce drásticamente el tiempo de cálculo mientras mantiene una alta sensibilidad.</p>
+        </section>
+
+        <section>
+            <h2>Instalación y configuración del índice de referencia</h2>
+            <p>Antes de alinear lecturas, es necesario construir un índice del genoma de referencia utilizando el comando <code>STAR --runMode genomeGenerate</code>. Este paso es costoso computacionalmente pero solo debe hacerse una vez por genoma y especie. Los requisitos incluyen:</p>
+            <ul>
+                <li>Un archivo FASTA del genoma de referencia (por ejemplo, <code>hg38.fa</code>)</li>
+                <li>Un archivo GTF con las anotaciones de genes (por ejemplo, <code>genes.gtf</code>)</li>
+                <li>Un directorio de salida para el índice</li>
+            </ul>
+            <p>Un ejemplo típico de comando de generación de índice:</p>
+            <pre><code>STAR \
+  --runMode genomeGenerate \
+  --runThreadN 8 \
+  --genomeDir ./STAR_index \
+  --genomeFastaFiles hg38.fa \
+  --sjdbGTFfile genes.gtf \
+  --sjdbOverhang 99</code></pre>
+            <p>El parámetro <code>--sjdbOverhang</code> debe ser uno menos que el tamaño de lectura (por ejemplo, 99 si las lecturas son de 100 nt), ya que determina la longitud del fragmento que se mantiene fuera del exón en el alineamiento spliced.</p>
+        </section>
+
+        <section>
+            <h2>Ejecución del alineamiento de lecturas</h2>
+            <p>Una vez generado el índice, se puede ejecutar el alineamiento con el comando <code>STAR --runMode alignReads</code>. Los principales parámetros de entrada son:</p>
+            <ul>
+                <li><code>--genomeDir</code>: ruta al directorio del índice</li>
+                <li><code>--readFilesIn</code>: rutas a los archivos de lecturas (fastq o fastq.gz)</li>
+                <li><code>--outFileNamePrefix</code>: prefijo para los archivos de salida</li>
+            </ul>
+            <p>Un ejemplo práctico:</p>
+            <pre><code>STAR \
+  --runMode alignReads \
+  --runThreadN 16 \
+  --genomeDir ./STAR_index \
+  --readFilesIn sample1_R1.fastq.gz sample1_R2.fastq.gz \
+  --outFileNamePrefix ./results/sample1_ \
+  --outSAMtype BAM SortedByCoordinate \
+  --outFilterMultimapNmax 1</code></pre>
+            <p>Este comando produce un archivo BAM ordenado por coordenadas, útil para análisis posteriores con herramientas como <code>samtools</code>, <code>DESeq2</code>, <code>edgeR</code>, <code>Salmon</code> o <code>kallisto</code>.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El alineamiento de RNA-seq con STAR es un pilar fundamental del análisis bioinformático moderno. Su combinación de velocidad, precisión y capacidad para manejar splicing complejo lo convierten en una herramienta esencial para cualquier laboratorio que trabaje con datos de secuenciación de ARN. Dominar su uso, desde la generación del índice hasta el análisis de los resultados, es clave para obtener conclusiones biológicas fiables.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar un genoma incorrecto</strong>: Asegúrese de que el genoma de referencia (FASTA) y las anotaciones (GTF) sean compatibles y correspondan a la misma versión (por ejemplo, GRCh38, hg38).</li>
+                <li><strong>Mal configuración de <code>--sjdbOverhang</code></strong>: un valor incorrecto puede llevar a alineamientos incompletos o inexactos.</li>
+                <li><strong>Ignorar el filtrado de lecturas múltiples</strong>: usar <code>--outFilterMultimapNmax 1</code> ayuda a evitar asignaciones ambiguas, especialmente en regiones repetitivas.</li>
+                <li><strong>Reutilizar índices</strong>: no reconstruya el índice a menos que sea estrictamente necesario. Puede almacenarlo en un lugar compartido para ahorrar tiempo.</li>
+                <li><strong>Analizar los reportes de STAR</strong>: el archivo <code>Log.final.out</code> contiene información crítica sobre el porcentaje de lecturas alineadas, el número de alineamientos múltiples, etc.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

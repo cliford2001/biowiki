@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de variabilidad estructural con LUMPY</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Detección de variabilidad estructural con LUMPY</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es la variabilidad estructural y por qué importa?</h2>
+            <p>La variabilidad estructural (SV, por sus siglas en inglés) se refiere a alteraciones en el genoma de gran tamaño que incluyen deletiones, duplicaciones, inserciones, inversiones y translocaciones. A diferencia de los variantes de un solo nucleótido (SNVs) o los pequeños indels, las SVs pueden afectar múltiples genes, promotores, o regiones reguladoras, y están fuertemente asociadas con enfermedades genéticas, cáncer y variabilidad fenotípica. Detectar estas variantes de forma precisa y completa es un desafío clave en genómica moderna.</p>
+            <p>En este artículo, exploramos <strong>LUMPY</strong> (LIneUP for Mapping and genotyping of structural Variants), una herramienta de detección de SVs diseñada para análisis de secuenciación de próxima generación (NGS). LUMPY se distingue por su capacidad de integrar múltiples tipos de señales de secuenciación —como <em>split reads</em>, <em>discordant pairs</em>, <em>read depth</em> y <em>soft-clipped reads</em>— en un modelo estadístico unificado para identificar SVs de forma robusta, especialmente en datos de exoma o secuenciación del genoma completo (WGS).</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: Cómo funciona LUMPY</h2>
+            <p>LUMPY opera en dos fases principales: la <strong>generación de señales</strong> y el <strong>modelo de detección</strong>.</p>
+
+            <h3>1. Preparación del alineamiento</h3>
+            <p>Antes de ejecutar LUMPY, es esencial tener un alineamiento de alta calidad de los reads a un genoma de referencia. Las herramientas más comunes son <strong>STAR</strong> (para RNA-seq) o <strong>BWA-MEM</strong> (para DNA-seq). El archivo de salida debe estar en formato BAM, ordenado y indexado con <code>samtools</code>:</p>
+            <pre><code> samtools sort alineamiento.unsorted.bam -o alineamiento.sorted.bam
+ samtools index alineamiento.sorted.bam
+</code></pre>
+
+            <h3>2. Generación de señales con LUMPY</h3>
+            <p>LUMPY utiliza una combinación de cuatro tipos de evidencia:</p>
+            <ul>
+                <li><strong>Split reads</strong>: reads que se alinean a dos regiones distintas del genoma.</li>
+                <li><strong>Discordant pairs</strong>: pares de reads que se alinean con distancia o orientación inesperada.</li>
+                <li><strong>Read depth</strong>: variaciones en la cobertura de secuenciación que indican duplicaciones o eliminaciones.</li>
+                <li><strong>Soft-clipped reads</strong>: reads con extremos truncados, común en translocaciones o grandes inserciones.</li>
+            </ul>
+            <p>Para extraer estas señales, se usa el comando <code>lumpy</code> en modo <code>make</code>:</p>
+            <pre><code> lumpy -X 10000 -d 50000 -f 2 -l 100000 -o lumpy.bedpe alineamiento.sorted.bam
+</code></pre>
+            <p>Donde los parámetros significan:</p>
+            <ul>
+                <li><code>-X</code>: tamaño máximo de una SV (en bp).</li>
+                <li><code>-d</code>: desvío máximo permitido para pares discordantes.</li>
+                <li><code>-f</code>: factor de penalización para <em>read depth</em>.</li>
+                <li><code>-l</code>: longitud mínima de fragmento para considerar.</li>
+                <li><code>-o</code>: nombre del archivo de salida en formato BEDPE.</li>
+            </ul>
+
+            <h3>3. Genotipado y filtrado</h3>
+            <p>Una vez generada la lista de posibles SVs, se realiza el <strong>genotipado</strong> para estimar la probabilidad de que un individuo porte una variante. Esto se hace con el comando <code>lumpy</code> en modo <code>genotyper</code>:</p>
+            <pre><code> lumpy -X 10000 -d 50000 -f 2 -l 100000 -o genotipos.vcf -c 10000 -i 100000 -t 100000 alineamiento.sorted.bam lumpy.bedpe
+</code></pre>
+            <p>El archivo de salida es un VCF que contiene información de genotipo, calidad y frecuencia de la variante.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>LUMPY es una herramienta poderosa y flexible para la detección de variabilidad estructural, especialmente útil en estudios de genómica humana y canceres. Su capacidad para integrar múltiples tipos de evidencia de NGS hace que sea más sensible que métodos basados en un solo tipo de señal. Sin embargo, requiere datos de alineamiento de alta calidad y configuración cuidadosa de parámetros para evitar falsos positivos.</p>
+            <p>La detección de SVs no es solo un paso técnico: es una clave para descubrir las bases genéticas de enfermedades complejas. LUMPY, junto con herramientas como <strong>SVIM</strong>, <strong>GridSS</strong> o <strong>DeepVariant</strong>, forma parte del arsenal indispensable para los bioinformáticos modernos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar datos de alineamiento sin ordenar o indexar</strong>: LUMPY fallará si el archivo BAM no está indexado.</li>
+                <li><strong>Configurar parámetros demasiado laxos</strong>: esto genera muchos falsos positivos. Siempre validar con herramientas de supervisión como <a href="https://github.com/CSG-Genomics/DeepVariant">DeepVariant</a> o <a href="https://github.com/NCBI-Hackathons/Genome-Assembly-Validator">Genome-Assembly-Validator</a>.</li>
+                <li><strong>No filtrar resultados por calidad</strong>: usar <code>vcftools</code> o <code>bcftools</code> para eliminar variantes de baja confianza.</li>
+                <li><strong>Ignorar el contexto biológico</strong>: no toda SV detectada es relevante. Siempre anotar con herramientas como <strong>ANNOVAR</strong> o <strong>VEP</strong>.</li>
+                <li><strong>Usar LUMPY en datos de RNA-seq sin ajustar</strong>: LUMPY está optimizado para DNA-seq. Para RNA-seq, considera herramientas como <strong>STAR-Fusion</strong> o <strong>SQANTI3</strong>.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

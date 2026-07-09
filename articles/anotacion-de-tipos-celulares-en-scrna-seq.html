@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anotación de tipos celulares en scRNA-seq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Anotación de tipos celulares en scRNA-seq</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>La anotación de tipos celulares en datos de secuenciación de ARN de células únicas (<em>single-cell RNA sequencing</em>, scRNA-seq) es un paso crítico en el análisis de transcripción a nivel celular. Tras la obtención de perfiles de expresión génica de miles de células individuales, el investigador se enfrenta a un reto fundamental: ¿qué tipo de célula representa cada cluster identificado? Esta anotación no es solo un ejercicio de etiquetado, sino una puerta hacia la comprensión funcional del tejido, la identificación de subpoblaciones raras, la caracterización de estados celulares durante el desarrollo o la respuesta a tratamientos, y la generación de hipótesis biológicas.</p>
+      <p>La precisión de la anotación determina la validez de las conclusiones derivadas del estudio. Una etiqueta incorrecta puede llevar a interpretaciones erróneas sobre la biología celular, la dinámica de tejidos o los mecanismos de enfermedad. Por ello, se requieren estrategias robustas, basadas en marcadores génicos conocidos y técnicas estadísticas que permitan una asignación confiable.</p>
+    </section>
+
+    <section>
+      <h2>Metodologías de anotación</h2>
+      <p>Existen varios enfoques para anotar tipos celulares, cada uno con sus fortalezas y limitaciones. A continuación se describen los métodos más comunes.</p>
+
+      <h3>1. Anotación basada en marcadores conocidos</h3>
+      <p>Este método consiste en buscar genes que están altamente expresados en un cluster y que son conocidos por marcar tipos celulares específicos. Se utilizan bases de datos como <a href="https://www.proteinatlas.org/" target="_blank">Human Protein Atlas</a>, <a href="https://www.mousephenotype.org/" target="_blank">Mouse Phenotype</a>, <a href="https://www.ihcweb.com/" target="_blank">IHC Web</a>, o listas manuales de marcadores de literatura. Por ejemplo:</p>
+      <pre><code class="language-r">
+# En R con Seurat
+marker_genes &lt;- GetAssayData(sce, slot = "data")
+
+# Buscar marcadores para linfocitos T
+T_cell_markers &lt;- c("CD3D", "CD3E", "CD4", "CD8A", "TRAC")
+
+# Ver expresión promedio en cada cluster
+AverageExpression(sce, features = T_cell_markers)
+      </code></pre>
+      <p>Este enfoque es directo y rápido, pero depende de la calidad y exhaustividad de los marcadores disponibles. Puede fallar si se trata de una población celular poco estudiada o si hay expresión inusual de marcadores.</p>
+
+      <h3>2. Anotación por comparación con referencias públicas</h3>
+      <p>Este enfoque implica comparar los perfiles de expresión de los clusters con conjuntos de datos de referencia ya anotados. Herramientas como <a href="https://github.com/immunogenomics/SingleCellMultiModal" target="_blank">SingleCellMultiModal</a>, <a href="https://github.com/chriscainx/CellTypist" target="_blank">CellTypist</a>, o <a href="https://github.com/ebi-gene-expression-group/scRNA-seq-analyzer" target="_blank">scRNA-seq-analyzer</a> permiten clasificar células mediante modelos de aprendizaje automático entrenados en datos de referencia. Por ejemplo, CellTypist utiliza un modelo de árboles de decisión para predecir el tipo celular basado en la expresión de genes de referencia.</p>
+      <pre><code class="language-python">
+# En Python con CellTypist
+import celltypist
+
+# Cargar modelo
+model = celltypist.load_model("celltypist_model")
+
+# Predecir tipos celulares
+predictions = model.predict(data=cluster_expression, return_prob=True)
+      </code></pre>
+      <p>Esta metodología es más robusta que la basada en marcadores únicos, ya que considera patrones complejos de expresión y puede identificar poblaciones no esperadas. Es especialmente útil en tejidos con alta heterogeneidad o en sistemas modelo menos estudiados.</p>
+
+      <h3>3. Anotación guiada por análisis de funciones</h3>
+      <p>En casos donde la identidad celular no es clara, se puede recurrir al análisis funcional. Se identifican genes diferencialmente expresados (<em>DEGs</em>) entre clusters y se analiza su enriquecimiento funcional mediante herramientas como <a href="https://www.geneontology.org/" target="_blank">Gene Ontology</a> (<em>GO</em>), <a href="https://www.reactome.org/" target="_blank">Reactome</a>, o <a href="https://www.gsea-msigdb.org/" target="_blank">GSEA</a>. Por ejemplo, si un cluster muestra un enriquecimiento significativo en vías relacionadas con la actividad mitocondrial, podría corresponder a una población de células de alto metabolismo como los macrófagos activados.</p>
+      <pre><code class="language-r">
+# En R con Seurat
+# Encontrar DEGs entre cluster 1 y 2
+degs &lt;- FindMarkers(sce, ident.1 = 1, ident.2 = 2, test.use = "wilcox")
+
+# Enrichment con clusterProfiler
+library(clusterProfiler)
+library(org.Hs.eg.db)
+
+ego <- enricher(degs$avg_log2FC, 
+                gene = rownames(degs), 
+                universe = rownames(degs), 
+                pvalueCutoff = 0.05, 
+                pAdjustMethod = "BH")
+      </code></pre>
+      <p>Este método no proporciona una etiqueta directa, pero ayuda a inferir la función biológica del cluster, lo que puede facilitar la anotación mediante lógica biológica.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La anotación de tipos celulares en scRNA-seq es un paso esencial para extraer significado biológico de los datos. No existe un único método perfecto. La mejor estrategia combina múltiples enfoques: se comienza con marcadores conocidos, se valida con modelos de referencia, y se refuerza con análisis funcional. La anotación cuidadosa y justificada es clave para que los hallazgos sean reproducibles y biológicamente relevantes.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No confiar únicamente en un marcador único:</strong> los marcadores son a menudo expresados en múltiples tipos celulares. Usar múltiples marcadores específicos mejora la confiabilidad.</li>
+        <li><strong>Ignorar la calidad de los datos:</strong> un cluster con baja cobertura o alta contaminación puede llevar a anotaciones erróneas. Verificar la calidad previamente (por ejemplo, con <code>scater</code> o <code>Scanpy</code>).</li>
+        <li><strong>Usar referencias no relevantes:</strong> los datos de referencia deben ser del mismo organismo, tejido o estado biológico. Comparar un cluster de corazón con datos de cerebro puede dar resultados falsos.</li>
+        <li><strong>Rechazar la evidencia funcional:</strong> si un cluster no se alinea con marcadores conocidos, pero tiene un perfil funcional coherente, puede representar una población nueva o una condición poco común.</li>
+        <li><strong>Documentar el proceso:</strong> registrar cómo se llegó a cada anotación (marcadores usados, referencias consultadas, resultados de enriquecimiento) permite la revisión y la reproducibilidad.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

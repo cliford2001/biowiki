@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análisis de trayectorias y pseudotime</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de trayectorias y pseudotime</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es el análisis de trayectorias y pseudotime?</h2>
+      <p>
+        En el campo de la genómica de células individuales (scRNA-seq), el análisis de trayectorias y pseudotime permite reconstruir los caminos de diferenciación celular en un espacio de expresión génica. A diferencia de un análisis estático que compara grupos de células, esta técnica modela la evolución temporal de las células a partir de un estado precursor hasta un estado terminal, incluso cuando no existen datos temporales reales.
+      </p>
+      <p>
+        El <strong>pseudotime</strong> es un concepto clave: representa una estimación de la progresión de una célula a través de una trayectoria biológica, ordenando las células en un eje de tiempo simulado. Este eje no es físico, sino inferido mediante algoritmos que analizan el patrón de expresión génica a lo largo de la trayectoria.
+      </p>
+    </section>
+
+    <section>
+      <h2>Conceptos fundamentales</h2>
+      <h3>Trayectorias de diferenciación</h3>
+      <p>
+        Las trayectorias representan los posibles caminos que una célula madre puede seguir para convertirse en tipos celulares especializados. Algunos ejemplos comunes incluyen:
+      </p>
+      <ul>
+        <li>La diferenciación de hematopoyesis desde una célula madre hematopoyética.</li>
+        <li>La transdiferenciación en modelos de desarrollo embrionario.</li>
+        <li>La reprogramación celular en estudios de iPSCs.</li>
+      </ul>
+      <p>
+        Estas trayectorias pueden ser lineales (como un camino único de diferenciación) o ramificadas (como la bifurcación hacia tipos celulares distintos).
+      </p>
+
+      <h3>Algoritmos y herramientas</h3>
+      <p>
+        Varios paquetes de R y Python han sido diseñados específicamente para este tipo de análisis. Entre los más utilizados se encuentran:
+      </p>
+      <ul>
+        <li><code>Monocle3</code> (R): herramienta robusta para la reconstrucción de trayectorias y estimación de pseudotime.</li>
+        <li><code>Slingshot</code> (R): utiliza un enfoque basado en clústeres y suavizado de gráficos para inferir trayectorias.</li>
+        <li><code>RNA velocity</code> (Python): permite estimar el flujo de transcripción a partir de los ratios de genes con spliced/unspliced, proporcionando una dirección más confiable en el espacio de expresión.</li>
+        <li><code>Pseudobulk</code> (Python): útil para reducir ruido en datos de células individuales y prepararlos para análisis de pseudotime.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Paso a paso: análisis de pseudotime con Monocle3</h2>
+      <p>
+        A continuación, se muestra un ejemplo real de cómo usar Monocle3 para inferir un camino de diferenciación en datos scRNA-seq.
+      </p>
+
+      <h3>1. Carga de datos y preprocesamiento</h3>
+      <pre><code>library(monocle3)
+library(slingshot)
+
+# Cargar datos en formato Seurat
+seurat_obj &lt;- readRDS("data/processed_seurat.rds")
+
+# Convertir a monocle3
+cds &lt;- new_cell_data_set(seurat_obj)
+</code></pre>
+
+      <h3>2. Selección de genes variables y reducción de dimensionalidad</h3>
+      <pre><code># Seleccionar genes con alta variabilidad
+cds &lt;- detect_genes(cds, min_expr = 0.1)
+
+# Reducción de dimensionalidad con UMAP
+cds &lt;- reduce_dimension(cds, reduction_method = "UMAP")
+</code></pre>
+
+      <h3>3. Reconstrucción de la trayectoria</h3>
+      <pre><code># Reconstruir trayectoria
+cds &lt;- order_cells(cds, use_partition = "default")
+</code></pre>
+
+      <h3>4. Visualización</h3>
+      <pre><code># Visualizar pseudotime
+plot_cell_trajectory(cds, color_by = "pseudotime")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        El análisis de trayectorias y pseudotime es una herramienta esencial para entender los procesos dinámicos en biología celular. Permite inferir la progresión temporal de células sin necesidad de datos de tiempo real, lo que es especialmente valioso en estudios de desarrollo, diferenciación y reprogramación. Herramientas como Monocle3, Slingshot y RNA velocity proporcionan un conjunto potente de métodos para reconstruir y visualizar estos caminos biológicos.
+      </p>
+      <p>
+        Sin embargo, la interpretación debe hacerse con cautela: las trayectorias son modelos inferidos, no observaciones directas. El resultado puede variar según el conjunto de genes seleccionados, el método de reducción de dimensionalidad y los parámetros del algoritmo.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar todos los genes</strong>: seleccionar solo genes diferencialmente expresados o de alta variabilidad mejora la precisión de la reconstrucción.</li>
+        <li><strong>Validar con biología conocida</strong>: comparar la trayectoria inferida con marcadores de tipos celulares conocidos ayuda a evaluar la plausibilidad biológica.</li>
+        <li><strong>Evitar sobreinterpretar ramificaciones</strong>: las ramificaciones deben ser verificadas con datos de expresión de genes de transición y no asumidas automáticamente.</li>
+        <li><strong>Usar múltiples algoritmos</strong>: comparar resultados entre Monocle3, Slingshot o RNA velocity aumenta la robustez del análisis.</li>
+        <li><strong>Documentar los parámetros</strong>: registrar todos los parámetros usados en el análisis es crucial para la reproducibilidad.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

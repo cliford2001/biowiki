@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>evo-design/proto-tools</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Utilidades / Paquetes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>evo-design/proto-tools</h1>
+    <p class="meta">
+      <a href="https://github.com/evo-design/proto-tools">Repositorio en GitHub</a> · 
+      autores: 70 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <strong>evo-design/proto-tools</strong> es una infraestructura universal para biología generativa, diseñada como una capa base que permite el desarrollo, integración y gestión de herramientas y modelos en el campo de la biología sintética y el diseño de proteínas. Su objetivo principal es estandarizar el flujo de trabajo alrededor de modelos generativos, facilitando la creación de prototipos rápidos, la interoperabilidad entre diferentes pipelines, y la reutilización de componentes biológicos.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      Esta herramienta está construida en Python. Para instalarla, se recomienda usar <code>pip</code>:
+    </p>
+    <pre><code>pip install proto-tools</code></pre>
+    <p>
+      Si el paquete no está disponible en PyPI, se puede instalar directamente desde el repositorio GitHub:
+    </p>
+    <pre><code>pip install git+https://github.com/evo-design/proto-tools.git</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      A continuación se muestra un ejemplo ilustrativo de cómo inicializar un prototipo biológico usando <code>proto-tools</code>. Este código es representativo del estilo de uso, pero los nombres exactos de funciones y argumentos deben verificarse en la documentación oficial.
+    </p>
+    <pre><code>from proto_tools import Prototype, DesignPipeline
+
+# Crear un prototipo de proteína
+prototype = Prototype(
+    name="my_prototype",
+    sequence="MKTIIALSYV...",
+    model="protein_gpt_v2"
+)
+
+# Definir un pipeline de diseño
+pipeline = DesignPipeline(
+    steps=["stability_analysis", "expression_optimization", "mutagenesis"]
+)
+
+# Ejecutar el pipeline
+results = pipeline.run(prototype)
+print(results)</code></pre>
+    <p><em>Sintaxis ilustrativa; verifica en la documentación oficial.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo de trabajo típico con <code>proto-tools</code> sigue una secuencia de prototipado iterativo:
+    </p>
+    <ol>
+      <li>Definir un objeto <code>Prototype</code> con una secuencia biológica base.</li>
+      <li>Configurar un <code>DesignPipeline</code> con etapas como análisis de estabilidad, optimización de expresión o mutagénesis.</li>
+      <li>Ejecutar el pipeline para generar variantes mejoradas.</li>
+      <li>Evaluar resultados con herramientas de análisis integradas.</li>
+      <li>Iterar el diseño basado en feedback.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="80" y="45" font-size="14" text-anchor="middle" fill="#006064">Prototipo base</text>
+
+        <rect x="180" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="240" y="45" font-size="14" text-anchor="middle" fill="#006064">Pipeline</text>
+
+        <rect x="340" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="390" y="45" font-size="14" text-anchor="middle" fill="#006064">Ejecución</text>
+
+        <rect x="500" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="560" y="45" font-size="14" text-anchor="middle" fill="#006064">Resultados</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="180" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="300" y1="40" x2="340" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="460" y1="40" x2="500" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#006064" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Diagrama del flujo de trabajo típico con <em>evo-design/proto-tools</em>: desde el prototipo base hasta los resultados finales.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Instalación incorrecta:</strong> Asegúrate de usar <code>pip install</code> y no <code>conda</code> si no está disponible en conda-forge.</li>
+      <li><strong>Uso de modelos no disponibles:</strong> Verifica que el modelo especificado (como <code>protein_gpt_v2</code>) esté soportado y correctamente instalado.</li>
+      <li><strong>Secuencias inválidas:</strong> Asegúrate de que las secuencias biológicas usadas sean válidas (por ejemplo, no contengan caracteres no permitidos).</li>
+      <li><strong>Iteración progresiva:</strong> No intentes realizar múltiples etapas del pipeline en una sola ejecución sin validación previa. Mejor hacer pruebas en etapas.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

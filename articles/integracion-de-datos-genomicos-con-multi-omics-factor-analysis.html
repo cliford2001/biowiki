@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos genómicos con Multi-Omics Factor Analysis</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos genómicos con Multi-Omics Factor Analysis</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la integración de datos genómicos con MOFA?</h2>
+      <p>La <strong>análisis de factores multi-ómicos</strong> (Multi-Omics Factor Analysis, MOFA) es una técnica estadística avanzada diseñada para integrar múltiples tipos de datos biológicos —como expresión génica, metilación, proteómica, y datos de citometría de flujo— en un único marco analítico. A diferencia de métodos tradicionales que analizan cada conjunto de datos por separado, MOFA busca factores latentes que explican la variabilidad conjunta entre múltiples matrices de datos. Esto permite identificar patrones biológicos subyacentes comunes a varios niveles moleculares, revelando relaciones complejas que de otro modo permanecerían ocultas.</p>
+      <p>MOFA es especialmente útil en estudios de enfermedades complejas, como el cáncer, donde la interacción entre distintos niveles de regulación (genómica, epigenómica, transcriptómica) juega un papel crucial. Su enfoque permite descubrir subtipos de pacientes, biomarcadores de respuesta a tratamientos, y mecanismos biológicos compartidos que no se detectan mediante análisis univariados.</p>
+    </section>
+
+    <section>
+      <h2>Principios de MOFA y MOFA2</h2>
+      <p>MOFA se basa en un modelo de <em>factorización de matrices</em> bajo un marco bayesiano. Dado un conjunto de matrices de datos $ X_1, X_2, ..., X_K $, cada una representando un tipo de omica (por ejemplo, RNA-seq, DNA methylation), MOFA modela cada matriz como una combinación lineal de factores comunes y factores específicos de cada omica:</p>
+      <pre><code>X_k = W_k F + E_k</code></pre>
+      <p>Donde:</p>
+      <ul>
+        <li><strong>W_k</strong>: matriz de cargas para la omica k</li>
+        <li><strong>F</strong>: matriz de factores latentes (comunes a todas las omicas)</li>
+        <li><strong>E_k</strong>: ruido específico de la omica k</li>
+      </ul>
+      <p>Esta formulación permite que MOFA descubra factores que capturan la variabilidad común entre múltiples omicas, así como factores específicos que explican la variabilidad intrínseca de cada tipo de datos.</p>
+      <p>La versión <strong>MOFA2</strong> (implementada en Python) mejora la eficiencia computacional, ofrece mejor soporte para datos de alta dimensión, y cuenta con una interfaz más accesible mediante <code>Scanpy</code> y <code>anndata</code>. Es la herramienta recomendada para estudios modernos debido a su rapidez y flexibilidad.</p>
+    </section>
+
+    <section>
+      <h2>Implementación con MOFA2 en Python</h2>
+      <p>El siguiente ejemplo muestra cómo usar MOFA2 para integrar datos de expresión génica y metilación usando <code>Scanpy</code>:</p>
+      <pre><code>import scanpy as sc
+import mofa2
+
+# Cargar datos en anndata
+adata_gene = sc.read_h5ad('data/expr.h5ad')
+adata_meth = sc.read_h5ad('data/meth.h5ad')
+
+# Crear objeto MOFA
+mofa = mofa2.MOFA()
+
+# Añadir matrices
+mofa.add_data(adata_gene, 'gene_expr')
+mofa.add_data(adata_meth, 'methylation')
+
+# Ejecutar análisis
+mofa.run(n_factors=10, max_iter=1000)
+
+# Obtener factores
+factors = mofa.get_factors()
+
+# Visualizar
+mofa.plot_factors()  # Gráficos de factores y cargas
+mofa.plot_heatmap()  # Mapa de calor de cargas</code></pre>
+    </section>
+
+    <section>
+      <h2>Integración con Seurat (R)</h2>
+      <p>En R, el paquete <code>MOFA</code> ofrece una implementación robusta. Aquí se muestra un flujo típico para integrar datos de RNA-seq y ATAC-seq:</p>
+      <pre><code>library(MOFA)
+
+# Cargar datos
+expr <- readRDS("data/expr.rds")
+atac <- readRDS("data/atac.rds")
+
+# Crear objeto MOFA
+mofa_obj <- create_mofa_object(
+  data = list(expr = expr, atac = atac),
+  type = "matrix"
+)
+
+# Entrenar el modelo
+mofa_obj <- run(mofa_obj, n_factors = 8)
+
+# Obtener factores
+factors <- get_factors(mofa_obj)
+
+# Visualización
+plot(mofa_obj, what = "factors")
+plot(mofa_obj, what = "loadings")</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen y buenas prácticas</h2>
+      <p>MOFA y MOFA2 son herramientas poderosas para la integración multi-ómica, capaces de descubrir factores biológicos compartidos entre múltiples niveles de regulación. Su aplicación permite un análisis más profundo de la biología celular y patológica, facilitando el descubrimiento de biomarcadores y subtipos de pacientes.</p>
+      <p><strong>Buenas prácticas:</strong></p>
+      <ul>
+        <li>Normalizar cada tipo de dato antes de integrar (por ejemplo, usar <code>DESeq2</code> para RNA-seq o <code>minfi</code> para metilación).</li>
+        <li>Seleccionar el número de factores con validación cruzada o métodos de selección como el <em>elbow method</em> o <em>variance explained</em>.</li>
+        <li>Verificar la calidad del modelo mediante <code>plot(mofa_obj, "reconstruction")</code> para asegurar que los datos se reconstruyen adecuadamente.</li>
+        <li>Usar <code>scanpy</code> o <code>Seurat</code> para visualizar resultados en espacios de factores y relacionarlos con etiquetas biológicas (clases, estados celulares).</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

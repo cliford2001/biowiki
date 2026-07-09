@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="300">
+<title>Estado del sistema — BioWiki</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+<style>
+.status-wrap{max-width:900px;margin:2rem auto;padding:0 1.2rem}
+.big-pill{display:inline-block;font-weight:800;font-size:1.1rem;padding:.5rem 1.4rem;border-radius:999px;letter-spacing:.05em}
+.big-pill.ok{background:rgba(94,212,160,.18);color:var(--accent)}
+.big-pill.warn{background:rgba(255,140,90,.18);color:#e07b3a}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin:1.4rem 0}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.3rem}
+.panel h3{margin:.1rem 0 .8rem;font-size:1rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td{padding:.4rem .2rem;border-bottom:1px solid var(--border)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:.5rem;vertical-align:middle}
+.dot.ok{background:var(--accent)}.dot.warn{background:#e07b3a}
+.kpi{display:flex;gap:1.4rem;flex-wrap:wrap}
+.kpi div{text-align:center}
+.kpi b{display:block;font-size:1.8rem;color:var(--accent)}
+.kpi span{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.errs{margin:.3rem 0 0;padding-left:1.1rem;font-size:.85rem;color:#e07b3a}
+.errs li{margin:.25rem 0;font-family:ui-monospace,monospace}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <h1>📊 Estado del sistema</h1>
+  <p>Salud del entorno autónomo BioWiki · se refresca solo cada 5 min</p>
+  <nav><a href="index.html">← Inicio</a><a href="articulos.html">🧬 Artículos</a><a href="novedades.html">📡 Novedades</a><a href="asociaciones.html">🔗 Asociaciones</a></nav>
+</header>
+<main class="status-wrap">
+  <p><span class="big-pill ok">Sistema: OK</span> <span class="muted">&nbsp;actualizado 2026-07-08 21:43:44</span></p>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Modelo local "enojo"</h3>
+      <p><span class="dot ok"></span><b>Responde</b><br><span class="muted">80 ms</span></p>
+      <p class="muted">Lock del modelo: libre</p>
+    </div>
+    <div class="panel">
+      <h3>GitHub API</h3>
+      <p><span class="dot ok"></span>Rate limit: <b>4998 / 5000</b></p>
+      <p class="muted">Token: configurado (5000/h)</p>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Tareas programadas (crons)</h3>
+    <table><tr><td>Blog (artículos)</td><td>hace 31 min</td><td><span class="dot ok"></span>al día</td></tr>
+<tr><td>Vigía (papers+repos)</td><td>hace 1.1 h</td><td><span class="dot ok"></span>al día</td></tr>
+<tr><td>Generador de temas</td><td>hace 23 min</td><td><span class="dot ok"></span>al día</td></tr>
+<tr><td>Generador de watchlist</td><td>hace 18 min</td><td><span class="dot ok"></span>al día</td></tr></table>
+  </div>
+  <div class="panel" style="margin-top:1rem">
+    <h3>Contenido</h3>
+    <div class="kpi">
+      <div><b>36</b><span>Artículos</span></div>
+      <div><b>18</b><span>Programas</span></div>
+      <div><b>38</b><span>Reseñas</span></div>
+      <div><b>24</b><span>Watchlist</span></div>
+      <div><b>6</b><span>Temas en cola</span></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:1rem">
+    <h3>Crecimiento — contenido total por día</h3>
+    <p class='muted'>Acumulando datos… vuelve mañana para ver la tendencia. 📈</p>
+  </div>
+  <div class="panel" style="margin-top:1rem">
+    <h3>Errores recientes en logs</h3>
+    <ul class='errs'><li>[reviews-cron.log] # github Cell Ranger: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github Harmony: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github Monocle: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github Trimmomatic: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github FastQC: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github BWA: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github Cutadapt: HTTP Error 403: rate limit exceeded</li><li>[reviews-cron.log] # github error: HTTP Error 403: rate limit exceeded</li></ul>
+  </div>
+</main>
+<footer class="site-footer"><p>Página de estado generada por build_status.py</p></footer>
+</body>
+</html>

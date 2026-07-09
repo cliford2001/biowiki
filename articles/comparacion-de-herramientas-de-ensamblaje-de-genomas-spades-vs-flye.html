@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparación de herramientas de ensamblaje de genomas: SPAdes vs Flye</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Comparación de herramientas de ensamblaje de genomas: SPAdes vs Flye</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Por qué elegir entre SPAdes y Flye?</h2>
+            <p>El ensamblaje de genomas es un paso fundamental en la bioinformática genómica, especialmente en estudios de organismos no descritos o con genomas complejos. Este proceso consiste en reconstruir el genoma completo a partir de millones de lecturas cortas (como las de Illumina) o largas (como las de PacBio o Oxford Nanopore). Dos herramientas destacadas en este campo son <strong>SPAdes</strong> y <strong>Flye</strong>. Aunque ambas comparten el objetivo común, sus algoritmos, supuestos y aplicaciones varían significativamente. Esta comparación explora sus diferencias clave, su desempeño en distintos escenarios y cómo elegir la adecuada según el tipo de datos y el objetivo del estudio.</p>
+        </section>
+
+        <section>
+            <h2>SPAdes: Ensamblaje para datos de secuenciación de corta longitud</h2>
+            <p><strong>SPAdes</strong> (St. Petersburg Genome Assembler) es un ensamblador diseñado principalmente para secuencias de <em>alta profundidad</em> de corta longitud, típicamente generadas por plataformas como Illumina. Su fortaleza radica en su capacidad para manejar datos con alto error de secuenciación, especialmente los errores de sustitución, que son comunes en Illumina.</p>
+
+            <h3>Algoritmo y arquitectura</h3>
+            <p>SPAdes utiliza un grafo de de Bruijn ajustado para manejar la complejidad de los genomas. Integra una estrategia multi-cobertura que permite detectar y corregir errores mediante el análisis de las frecuencias de k-mers. Además, implementa un módulo de corrección de errores (error correction) y un algoritmo de ensamblaje híbrido (para datos mixtos: cortos + largos) que mejora la calidad del resultado.</p>
+
+            <h3>Ejemplo de uso</h3>
+            <pre><code>spades.py \
+    -1 reads_1.fastq \
+    -2 reads_2.fastq \
+    -o spades_output \
+    -t 8 \
+    --careful</code></pre>
+            <p>El parámetro <code>--careful</code> activa la eliminación de caminos de baja cobertura, reduciendo el ruido y mejorando la calidad del ensamblaje.</p>
+        </section>
+
+        <section>
+            <h2>Flye: Ensamblaje para datos de larga longitud</h2>
+            <p><strong>Flye</strong> es un ensamblador especializado en datos de secuenciación de larga longitud, como los de <em>PacBio</em> (HiFi) y <em>Oxford Nanopore</em>. Su diseño se centra en manejar el alto porcentaje de errores de inserción y eliminación (indels), que son típicos en estas plataformas.</p>
+
+            <h3>Algoritmo y arquitectura</h3>
+            <p>Flye emplea un enfoque basado en la construcción de grafos de contig con alineaciones de lectura directas, evitando el uso de k-mers en etapas tempranas. Esto le permite mantener mejor la información de estructura genómica. Además, utiliza un proceso iterativo de ensamblaje con corrección de errores basada en el alineamiento de lecturas, lo que resulta en ensamblados más continuos y menos fragmentados.</p>
+
+            <h3>Ejemplo de uso</h3>
+            <pre><code>flye \
+    --nano-raw reads.fastq \
+    --out-dir flye_output \
+    --threads 8 \
+    --genome-size 5m</code></pre>
+            <p>El parámetro <code>--genome-size</code> es clave: proporcionar una estimación razonable del tamaño del genoma (en Mb) mejora significativamente el rendimiento y la calidad del ensamblaje.</p>
+        </section>
+
+        <section>
+            <h2>Comparación clave: cuando usar cada una</h2>
+
+            <h3>Plataforma de secuenciación</h3>
+            <ul>
+                <li><strong>SPAdes</strong>: Ideal para datos de <em>Illumina</em> (MiSeq, HiSeq, NovaSeq).</li>
+                <li><strong>Flye</strong>: Optimizado para <em>PacBio HiFi</em> y <em>Oxford Nanopore</em> (R9.4, MinION).</li>
+            </ul>
+
+            <h3>Complejidad genómica</h3>
+            <ul>
+                <li><strong>SPAdes</strong>: Funciona bien en genomas con alto contenido repetitivo, gracias a su corrección de errores y estrategia de múltiples coberturas.</li>
+                <li><strong>Flye</strong>: Excelente para genomas complejos con repeticiones largas, ya que los ensambladores basados en lectura larga pueden atravesar repeticiones más fácilmente.</li>
+            </ul>
+
+            <h3>Resultado: fragmentación vs. continuidad</h3>
+            <ul>
+                <li><strong>SPAdes</strong>: Tiende a generar más contigs, pero con menos errores. Útil cuando se necesita alta precisión.</li>
+                <li><strong>Flye</strong>: Produce ensamblados más largos y menos fragmentados, ideal para estudios de estructura genómica.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>SPAdes y Flye son herramientas poderosas, pero diseñadas para contextos distintos. <strong>SPAdes</strong> es el estándar de facto para datos de secuenciación de corta longitud, con un enfoque en precisión y corrección de errores. <strong>Flye</strong> domina en el mundo de las lecturas largas, ofreciendo ensamblados más continuos y menos fragmentados. La elección entre ambos no es arbitraria: debe basarse en el tipo de datos, el tamaño y la complejidad del genoma, y el objetivo del análisis. En estudios de genómica funcional, el ensamblado de alta calidad es el primer paso hacia una interpretación precisa de los genes y sus regulaciones.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No proporcionar una estimación de tamaño de genoma</strong>: En Flye, omitir <code>--genome-size</code> puede llevar a un ensamblaje ineficiente o erróneo.</li>
+                <li><strong>Usar SPAdes con datos de larga longitud sin previa corrección</strong>: Esto puede generar ensamblados con alta fragmentación y errores.</li>
+                <li><strong>Ignorar los resultados de calidad</strong>: Siempre revisar métricas como N50, número de contigs, cobertura y contenido repetitivo.</li>
+                <li><strong>Correr con demasiados threads</strong>: Aunque ambos programas son paralelizables, exceder el número de núcleos puede ralentizar el proceso.</li>
+                <li><strong>Usar datos sin limpieza previa</strong>: Eliminar secuencias de baja calidad y adaptadores antes del ensamblaje mejora drásticamente los resultados.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

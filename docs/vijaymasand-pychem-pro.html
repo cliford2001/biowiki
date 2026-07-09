@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyChem-Pro</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>PyChem-Pro</h1>
+    <p class="meta">
+      <a href="https://github.com/vijaymasand/PyChem-Pro">Repositorio en GitHub</a>
+      · Autores: 207 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      PyChem-Pro es una herramienta flexible y programable para visualización molecular 2D y 3D, diseñada como una librería de cheminformática. Permite visualizar poses de acoplamiento molecular (docking), calcular descriptores moleculares, editar moléculas, dibujar estructuras químicas, desarrollar modelos QSAR, y realizar múltiples tareas de análisis químico de manera eficiente en Python.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>PyChem-Pro puede instalarse usando pip:</p>
+    <pre><code>pip install PyChem-Pro</code></pre>
+    <p>Alternativamente, si se desea instalar desde el código fuente:</p>
+    <pre><code>git clone https://github.com/vijaymasand/PyChem-Pro.git
+cd PyChem-Pro
+pip install .</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Este es un ejemplo mínimo y realista de cómo cargar una molécula y visualizarla en 2D:</p>
+    <pre><code>from pychempro import Molecule
+
+# Crear una molécula desde una cadena SMILES
+mol = Molecule.from_smiles("CCO")
+
+# Visualizar en 2D
+mol.plot_2d()</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>Un flujo típico de trabajo con PyChem-Pro puede incluir:</p>
+    <ol>
+      <li>Cargar una molécula desde un archivo (por ejemplo, SDF o SMILES).</li>
+      <li>Calcular descriptores moleculares (como logP, MW, TPSA).</li>
+      <li>Visualizar la estructura 2D o 3D.</li>
+      <li>Realizar acoplamiento molecular (docking) y visualizar el pose final.</li>
+      <li>Exportar resultados o generar modelos QSAR.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="30" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="160" y="30" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="300" y="30" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="440" y="30" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="20" y="120" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="160" y="120" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        <rect x="300" y="120" width="120" height="40" rx="10" fill="#e6f7ff" stroke="#1890ff" />
+        
+        <!-- Etiquetas -->
+        <text x="80" y="55" font-size="14" text-anchor="middle" fill="#000">Carga molécula</text>
+        <text x="220" y="55" font-size="14" text-anchor="middle" fill="#000">Cálculo de descriptores</text>
+        <text x="360" y="55" font-size="14" text-anchor="middle" fill="#000">Visualización 2D/3D</text>
+        <text x="500" y="55" font-size="14" text-anchor="middle" fill="#000">Docking</text>
+        <text x="80" y="145" font-size="14" text-anchor="middle" fill="#000">Exportar</text>
+        <text x="220" y="145" font-size="14" text-anchor="middle" fill="#000">Modelos QSAR</text>
+        <text x="360" y="145" font-size="14" text-anchor="middle" fill="#000">Análisis</text>
+        
+        <!-- Flechas -->
+        <line x1="140" y1="50" x2="160" y2="50" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="280" y1="50" x2="300" y2="50" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="420" y1="50" x2="440" y2="50" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="140" y1="140" x2="160" y2="140" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="280" y1="140" x2="300" y2="140" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+        
+        <!-- Flecha de retorno -->
+        <line x1="360" y1="140" x2="360" y2="120" stroke="#1890ff" stroke-width="2" marker-end="url(#arrowhead)" />
+      </svg>
+      <figcaption>Flujo típico de trabajo con PyChem-Pro: desde la carga hasta el análisis y modelado.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores comunes:</strong> Usar SMILES inválidos o cadenas mal formateadas puede causar fallos en la creación de moléculas. Asegúrate de validar las entradas antes de procesarlas.</li>
+      <li><strong>Errores comunes:</strong> Al intentar visualizar moléculas grandes o complejas, puede haber problemas de rendimiento. Considera simplificar estructuras o usar visualizaciones en 2D para moléculas grandes.</li>
+      <li><strong>Buenas prácticas:</strong> Utiliza <code>from pychempro import Molecule</code> y no importes módulos de forma global para evitar conflictos.</li>
+      <li><strong>Buenas prácticas:</strong> Revisa la documentación oficial para conocer todos los métodos disponibles, ya que la sintaxis exacta de algunos métodos puede variar.</li>
+      <li><strong>Buenas prácticas:</strong> Para cálculos de descriptores, considera usar un batch processing si tienes muchas moléculas para mejorar el rendimiento.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

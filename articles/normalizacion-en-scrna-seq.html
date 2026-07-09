@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Normalización en scRNA-seq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Normalización en scRNA-seq</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la normalización en scRNA-seq?</h2>
+      <p>La normalización en secuenciación de ARN de células únicas (scRNA-seq) es el proceso crítico de ajustar las cuentas de expresión génica para eliminar sesgos técnicos que no reflejan la biología real del sistema. Sin normalización, diferencias observadas entre células podrían deberse a variaciones en la cantidad de material, eficiencia de captura, o profundidad de secuenciación, en lugar de diferencias biológicas reales.</p>
+      <p>Este paso es fundamental para comparaciones válidas entre células, condiciones experimentales, o muestras, ya que permite detectar diferencias en expresión génica que son biológicamente significativas, no artefactos técnicos.</p>
+    </section>
+
+    <section>
+      <h2>¿Por qué es necesaria la normalización?</h2>
+      <p>Los datos de scRNA-seq contienen múltiples fuentes de variación técnica:</p>
+      <ul>
+        <li><strong>Profundidad de secuenciación variable:</strong> Algunas células pueden tener más ARN total o ser más eficientes en la captura, resultando en más reads.</li>
+        <li><strong>Capacidad de captura de la plataforma:</strong> Plataformas como 10x Genomics tienen tasas de captura que varían entre células.</li>
+        <li><strong>Expresión de genes de fondo:</strong> Genes muy expresados pueden dominar las cuentas y distorsionar análisis posteriores.</li>
+      </ul>
+      <p>Si no se corrigen estos sesgos, métodos de clustering, diferencial, o visualización pueden generar resultados engañosos. Por ejemplo, una célula con más ARN total podría parecer más activa, no por su estado biológico real, sino por un mayor rendimiento técnico.</p>
+    </section>
+
+    <section>
+      <h2>Técnicas comunes de normalización</h2>
+      <h3>1. Normalización por tamaño de la muestra (Library Size Scaling)</h3>
+      <p>La técnica más simple es dividir cada cuenta de genes por el total de reads por célula (library size), o por un factor de escala estimado.</p>
+      <pre><code>## R (usando Seurat)
+library(Seurat)
+
+# Calcular factor de escala
+scaling.factor &lt;- rowMeans(scaled.data)  # media de cada gen
+
+# Normalizar
+normalized.data &lt;- scaled.data / scaling.factor
+
+# En Seurat: normalize.data() usa este método por defecto
+pbmc &lt;- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
+</code></pre>
+
+      <h3>2. Log-normalización</h3>
+      <p>Aplica un logaritmo a los datos normalizados, lo cual estabiliza la varianza y reduce el impacto de genes con alta expresión. Se usa comúnmente en herramientas como Seurat y Scanpy.</p>
+      <pre><code>## Python (Scanpy)
+import scanpy as sc
+
+# Normalizar y escalar
+adata = sc.pp.normalize_total(adata, target_sum=1e4)
+adata = sc.pp.log1p(adata)
+
+# O en una sola línea
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+</code></pre>
+
+      <h3>3. Normalización de datos de contadores (e.g., SCTransform)</h3>
+      <p>Metodología avanzada (en Seurat) que separa la varianza técnica de la biológica. Usa una regresión de Poisson para modelar la varianza y luego aplica una transformación logarítmica.</p>
+      <pre><code>## R (Seurat - SCTransform)
+library(Seurat)
+
+# SCTransform: modelo de varianza y normalización
+sct &lt;- SCTransform(pbmc, vars.to.regress = "nFeature_RNA", method = "glmGamPoi")
+</code></pre>
+
+      <h3>4. Normalización basada en genes de referencia</h3>
+      <p>Algunas técnicas usan genes de referencia (housekeeping genes) para estimar factores de escala, especialmente útil en condiciones de baja expresión o datos ruidosos.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <h3>Errores comunes</h3>
+      <ul>
+        <li><strong>Normalizar sin considerar la varianza técnica:</strong> Usar solo escala global sin ajustar por genes de alta expresión o varianza de conteo.</li>
+        <li><strong>Aplicar logaritmo antes de normalizar:</strong> Esto distorsiona las relaciones de escala y puede introducir sesgos.</li>
+        <li><strong>Ignorar genes de alta expresión:</strong> Estos pueden dominar el análisis si no se controlan.</li>
+      </ul>
+
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li><strong>Usar métodos adecuados al tipo de datos:</strong> SCTransform para datos con alta variabilidad técnica; LogNormalize para datos más estables.</li>
+        <li><strong>Revisar las estadísticas de normalización:</strong> Verificar que el factor de escala sea razonable y que la distribución de cuentas no esté sesgada.</li>
+        <li><strong>Probar diferentes métodos:</strong> Comparar resultados de clustering y diferencial con distintas técnicas.</li>
+        <li><strong>Documentar el proceso:</strong> Registrar qué método se usó, y por qué, para reproducibilidad.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

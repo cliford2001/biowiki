@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioWiki | Knowledge in Motion</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --accent: #00e0a4;
+      --text: #ffffff;
+      --card-bg: #111111;
+      --shadow: 0 8px 32px rgba(0, 224, 164, 0.1);
+      --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* Responsive Typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-feature-settings: 'kern', 'liga';
+    }
+
+    h1 {
+      font-size: clamp(3.5rem, 8vw, 8rem);
+      line-height: 1;
+    }
+
+    h2 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      line-height: 1.1;
+    }
+
+    h3 {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+    }
+
+    /* Button Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem 2.2rem;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: transparent;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-size: 1.2rem;
+    }
+
+    .btn.primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 35px rgba(0, 224, 164, 0.25);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, transparent 30%, rgba(0, 224, 164, 0.03) 70%, rgba(0, 224, 164, 0.01) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .hero h1 {
+      margin-bottom: 1rem;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 1.2s ease forwards;
+    }
+
+    .hero p {
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 1.4s ease forwards;
+      animation-delay: 0.3s;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(15px);
+      animation: fadeInUp 1.6s ease forwards;
+      animation-delay: 0.6s;
+    }
+
+    /* Main Sections */
+    section {
+      padding: 8rem 2rem;
+      position: relative;
+    }
+
+    section h2 {
+      margin-bottom: 3rem;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: var(--transition);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Stats Bar */
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 224, 164, 0.1);
+      border-radius: 12px;
+      padding: 3rem;
+      margin: 4rem auto;
+      max-width: 1400px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .stat {
+      text-align: center;
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .stat h3 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      font-weight: 800;
+    }
+
+    .stat p {
+      font-size: 1rem;
+      opacity: 0.7;
+    }
+
+    /* Card Grid */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 224, 164, 0.1);
+      border-radius: 12px;
+      padding: 2rem;
+      transition: var(--transition);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 60px rgba(0, 224, 164, 0.15);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card h3 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: clamp(2.5rem, 10vw, 5rem);
+      }
+
+      h2 {
+        font-size: clamp(2rem, 8vw, 4rem);
+      }
+
+      .hero {
+        padding: 4rem 1rem;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .stats {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .stat {
+        margin-bottom: 1rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Reduced Motion Support */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>BIOWIKI</h1>
+      <p>Knowledge written by AI, 24/7. Self-evolving bioinformatics database.</p>
+      <div class="hero-buttons">
+        <a href="#explore" class="btn">Explore Knowledge</a>
+        <a href="#learn" class="btn primary">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistics Bar -->
+  <section>
+    <div class="stats">
+      <div class="stat">
+        <h3>1.2M+</h3>
+        <p>Scientific Papers Indexed</p>
+      </div>
+      <div class="stat">
+        <h3>43k+</h3>
+        <p>Genomes Analyzed</p>
+      </div>
+      <div class="stat">
+        <h3>98.7%</h3>
+        <p>Accuracy Rate</p>
+      </div>
+      <div class="stat">
+        <h3>24/7</h3>
+        <p>Continuous Learning</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="explore">
+    <h2 class="reveal">Self-Generating Knowledge</h2>
+    <div class="cards">
+      <div class="card reveal">
+        <h3>AI-Driven Research</h3>
+        <p>Our local AI models continuously generate new bioinformatics content, refining knowledge in real time.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Dynamic Updates</h3>
+        <p>Information evolves automatically—no manual updates, no delays. The database grows smarter every second.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Open Access</h3>
+        <p>Full transparency. All content is open, citable, and available to researchers worldwide.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technology Section -->
+  <section id="learn">
+    <h2 class="reveal">Powered by Local AI</h2>
+    <div class="cards">
+      <div class="card reveal">
+        <h3>Privacy First</h3>
+        <p>Runs entirely offline. No data leaves your system. Your research stays yours.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Zero Dependencies</h3>
+        <p>Self-contained architecture. No external APIs. No cloud services.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Lightning Fast</h3>
+        <p>Optimized for speed. Instant access to the latest bioinformatics knowledge.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section>
+    <div style="text-align: center; padding: 6rem 2rem;">
+      <h2 style="margin-bottom: 2rem;">Join the Future of Bioinformatics</h2>
+      <p style="max-width: 800px; margin: 0 auto 3rem;">
+        BioWiki is not just a database—it's a living, learning entity that evolves with you.
+      </p>
+      <a href="#download" class="btn primary" style="font-size: 1.4rem; padding: 1.2rem 3rem;">Download & Start</a>
+    </div>
+  </section>
+
+  <script>
+    // Intersection Observer for Reveal Animations
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      // Observe all elements with .reveal class
+      document.querySelectorAll('.reveal').forEach(el => {
+        observer.observe(el);
+      });
+
+      // Prevent animations on reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('.reveal').forEach(el => {
+          el.classList.add('visible');
+        });
+      }
+    });
+  </script>
+</body>
+</html>

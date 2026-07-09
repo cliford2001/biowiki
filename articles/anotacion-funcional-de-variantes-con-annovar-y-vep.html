@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anotación funcional de variantes con ANNOVAR y VEP</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Anotación funcional de variantes con ANNOVAR y VEP</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la anotación funcional de variantes?</h2>
+      <p>La anotación funcional de variantes es el proceso de asignar información biológica a variantes genéticas identificadas en un genoma, como SNVs, indels o estructurales. Esta información incluye su efecto sobre genes (por ejemplo, sinónimo, no sentido, cambio de aminoácido), ubicación relativa a elementos reguladores, frecuencia en poblaciones, y relación con enfermedades. Es esencial para priorizar variantes candidatas en estudios de asociación, diagnóstico clínico y descubrimiento funcional.</p>
+      <p>Herramientas como <strong>ANNOVAR</strong> y <strong>VEP (Variant Effect Predictor)</strong> son las más ampliamente utilizadas para este fin. Ambas procesan archivos de variantes en formato VCF (Variant Call Format) y enriquecen cada variante con datos provenientes de bases de datos como dbSNP, ClinVar, 1000 Genomes, gnomAD, Ensembl, UCSC, y entre otros.</p>
+    </section>
+
+    <section>
+      <h2>ANNOVAR: flexibilidad y potencia para análisis en múltiples organismos</h2>
+      <p>ANNOVAR (ANNOtate VARiants) es una herramienta altamente configurable desarrollada por Hui Tang y sus colaboradores. Destaca por su soporte para múltiples especies, su capacidad de procesar grandes volúmenes de datos, y su integración con bases de datos genómicas locales o en línea.</p>
+      <p>ANNOVAR ofrece diferentes tipos de anotación, como:</p>
+      <ul>
+        <li><strong>Gene-based</strong>: efecto de la variante sobre genes (exón, intrón, UTR).</li>
+        <li><strong>Region-based</strong>: ubicación en regiones funcionales (promotores, enhancers, repeticiones).</li>
+        <li><strong>Functional</strong>: impacto en la proteína (sinónimo, no sentido, desplazamiento de marco).</li>
+      </ul>
+      <p>Un flujo típico con ANNOVAR incluye:</p>
+      <pre><code>perl annotate_variation.pl -buildver hg38 -downdb snp151 humandb/
+perl annotate_variation.pl -buildver hg38 -out my_variants -geneanno -dbtype refGene my_variants.vcf humandb/</code></pre>
+      <p>Este comando anota los variantes usando el genoma de referencia hg38, la base de datos de genes <code>refGene</code> y guarda los resultados en <code>my_variants.refGene.txt</code>.</p>
+    </section>
+
+    <section>
+      <h2>VEP: anotación integrada y rica en contexto</h2>
+      <p>VEP, desarrollado por el equipo del <em>Ensembl</em> Genome Browser, ofrece una anotación más completa y directa, con integración continua de datos funcionales y clínicos. VEP no solo identifica el efecto sobre genes, sino que también predice la severidad del impacto mediante herramientas como SIFT, PolyPhen-2 y CADD.</p>
+      <p>VEP se puede usar como herramienta en línea o como línea de comandos. Un ejemplo de uso en terminal es:</p>
+      <pre><code>vep -i my_variants.vcf -o my_variants_annotated.txt --format vcf --af --sift bams --polyphen bams --cadd --hgvs --symbol --gene --protein --canonical --biotype --regulatory</code></pre>
+      <p>Este comando anota los variantes con:</p>
+      <ul>
+        <li>Frecuencia alélica (af)</li>
+        <li>Predicción de daño (SIFT, PolyPhen)</li>
+        <li>Puntaje CADD (predictor de severidad)</li>
+        <li>Identificadores de proteína (hgvs), símbolo genético, biotipo, etc.</li>
+      </ul>
+      <p>VEP también permite la anotación de variantes en múltiples especies y soporta formatos como VCF, gVCF, PLINK y BED.</p>
+    </section>
+
+    <section>
+      <h2>Comparación entre ANNOVAR y VEP</h2>
+      <p>Las dos herramientas son complementarias, aunque presentan diferencias clave:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th>ANNOVAR</th>
+            <th>VEP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Soporte multiespecie</td>
+            <td>Excelente (con bases de datos personalizadas)</td>
+            <td>Excelente (más de 100 especies)</td>
+          </tr>
+          <tr>
+            <td>Integración de predicciones</td>
+            <td>Limitada (requiere herramientas externas)</td>
+            <td>Completa (SIFT, PolyPhen, CADD integrados)</td>
+          </tr>
+          <tr>
+            <td>Interfaz y facilidad de uso</td>
+            <td>Requiere más configuración</td>
+            <td>Mayor facilidad de uso, especialmente en línea</td>
+          </tr>
+          <tr>
+            <td>Velocidad</td>
+            <td>Más rápido para grandes conjuntos</td>
+            <td>Más lento, pero más completo</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>En general, se recomienda usar ANNOVAR para análisis de alto rendimiento o en organismos menos estudiados, y VEP para análisis clínicos o cuando se requiere una anotación más rica y contextualizada.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La anotación funcional de variantes es un paso fundamental en el análisis de datos genómicos. ANNOVAR y VEP son dos de las herramientas más poderosas y ampliamente utilizadas, ofreciendo complementariedad en funcionalidad, velocidad y riqueza de información. ANNOVAR destaca por su flexibilidad y rendimiento, mientras que VEP proporciona una anotación más completa y directa, con predicciones de impacto biológico integradas.</p>
+      <p>La elección entre ambas depende del contexto: tipo de estudio, especie, tamaño del conjunto de datos y profundidad de anotación requerida.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar el genoma de referencia equivocado</strong>: asegúrate de que el archivo VCF y la base de datos anotada correspondan al mismo build (hg38, hg19, etc.).</li>
+        <li><strong>Ignorar la frecuencia alélica</strong>: variantes con alta frecuencia en poblaciones sanas (por ejemplo, >1% en gnomAD) son menos probables de ser patogénicas.</li>
+        <li><strong>Confundir efecto funcional con patogenicidad</strong>: un cambio de aminoácido no implica necesariamente enfermedad; usar herramientas de predicción y bases de datos clínicas (ClinVar) es clave.</li>
+        <li><strong>No validar resultados</strong>: siempre revisa los resultados anotados manualmente, especialmente para variantes de interés clínico.</li>
+        <li><strong>Usar VEP sin actualizar bases de datos</strong>: VEP depende de fuentes actualizadas; actualiza las bases con <code>vep --update</code> periódicamente.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

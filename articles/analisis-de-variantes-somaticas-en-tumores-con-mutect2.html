@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de variantes somáticas en tumores con MuTect2</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de variantes somáticas en tumores con MuTect2</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Por qué el análisis de variantes somáticas es clave en oncología</h2>
+      <p>Las variantes somáticas son mutaciones del ADN que ocurren en células somáticas (no germinales) y que se acumulan durante la vida del individuo. En el contexto del cáncer, estas mutaciones son el motor de la transformación celular, impulsando la proliferación descontrolada, la evasión de la apoptosis y la invasión metastásica. Identificar de forma precisa y sensible estas variantes en tejidos tumorales es fundamental para el diagnóstico, la clasificación molecular de tumores, la predicción de respuesta a terapias dirigidas y el seguimiento de la evolución clonal. El análisis de variantes somáticas requiere un enfoque riguroso, ya que se debe distinguir entre verdaderas mutaciones tumorales y artefactos de secuenciación, ruido biológico o variaciones germinales.</p>
+      <p>En este artículo, nos centraremos en la metodología y herramientas clave para el análisis de variantes somáticas, con un enfoque práctico en el uso del algoritmo <strong>MuTect2</strong>, desarrollado por el <em>Genome Analysis Toolkit (GATK)</em>. MuTect2 es un método estadístico avanzado que permite detectar variantes somáticas de baja frecuencia en una muestra de tumor, comparándola con una muestra de tejido normal (sana) del mismo paciente. Este enfoque de comparación paired es esencial para reducir el número de falsos positivos, ya que elimina las variantes germinales y los artefactos recurrentes.</p>
+    </section>
+
+    <section>
+      <h2>Preprocesamiento de datos: desde reads hasta variantes llamadas</h2>
+      <p>El éxito del análisis de variantes somáticas depende en gran medida de la calidad del preprocesamiento. El flujo de trabajo típico incluye los siguientes pasos:</p>
+      <ol>
+        <li><strong>Alineamiento de reads:</strong> Usar herramientas como <code>STAR</code> (para RNA-seq) o <code>BWA-MEM</code> (para DNA-seq) para alinear los reads secuenciados al genoma de referencia (por ejemplo, GRCh38).</li>
+        <li><strong>Marcaje de duplicados:</strong> Aplicar <code>samtools markdup</code> o <code>picard MarkDuplicates</code> para identificar y etiquetar reads duplicados, que pueden sesgar la estimación de la frecuencia de variación.</li>
+        <li><strong>Reajuste de posiciones de los reads:</strong> Ejecutar <code>GATK RealignerTargetCreator</code> y <code>IndelRealigner</code> para corregir desplazamientos en regiones con inserciones/deleciones (indels).</li>
+        <li><strong>Recalibrado de calidad de base:</strong> Utilizar <code>GATK BaseRecalibrator</code> y <code>ApplyBQSR</code> para ajustar las puntuaciones de calidad (Phred) de los nucleótidos, lo que mejora la precisión del llamado de variantes.</li>
+      </ol>
+      <p>Estos pasos generan archivos BAM procesados para el tumor y el normal, que se utilizan como entrada para MuTect2.</p>
+    </section>
+
+    <section>
+      <h2>Uso de MuTect2 para la detección de variantes somáticas</h2>
+      <p>MuTect2 es un algoritmo de llamado de variantes somáticas que utiliza un modelo estadístico basado en una distribución binomial para evaluar la probabilidad de que un nucleótido en una posición dada sea una variante somática. Es especialmente sensible a variantes con baja frecuencia en el tumor (por ejemplo, 5-10%), lo que es común en tumores heterogéneos o en etapas tempranas.</p>
+      <p>El comando de ejecución básico es:</p>
+      <pre><code>gatk Mutect2 \
+  -R hg38.fasta \
+  -I tumor.bam \
+  -I normal.bam \
+  -O somatic_variants.vcf \
+  --disable-read-filter MateOnSameChromosome</code></pre>
+      <p>Este comando especifica:</p>
+      <ul>
+        <li><code>-R</code>: genoma de referencia (ej. <code>hg38.fasta</code>).</li>
+        <li><code>-I tumor.bam</code>: archivo BAM del tejido tumoral.</li>
+        <li><code>-I normal.bam</code>: archivo BAM del tejido normal (control).</li>
+        <li><code>-O</code>: salida en formato VCF (Variant Call Format).</li>
+        <li><code>--disable-read-filter MateOnSameChromosome</code>: opcional, desactiva un filtro que puede ser demasiado restrictivo.</li>
+      </ul>
+      <p>El resultado es un archivo VCF con llamados de variantes. Sin embargo, no todos los llamados son verdaderos. Es fundamental filtrar los resultados con herramientas como <code>FilterMutectCalls</code> o <code>vcfanno</code> para eliminar falsos positivos.</p>
+    </section>
+
+    <section>
+      <h2>Filtrado y validación: de VCF a variantes confiables</h2>
+      <p>El archivo VCF generado por MuTect2 contiene una mezcla de verdaderas variantes somáticas y falsos positivos. El filtrado se realiza mediante el uso de filtros basados en estadísticas y calidad. Algunos de los filtros más comunes incluyen:</p>
+      <ul>
+        <li><strong>Qualidad de la llamada (QUAL):</strong> Eliminar variantes con baja puntuación de calidad.</li>
+        <li><strong>Frecuencia de variación en el tumor:</strong> Asegurarse de que la frecuencia del alelo alternativo en el tumor sea significativamente mayor que en el normal.</li>
+        <li><strong>Información de alineamiento (read depth, strand bias, mapping quality):</strong> Detectar artefactos relacionados con la técnica de secuenciación.</li>
+      </ul>
+      <p>Un flujo típico de filtrado es:</p>
+      <pre><code>gatk FilterMutectCalls \
+  -V somatic_variants.vcf \
+  -O filtered_variants.vcf \
+  --min-pruning 10</code></pre>
+      <p>Este comando aplica un filtro interno basado en una combinación de parámetros estadísticos para eliminar llamados de baja confianza.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variantes somáticas en tumores es una pieza fundamental del análisis genómico en oncología. MuTect2, como herramienta principal del GATK, ofrece una metodología robusta y estadísticamente sólida para identificar mutaciones tumorales con alta sensibilidad y especificidad. El éxito depende de un preprocesamiento riguroso, la comparación con una muestra normal del mismo paciente, y una filtración cuidadosa de los resultados. Los datos generados permiten identificar dianas terapéuticas, evaluar la heterogeneidad tumoral y contribuir al desarrollo de medicina personalizada.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar una muestra normal de otro paciente:</strong> Esto introduce variantes germinales que no se pueden distinguir de las somáticas. Siempre debe usarse una muestra de tejido normal del mismo paciente.</li>
+        <li><strong>Ignorar el preprocesamiento:</strong> Saltarse pasos como el recalibrado de calidad o el marcado de duplicados puede generar falsos positivos.</li>
+        <li><strong>No filtrar los resultados:</strong> Un VCF sin filtrar contiene muchos artefactos. Siempre aplicar <code>FilterMutectCalls</code> o herramientas de validación.</li>
+        <li><strong>Asumir que todos los llamados son verdaderos:</strong> Verificar las variantes con herramientas como <code>samtools tview</code> o visualización en <code>IGV</code> es esencial.</li>
+        <li><strong>Usar un genoma de referencia antiguo:</strong> Asegurarse de usar una versión actualizada del genoma (GRCh38) para una llamada precisa.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

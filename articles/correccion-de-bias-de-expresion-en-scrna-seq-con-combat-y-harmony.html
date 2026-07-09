@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrección de bias de expresión en scRNA-seq con Combat y Harmony</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Corrección de bias de expresión en scRNA-seq con Combat y Harmony</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>En el análisis de secuenciación de RNA de células individuales (scRNA-seq), los datos suelen estar sesgados por factores técnicos como el momento de procesamiento, el lote de reactivos, el operador, o la plataforma de secuenciación. Este sesgo, conocido como <em>batch effect</em>, puede confundir las diferencias biológicas reales con variaciones técnicas, llevando a conclusiones erróneas sobre la heterogeneidad celular y las trayectorias de diferenciación. La corrección de estos sesgos es, por tanto, un paso crítico para obtener resultados biológicamente válidos.</p>
+      <p>Dos de las herramientas más ampliamente utilizadas para este propósito son <strong>Combat</strong> y <strong>Harmony</strong>. Aunque ambas buscan eliminar el efecto de lote, lo hacen mediante enfoques distintos: Combat es un método estadístico basado en modelos lineales, mientras que Harmony emplea un enfoque de integración basado en grafos. En este artículo, exploraremos el funcionamiento de ambos, sus casos de uso, y cómo implementarlos en el flujo típico de análisis de datos scRNA-seq.</p>
+    </section>
+
+    <section>
+      <h2>Combat: Corrección basada en modelos lineales</h2>
+      <p><strong>Combat</strong> es una extensión del algoritmo de <em>Empirical Bayes</em> originalmente diseñado para corregir el efecto de lote en datos de microarreglos. Su adaptación para scRNA-seq ha demostrado ser muy eficaz, especialmente cuando el sesgo técnico está claramente definido por un factor de diseño (por ejemplo, el lote).</p>
+      <p>Combat modela la expresión génica como una combinación de efectos biológicos y técnicos. A través de un enfoque de estimación de efectos mixtos, ajusta los datos para eliminar el sesgo asociado a cada lote, preservando al mismo tiempo las diferencias biológicas entre grupos de células.</p>
+
+      <h3>Uso en R con Seurat</h3>
+      <p>La implementación más común de Combat en el ecosistema scRNA-seq se encuentra en el paquete <code>Seurat</code>. A continuación, se muestra un ejemplo de cómo aplicarlo:</p>
+      <pre><code>library(Seurat)
+library(scran)
+
+# Cargar datos
+pbmc &lt;- Read10X(data.dir = "path/to/filtered_gene_bc_matrices/" )
+
+# Crear objeto Seurat
+pbmc_seurat &lt;- CreateSeuratObject(counts = pbmc, project = "PBMC")
+
+# Normalizar expresión
+pbmc_seurat &lt;- NormalizeData(pbmc_seurat)
+
+# Realizar corrección de batch con Combat
+# Asegurarse de tener el factor de batch (por ejemplo, "lote") en la metadata
+pbmc_seurat &lt;- FindIntegrationAnchors(
+  object.list = list(pbmc_seurat),
+  reference = NULL,
+  dims = 1:30,
+  reduction = "pca"
+)
+
+# Integrar datos usando Combat
+pbmc_integrated &lt;- IntegrateData(
+  anchorset = pbmc_seurat$FindIntegrationAnchors,
+  dims = 1:30,
+  reference = NULL,
+  reduction = "pca"
+)</code></pre>
+      <p>En este ejemplo, <code>FindIntegrationAnchors</code> identifica puntos de referencia entre lotes, y <code>IntegrateData</code> utiliza Combat para ajustar la expresión genética en función de esos anclajes.</p>
+    </section>
+
+    <section>
+      <h2>Harmony: Integración basada en grafos y proximidad</h2>
+      <p>En contraste con Combat, <strong>Harmony</strong> (desarrollado por Hao et al., 2021) no busca eliminar un efecto de lote de forma explícita, sino que busca integrar múltiples conjuntos de datos en un espacio de alta dimensión, minimizando las distancias entre células similares, incluso si provienen de diferentes lotes.</p>
+      <p>Harmony funciona sobre la matriz de expresión o sobre el espacio PCA. A través de un algoritmo iterativo, ajusta las coordenadas de cada célula para que las células de diferentes lotes que son biológicamente similares se acerquen, mientras se mantiene la separación entre células distintas. Su fortaleza radica en su capacidad para manejar múltiples factores de sesgo simultáneos sin necesidad de especificarlos explícitamente.</p>
+
+      <h3>Uso en Python con Scanpy</h3>
+      <p>La implementación de Harmony en Python está disponible a través del paquete <code>scanpy</code>:</p>
+      <pre><code>import scanpy as sc
+
+# Cargar datos
+adata = sc.read_h5ad("path/to/adata.h5ad")
+
+# Calcular PCA
+sc.tl.pca(adata, n_comps=50)
+
+# Aplicar Harmony
+sc.tl.harmony(adata, batch_key="lote")
+
+# Usar el espacio integrado para clustering y visualización
+sc.tl.umap(adata, use_coords="harmony")
+sc.tl.leiden(adata, resolution=0.5)
+
+# Guardar resultado
+adata.write_h5ad("path/to/adata_integrated.h5ad")</code></pre>
+      <p>El parámetro <code>batch_key</code> es crucial: especifica la columna en la metadata del objeto que contiene la etiqueta del lote. Harmony utiliza esta información para guiar su proceso de integración.</p>
+    </section>
+
+    <section>
+      <h2>Comparación y recomendaciones</h2>
+      <p>Aunque ambos métodos son poderosos, su elección depende del contexto:</p>
+      <ul>
+        <li><strong>Combat</strong> es más adecuado cuando el sesgo de lote está bien definido y se desea una corrección directa y estandarizada. Es ideal para análisis controlados o cuando se compara un grupo experimental con un control, especialmente si el lote es una variable de interés.</li>
+        <li><strong>Harmony</strong> es más flexible y robusto ante múltiples factores de variación no identificados. Es especialmente útil en estudios integrativos donde se combinan datos de múltiples fuentes, plataformas, o experimentos distintos.</li>
+      </ul>
+      <p>En general, se recomienda usar <em>Harmony</em> como método principal para integración de múltiples conjuntos de datos, y <em>Combat</em> cuando se necesita una corrección explícita de un único factor de lote.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La corrección del bias de expresión en scRNA-seq es fundamental para garantizar la validez biológica de los hallazgos. Combat y Harmony ofrecen dos enfoques complementarios: Combat mediante ajuste estadístico de efectos mixtos, y Harmony mediante integración basada en grafos. La elección del método debe basarse en la naturaleza del sesgo técnico y en el diseño del experimento. Aplicar estos métodos correctamente permite una visualización y análisis de datos más precisos, mejorando la confiabilidad de la inferencia de heterogeneidad celular y trayectorias biológicas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li>No olvidar incluir el factor de lote en la metadata del objeto de análisis (por ejemplo, <code>pbmc_seurat@meta.data$lote</code> en Seurat).</li>
+        <li>No aplicar la corrección antes de la normalización. Siempre normalizar primero, luego aplicar Combat o Harmony.</li>
+        <li>Evitar usar el mismo espacio (PCA) para el ajuste si ya se ha calculado previamente sin corregir el lote. Re-calcula PCA después de la integración.</li>
+        <li>Verificar que los anclajes (anchors) entre lotes son biológicamente razonables antes de integrar.</li>
+        <li>Visualizar los datos antes y después de la integración para confirmar que el sesgo de lote ha sido reducido sin perder variabilidad biológica.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

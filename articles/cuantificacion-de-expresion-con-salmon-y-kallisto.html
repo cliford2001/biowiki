@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuantificación de expresión con Salmon y kallisto</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Cuantificación de expresión con Salmon y kallisto</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la cuantificación de expresión y por qué importa?</h2>
+      <p>La cuantificación de expresión génica es un paso fundamental en el análisis de datos de secuenciación de RNA (RNA-seq). Su objetivo es estimar cuántas moléculas de ARN (transcriptos) de cada gen están presentes en una muestra biológica. Esta información permite comparar niveles de expresión entre condiciones experimentales (por ejemplo, tratamiento vs. control), identificar genes diferencialmente expresados y construir modelos biológicos.</p>
+      <p>Las herramientas modernas como <strong>Salmon</strong> y <strong>kallisto</strong> han transformado este proceso gracias a su velocidad y precisión. A diferencia de los métodos tradicionales que requieren alineamiento de lecturas a un genoma de referencia (como con TopHat o HISAT2), Salmon y kallisto emplean un enfoque de alineamiento directo mediante índices de transcritos, lo que elimina el paso computacionalmente costoso de alineamiento y acelera significativamente el análisis.</p>
+    </section>
+
+    <section>
+      <h2>Principios de funcionamiento: alineamiento directo vs. alineamiento basado en índice</h2>
+      <p>La clave del rendimiento de Salmon y kallisto radica en su uso de <em>índices de transcritos</em> en lugar de índices genómicos. En lugar de alinear cada lectura de RNA a un genoma, estos programas indexan previamente el conjunto de transcritos (cDNA) de referencia. Durante la cuantificación, las lecturas se comparan directamente con los modelos de transcritos en el índice, utilizando técnicas de <em>hashing</em> y <em>probabilidad</em>.</p>
+      <p>Este enfoque permite:</p>
+      <ul>
+        <li><strong>Mayor velocidad:</strong> No se necesita alineamiento de lecturas, lo que reduce el tiempo de procesamiento en un orden de magnitud.</li>
+        <li><strong>Mayor precisión en cuantificación:</strong> Al evitar las ambigüedades derivadas del alineamiento, los resultados son más consistentes y menos sesgados.</li>
+        <li><strong>Escalabilidad:</strong> Ideal para análisis de grandes conjuntos de datos, como estudios de expresión a gran escala.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo típico</h2>
+      <p>El flujo de trabajo para la cuantificación con Salmon y kallisto sigue una secuencia bien definida:</p>
+      <ol>
+        <li><strong>Obtención de datos de secuenciación:</strong> Lecturas en formato FASTQ (pares de lecturas, si es parcial).</li>
+        <li><strong>Construcción del índice de transcritos:</strong> Se genera a partir de un archivo de secuencias de transcritos (en formato FASTA).</li>
+        <li><strong>Cuantificación:</strong> Se ejecuta el programa con las lecturas y el índice.</li>
+        <li><strong>Integración con análisis diferencial:</strong> Los archivos de cuantificación se utilizan como entrada en herramientas como <code>DESeq2</code>, <code>edgeR</code>, <code>Scanpy</code> o <code>Seurat</code> para identificar genes diferencialmente expresados.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Ejemplos de comandos</h2>
+      <p>A continuación, se muestran ejemplos de uso de Salmon y kallisto para cuantificar datos de RNA-seq.</p>
+
+      <h3>Con Salmon</h3>
+      <pre><code>salmon index -t transcriptome.fasta -i salmon_index --gencode</code></pre>
+      <pre><code>salmon quant -i salmon_index -r reads_1.fastq -2 reads_2.fastq -p 8 -o quant_salmon --validateMappings</code></pre>
+
+      <h3>Con kallisto</h3>
+      <pre><code>kallisto index -i kallisto_index transcriptome.fasta</code></pre>
+      <pre><code>kallisto quant -i kallisto_index -o quant_kallisto -b 100 reads_1.fastq reads_2.fastq</code></pre>
+
+      <p>En ambos casos, se generan archivos de salida que contienen las estimaciones de expresión por gen (por ejemplo, <code>quant.sf</code> en kallisto o <code>abundance.tsv</code> en Salmon).</p>
+    </section>
+
+    <section>
+      <h2>Resumen y buenas prácticas</h2>
+      <p>Salmon y kallisto representan el estado actual del arte en la cuantificación de expresión génica. Su enfoque basado en índices de transcritos ofrece una combinación única de velocidad, precisión y facilidad de uso, haciendo posible el análisis de grandes conjuntos de datos en tiempo real.</p>
+      
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li>Utiliza transcritos de referencia de alta calidad (por ejemplo, <a href="https://www.gencodegenes.org">Gencode</a>, <a href="https://www.ensembl.org">Ensembl</a>).</li>
+        <li>Siempre valida el índice y verifica el número de lecturas asignadas.</li>
+        <li>Considera usar el parámetro <code>--validateMappings</code> en Salmon para detectar errores en el mapeo.</li>
+        <li>Evita mezclar datos de diferentes plataformas o protocolos sin ajustes adecuados.</li>
+        <li>Documenta cada paso del flujo de trabajo para reproducibilidad.</li>
+      </ul>
+
+      <h3>Errores comunes</h3>
+      <ul>
+        <li>Usar un índice genómico en lugar de un índice de transcritos (error común en Salmon).</li>
+        <li>Ignorar el número de lecturas no asignadas (puede indicar problemas de calidad o incompatibilidad de datos).</li>
+        <li>Aplicar análisis diferencial sin verificar la calidad de los datos de cuantificación.</li>
+        <li>Usar el mismo índice para datos de diferentes especies o versiones genómicas.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

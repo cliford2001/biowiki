@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>oschwengers/bakta</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Anotacion funcional">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>oschwengers/bakta</h1>
+    <p class="meta">Repositorio: <a href="https://github.com/oschwengers/bakta">https://github.com/oschwengers/bakta</a> · Autores: 661 estrellas · Python</p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>oschwengers/bakta es una herramienta de alto rendimiento para la anotación automatizada de genomas bacterianos, genomas de microorganismos aislados (MAGs) y plásmidos. Está diseñada para proporcionar una anotación estandarizada, rápida y exhaustiva, incluyendo genes, elementos funcionales, ARN no codificantes y características de estructura genómica. Es especialmente útil en estudios de metagenómica y microbiología donde se requiere una anotación fiable y comparativa de múltiples genomas.</p>
+
+    <h2>Instalación</h2>
+    <p>La herramienta se encuentra disponible en PyPI, por lo que puede instalarse con <code>pip</code>:</p>
+    <pre><code>pip install bakta</code></pre>
+    <p>Alternativamente, si se desea instalar desde el repositorio GitHub:</p>
+    <pre><code>pip install git+https://github.com/oschwengers/bakta</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Un ejemplo de uso básico de <code>bakta</code> para anotar un genoma bacteriano en formato FASTA:</p>
+    <pre><code>bakta --input genome.fasta --output ./annotation --threads 4</code></pre>
+    <p><strong>Nota:</strong> La sintaxis exacta puede variar según la versión. Siempre verifica la documentación oficial del proyecto para los flags disponibles y su comportamiento.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual para anotar un genoma bacteriano con Bakta incluye los siguientes pasos:</p>
+    <ol>
+      <li>Preparar el archivo de genoma en formato FASTA.</li>
+      <li>Verificar la calidad del genoma (por ejemplo, con <code>quast</code> o <code>checkm</code>).</li>
+      <li>Ejecutar Bakta con los parámetros adecuados (entrada, salida, número de hilos).</li>
+      <li>Revisar el informe generado (en <code>report.json</code>) y los archivos de salida (GFF, FASTA de genes, etc.).</li>
+      <li>Integrar los resultados en análisis posteriores (por ejemplo, comparaciones de anotaciones entre cepas).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="150" height="50" fill="#e0f7fa" stroke="black" />
+        <rect x="200" y="20" width="150" height="50" fill="#e0f7fa" stroke="black" />
+        <rect x="380" y="20" width="150" height="50" fill="#e0f7fa" stroke="black" />
+        <rect x="200" y="100" width="150" height="50" fill="#e0f7fa" stroke="black" />
+        <rect x="380" y="100" width="150" height="50" fill="#e0f7fa" stroke="black" />
+
+        <!-- Texto en cajas -->
+        <text x="95" y="50" text-anchor="middle" font-size="12" fill="black">Genoma (FASTA)</text>
+        <text x="275" y="50" text-anchor="middle" font-size="12" fill="black">Bakta</text>
+        <text x="455" y="50" text-anchor="middle" font-size="12" fill="black">Reporte</text>
+        <text x="275" y="130" text-anchor="middle" font-size="12" fill="black">GFF</text>
+        <text x="455" y="130" text-anchor="middle" font-size="12" fill="black">FASTA genes</text>
+
+        <!-- Flechas -->
+        <line x1="170" y1="45" x2="200" y2="45" stroke="black" marker-end="url(#arrowhead)" />
+        <line x1="350" y1="45" x2="380" y2="45" stroke="black" marker-end="url(#arrowhead)" />
+        <line x1="275" y1="70" x2="275" y2="100" stroke="black" marker-end="url(#arrowhead)" />
+        <line x1="455" y1="70" x2="455" y2="100" stroke="black" marker-end="url(#arrowhead)" />
+
+        <!-- Flecha en el SVG -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Diagrama del flujo de trabajo típico con Bakta: entrada en FASTA → anotación → salida de GFF, FASTA de genes y reporte.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Problemas con el formato de entrada:</strong> Asegúrate de que el archivo de genoma esté en formato FASTA válido, con secuencias continuas y sin caracteres inválidos. Puedes usar herramientas como <code>seqkit</code> para limpiar el archivo.</li>
+      <li><strong>Memoria insuficiente:</strong> Bakta puede requerir mucha memoria para genomas grandes o múltiples ejemplos. Ajusta el número de hilos o usa un sistema con más RAM.</li>
+      <li><strong>Versiones desactualizadas:</strong> Mantén Bakta actualizado para aprovechar mejoras en la precisión y eficiencia de la anotación.</li>
+      <li><strong>Revisión manual:</strong> Aunque Bakta es muy fiable, siempre revisa los resultados clave (como genes esenciales o reguladores) con herramientas de visualización (por ejemplo, IGV).</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

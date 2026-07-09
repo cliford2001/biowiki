@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detección de dobletes en scRNA-seq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Detección de dobletes en scRNA-seq</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué son los dobletes en scRNA-seq y por qué son un problema?</h2>
+      <p>En las experimentos de secuenciación de ARN a escala única (single-cell RNA sequencing, scRNA-seq), un <strong>doblé</strong> (doublet) se refiere a un archivo de secuenciación que proviene de la mezcla de material genético de <strong>dos células distintas</strong> durante el proceso de encapsulación. Esto ocurre cuando dos células se encierran en la misma cápsula (por ejemplo, en plataformas como 10x Genomics) y se secuencian como si fuera una sola célula.</p>
+      <p>Los dobletes introducen sesgos graves en el análisis bioinformático. Pueden generar perfiles de expresión que no corresponden a ninguna célula real, haciendo que se interpreten como nuevas poblaciones celulares o que se distorsionen las diferencias entre tipos celulares existentes. Esto puede llevar a conclusiones erróneas en estudios de heterogeneidad celular, diferenciación, o identificación de biomarcadores.</p>
+    </section>
+
+    <section>
+      <h2>Herramientas de detección de dobletes</h2>
+      <p>Existen varias herramientas especializadas para detectar dobletes en datos de scRNA-seq. Estas se basan en diferentes principios estadísticos y de modelado de datos, pero todas buscan identificar células con perfiles de expresión atípicos que no pueden explicarse como una única célula.</p>
+
+      <h3>Scrublet</h3>
+      <p><code>Scrublet</code> es una herramienta popular basada en <em>simulación de dobletes</em>. Funciona generando un conjunto de perfiles de doblete sintéticos a partir de las células reales del conjunto de datos. Para cada célula, se calcula la distancia al perfil de doblete más cercano. Si esta distancia es significativamente menor que la esperada en una población de células únicas, se marca la célula como un doblete.</p>
+      <pre><code>python -m scrublet --input data_filtered.h5 --output results_scrublet --n_jobs 4</code></pre>
+
+      <h3>DoubletFinder</h3>
+      <p><code>DoubletFinder</code> utiliza un enfoque basado en <em>modelado de distribuciones de expresión</em>. Se basa en la idea de que los dobletes tienden a tener una expresión de genes más alta y más dispersa que las células únicas. El algoritmo entrena un modelo de mezcla gaussiana para separar células únicas de posibles dobletes, utilizando características como el número total de genes expresados y la suma de expresión.</p>
+      <pre><code>library(DoubletFinder)
+
+# Cargar datos
+obj &lt;- Read10X(data.dir = "path/to/filtered/feature/barcodes/")
+
+# Encontrar dobletes
+obj &lt;- DoubletFinder(obj, pct.doublets = 0.1)
+</code></pre>
+
+      <h3>scrublet en Python con Scanpy</h3>
+      <p>Si estás usando <code>Scanpy</code>, puedes integrar <code>Scrublet</code> de manera nativa:</p>
+      <pre><code>import scanpy as sc
+import scrublet as scr
+
+# Cargar datos
+adata = sc.read_h5ad("data_filtered.h5ad")
+
+# Crear objeto Scrublet
+scrub = scr.Scrublet(adata.X, expected_doublet_rate=0.1)
+
+# Detectar dobletes
+doublet_scores, doublet_labels = scrub.scrub_doublets(
+    n_neighbors=10, 
+    min_dist=0.5, 
+    n_pcs=30
+)
+
+# Añadir resultados al anndata
+adata.obs["doublet_score"] = doublet_scores
+adata.obs["doublet_label"] = doublet_labels</code></pre>
+    </section>
+
+    <section>
+      <h2>Prácticas recomendadas y errores comunes</h2>
+
+      <h3>Errores comunes</h3>
+      <ul>
+        <li><strong>Ignorar la detección de dobletes:</strong> No realizar esta etapa puede llevar a conclusiones erróneas. Incluso un porcentaje bajo de dobletes (1-5%) puede afectar significativamente los resultados.</li>
+        <li><strong>Usar una tasa de dobletes esperada demasiado alta:</strong> Si se establece un valor muy alto (por ejemplo, > 0.2), se pueden rechazar muchas células únicas. La tasa esperada debe basarse en el protocolo y en la calidad del experimento.</li>
+        <li><strong>Confundir células con baja expresión con dobletes:</strong> Las células con baja cantidad de ARNm (por ejemplo, células muertas o en estado de estrés) pueden parecer dobletes si no se filtran previamente.</li>
+      </ul>
+
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li><strong>Filtrar primero por calidad:</strong> Eliminar células con muy pocos genes expresados, alto contenido de genes mitocondriales, o baja suma total de expresión antes de detectar dobletes.</li>
+        <li><strong>Validar con datos biológicos:</strong> Si se sabe que hay dos tipos celulares muy similares, un doblete entre ellos podría ser difícil de detectar, pero también menos problemático.</li>
+        <li><strong>Usar múltiples herramientas:</strong> Comparar resultados entre <code>Scrublet</code>, <code>DoubletFinder</code>, y otros métodos puede aumentar la confianza en los resultados.</li>
+        <li><strong>Visualizar resultados:</strong> Usar <code>Scanpy</code> para visualizar los dobletes en un UMAP o t-SNE, y verificar si están agrupados en regiones específicas del espacio de expresión.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La detección de dobletes es una etapa crítica en el análisis de datos de scRNA-seq. Los dobletes no solo distorsionan las expresiones génicas, sino que también pueden crear falsas poblaciones celulares. Herramientas como <code>Scrublet</code> y <code>DoubletFinder</code> permiten identificar estos artefactos de manera robusta, especialmente cuando se usan con un filtro previo de calidad celular. La integración de estas herramientas en el flujo de trabajo con <code>Scanpy</code> o <code>Seurat</code> es esencial para obtener resultados biológicamente válidos y reproducibles.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

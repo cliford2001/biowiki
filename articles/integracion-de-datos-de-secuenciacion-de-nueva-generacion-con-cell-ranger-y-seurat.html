@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos de secuenciación de nueva generación con Cell Ranger y Seurat</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos de secuenciación de nueva generación con Cell Ranger y Seurat</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>La integración de datos de secuenciación de nueva generación (NGS) es un pilar fundamental en el análisis de datos de RNA de célula única (scRNA-seq). Cuando se estudia la heterogeneidad celular en diferentes muestras, condiciones experimentales o incluso especies, es esencial unificar los datos de múltiples experimentos para identificar poblaciones celulares comunes y diferencias biológicas. En este contexto, <strong>Cell Ranger</strong> y <strong>Seurat</strong> se posicionan como herramientas clave: Cell Ranger para la generación de matrices de expresión desde datos raw, y Seurat para el análisis, integración y visualización de los datos.</p>
+      <p>La integración permite reducir el sesgo técnico (por ejemplo, diferencias en la eficiencia de captura, profundidad de secuenciación o procesamiento) y mejorar la potencia estadística para detectar cambios biológicos reales. Este artículo explora las mejores prácticas y técnicas para integrar datos scRNA-seq utilizando Cell Ranger y Seurat en R, con énfasis en herramientas como <strong>Harmony</strong> y <strong>BBKNN</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Procesamiento con Cell Ranger</h2>
+      <p>Cell Ranger, desarrollado por 10x Genomics, es el pipeline estándar para el análisis de datos scRNA-seq de alta calidad. Su flujo de trabajo incluye:</p>
+      <ul>
+        <li><strong>Alineamiento</strong> de lecturas a un genoma de referencia (usando STAR o alineador interno).</li>
+        <li><strong>Asignación de genes</strong> (feature counting) y generación de una matriz de expresión (barcodes × genes).</li>
+        <li><strong>Control de calidad</strong> por medio de métricas como número de genes detectados por célula, porcentaje de reads en genes, y umbral de expresión.</li>
+      </ul>
+      <p>El comando básico para generar la matriz es:</p>
+      <pre><code class="language-bash">cellranger count \
+  --id=sample1 \
+  --reference=/path/to/refdata-cellranger-GRCh38-2020-A \
+  --fastqs=/path/to/fastq \
+  --sample=sample1</code></pre>
+      <p>Este paso produce un directorio `sample1/outs/filtered_feature_bc_matrix` con la matriz final, que se utiliza como entrada para Seurat.</p>
+    </section>
+
+    <section>
+      <h2>Integración con Seurat</h2>
+      <p>Una vez que se tienen matrices de expresión de múltiples muestras, Seurat permite unificar los datos mediante métodos de integración. El enfoque más común consiste en:</p>
+      <ol>
+        <li>Crear un objeto <code>Seurat</code> por muestra.</li>
+        <li>Normalizar los datos (por ejemplo, con <code>NormalizeData()</code>).</li>
+        <li>Identificar genes variables (<code>FindVariableFeatures()</code>).</li>
+        <li>Escalar los datos (<code>ScaleData()</code>).</li>
+        <li>Calcular componentes principales (<code>RunPCA()</code>).</li>
+        <li>Aplicar un algoritmo de integración: <strong>Harmony</strong> o <strong>BBKNN</strong>.</li>
+      </ol>
+      <p>A continuación se muestra un ejemplo de integración con <code>Harmony</code>:</p>
+      <pre><code class="language-r">library(Seurat)
+library(harmony)
+
+# Cargar datos de cada muestra
+sample1 <- Read10X(data.dir = "sample1/outs/filtered_feature_bc_matrix")
+sample2 <- Read10X(data.dir = "sample2/outs/filtered_feature_bc_matrix")
+
+# Crear objetos Seurat
+seurat1 <- CreateSeuratObject(counts = sample1, project = "sample1")
+seurat2 <- CreateSeuratObject(counts = sample2, project = "sample2")
+
+# Normalización y escalamiento
+seurat1 <- NormalizeData(seurat1)
+seurat1 <- FindVariableFeatures(seurat1, nfeatures = 2000)
+seurat1 <- ScaleData(seurat1, features = VariableFeatures(seurat1))
+seurat1 <- RunPCA(seurat1, features = VariableFeatures(seurat1))
+
+seurat2 <- NormalizeData(seurat2)
+seurat2 <- FindVariableFeatures(seurat2, nfeatures = 2000)
+seurat2 <- ScaleData(seurat2, features = VariableFeatures(seurat2))
+seurat2 <- RunPCA(seurat2, features = VariableFeatures(seurat2))
+
+# Integración con Harmony
+integrated <- IntegrateData(anchorset = anchor_set, features.to.integrate = variable_features)
+integrated <- RunPCA(integrated, verbose = FALSE)
+integrated <- RunUMAP(integrated, reduction = "pca", dims = 1:30)
+integrated <- FindNeighbors(integrated, reduction = "pca", dims = 1:30)
+integrated <- FindClusters(integrated, resolution = 0.5)</code></pre>
+      <p>Alternativamente, <code>BBKNN</code> puede usarse con un enfoque basado en vecinos comunes:</p>
+      <pre><code class="language-r">library(BBKNN)
+
+# Unir datos en un listado
+seurat_list <- list(seurat1, seurat2)
+
+# Aplicar BBKNN
+integrated <- bbknn::bbknn(seurat_list, batch = c("sample1", "sample2"), k = 10)
+integrated <- RunPCA(integrated, verbose = FALSE)
+integrated <- RunUMAP(integrated, reduction = "pca", dims = 1:30)
+integrated <- FindNeighbors(integrated, reduction = "pca", dims = 1:30)
+integrated <- FindClusters(integrated, resolution = 0.5)</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos scRNA-seq mediante Cell Ranger y Seurat es un proceso esencial para el análisis de heterogeneidad celular en múltiples condiciones. Cell Ranger proporciona la base de datos de alta calidad, mientras que Seurat, con herramientas como Harmony y BBKNN, permite unificar datos técnicamente distintos, reduciendo sesgos y revelando poblaciones celulares compartidas. La elección entre métodos depende del número de muestras, la profundidad de integración requerida y la distribución de los datos. Un manejo cuidadoso de la normalización, la selección de genes variables y el ajuste de parámetros es crucial para obtener resultados biológicamente relevantes.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar matrices sin procesar</strong>: Siempre normaliza y escala los datos antes de integrar.</li>
+        <li><strong>Ignorar el batch effect</strong>: Asegúrate de que el método de integración tenga en cuenta la variable de batch (por ejemplo, muestra, día, laboratorio).</li>
+        <li><strong>Seleccionar demasiados genes variables</strong>: Puede introducir ruido. Usar 1000–3000 genes variables suele ser suficiente.</li>
+        <li><strong>Aplicar integración sin validar</strong>: Verifica la integración con UMAP y clusters: células de diferentes muestras deben estar mezcladas, no separadas.</li>
+        <li><strong>Usar resolución demasiado alta</strong>: Puede fragmentar poblaciones celulares reales. Prueba con <code>resolution = 0.5</code> como punto de partida.</li>
+      </ul>
+      <p>En resumen, la integración bien ejecutada permite descubrir patrones biológicos ocultos por el ruido técnico. Tener un enfoque sistemático y revisar siempre los resultados visuales es clave para una investigación robusta.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

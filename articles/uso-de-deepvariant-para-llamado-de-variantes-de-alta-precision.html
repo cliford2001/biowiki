@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uso de DeepVariant para llamado de variantes de alta precisión</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Uso de DeepVariant para llamado de variantes de alta precisión</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué el llamado de variantes es fundamental</h2>
+            <p>El llamado de variantes (variant calling) es un paso crítico en el análisis de genómica de alto rendimiento, especialmente en estudios de enfermedades genéticas, farmacogenómica y evolución. El objetivo es identificar diferencias en el ADN entre un genoma de referencia y un genoma de un individuo, como variantes de un solo nucleótido (SNPs), inserciones y deleciones (indels), y variantes estructurales. La precisión de este proceso tiene un impacto directo en la validez de las conclusiones biológicas.</p>
+            <p>Si bien herramientas tradicionales como GATK (Genome Analysis Toolkit) han sido el estándar durante años, el uso de modelos de aprendizaje profundo (deep learning) ha revolucionado este campo. <strong>DeepVariant</strong>, desarrollado por Google DeepMind, se ha posicionado como una de las herramientas más precisas para el llamado de variantes, especialmente en datos de secuenciación de larga y corta lectura.</p>
+        </section>
+
+        <section>
+            <h2>¿Qué es DeepVariant y cómo funciona?</h2>
+            <p>DeepVariant no es un algoritmo basado en reglas, sino un modelo de red neuronal convolucional (CNN) entrenado para interpretar imágenes de secuenciación. Transforma los datos de alineamiento (como archivos BAM) en matrices de píxeles donde cada pixel representa un alineamiento de lectura en una posición específica del genoma.</p>
+            <p>Este enfoque permite al modelo aprender patrones complejos en los datos, como errores de secuenciación, variantes raras, y regiones difíciles de alinear. DeepVariant procesa cada posición del genoma y predice si hay una variante, y si es así, qué tipo (SNP, indel, etc.) y cuál es la base alternativa.</p>
+
+            <h3>Flujo de trabajo típico</h3>
+            <p>El pipeline de DeepVariant sigue estos pasos clave:</p>
+            <ol>
+                <li><strong>Preparación del alineamiento</strong>: Usar herramientas como <code>STAR</code> o <code>BWA</code> para alinear lecturas a un genoma de referencia.</li>
+                <li><strong>Generación de archivos de entrada</strong>: Convertir el alineamiento en formato compatible con DeepVariant. Esto incluye la creación de archivos de entrada de imagen usando <code>make_examples</code>.</li>
+                <li><strong>Clasificación con la red neuronal</strong>: Ejecutar el modelo preentrenado con <code>call_variants</code>.</li>
+                <li><strong>Post-procesamiento</strong>: Usar <code>merge_variants</code> para unificar resultados si se usan múltiples regiones.</li>
+            </ol>
+
+            <h3>Ejemplo de comando</h3>
+            <pre><code>python3 /path/to/deepvariant/bin/make_examples \
+  --mode calling \
+  --ref /path/to/hg38.fa \
+  --reads aligned_reads.bam \
+  --output_examples examples.tfrecord \
+  --regions 1:100000-200000</code></pre>
+            <pre><code>python3 /path/to/deepvariant/bin/call_variants \
+  --examples examples.tfrecord \
+  --output_vcf variants.vcf \
+  --checkpoint /path/to/deepvariant/model.ckpt</code></pre>
+        </section>
+
+        <section>
+            <h2>Ventajas y casos de uso</h2>
+            <p>DeepVariant ofrece varias ventajas sobre herramientas tradicionales:</p>
+            <ul>
+                <li><strong>Mayor precisión</strong>: En benchmarks como el <em>1000 Genomes Project</em>, DeepVariant ha superado a GATK en sensibilidad y especificidad, especialmente para variantes raras y regiones complejas.</li>
+                <li><strong>Menor tasa de falsos positivos</strong>: Su capacidad para distinguir entre errores de secuenciación y variantes reales reduce el número de falsos positivos.</li>
+                <li><strong>Consistencia en múltiples tecnologías</strong>: Funciona bien tanto con secuenciación de lectura corta (Illumina) como de lectura larga (PacBio, Oxford Nanopore), aunque requiere adaptaciones específicas.</li>
+                <li><strong>Reproducibilidad</strong>: Al ser un modelo preentrenado, garantiza resultados consistentes entre diferentes usuarios y laboratorios.</li>
+            </ul>
+            <p>Es especialmente útil en estudios de <em>de novo</em> variantes, trios (padres-hijo), y análisis de cáncer, donde la detección de variantes raras es crítica.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>DeepVariant representa un avance significativo en el campo del llamado de variantes, combinando el poder del aprendizaje profundo con la precisión requerida en genómica. Al transformar alineamientos en imágenes y usar CNNs para clasificación, supera las limitaciones de los métodos basados en reglas. Es una herramienta esencial para investigadores que buscan resultados de alta fiabilidad en estudios genómicos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / Buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar el modelo predeterminado sin ajuste</strong>: Para datos de PacBio o Nanopore, se requieren modelos específicos (como DeepVariant on PacBio) o ajustes de parámetros.</li>
+                <li><strong>Ignorar la calidad de los alineamientos</strong>: Un alineamiento deficiente (por ejemplo, con muchos errores de mapeo) afectará directamente el resultado. Siempre verificar con <code>samtools flagstat</code> o <code>picard ValidateSamFile</code>.</li>
+                <li><strong>Usar regiones muy grandes sin dividir</strong>: DeepVariant se ejecuta mejor en regiones pequeñas (por ejemplo, 100kb). Dividir el genoma en regiones es fundamental para el rendimiento.</li>
+                <li><strong>Desatender el manejo de memoria</strong>: El proceso de <code>make_examples</code> puede consumir mucho RAM. Ajustar el número de hilos con <code>--num_shards</code> o usar máquinas con suficiente memoria es clave.</li>
+                <li><strong>Evitar la falta de validación</strong>: Siempre comparar los resultados con herramientas de referencia (como GATK) o bases de datos como dbSNP para validar variantes.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

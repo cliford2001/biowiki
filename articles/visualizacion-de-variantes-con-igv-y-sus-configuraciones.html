@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización de variantes con IGV y sus configuraciones</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Visualización de variantes con IGV y sus configuraciones</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La visualización de variantes genéticas es un paso crítico en el análisis bioinformático, especialmente en estudios de enfermedades hereditarias, cáncer y variabilidad humana. La herramienta <strong>IGV (Integrative Genomics Viewer)</strong>, desarrollada por el Broad Institute, se ha consolidado como una de las plataformas más poderosas y utilizadas para explorar datos de secuenciación de alta profundidad, como archivos BAM (alineamiento de reads) y VCF (variantes), en contexto genómico. Su interfaz interactiva permite a los investigadores examinar variantes individuales, su calidad, frecuencia de alelos y relación con genes, reguladores y otras características funcionales. Este artículo explica cómo configurar IGV para una visualización óptima, cómo interpretar los datos clave y qué errores comunes deben evitarse.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+            <h3>Preparación de los archivos de entrada</h3>
+            <p>Antes de abrir los datos en IGV, es esencial asegurar que los archivos estén correctamente generados y indexados. Los archivos principales son:</p>
+            <ul>
+                <li><code>.bam</code>: archivo de alineamiento de reads generado con herramientas como <strong>BWA</strong>, <strong>STAR</strong> o <strong>hisat2</strong>.</li>
+                <li><code>.bai</code>: índice del archivo BAM, necesario para la navegación rápida.</li>
+                <li><code>.vcf</code>: archivo de variantes, generado por herramientas como <strong>FreeBayes</strong>, <strong>GATK</strong> o <strong>bcftools</strong>.</li>
+                <li><code>.tbi</code>: índice del archivo VCF.</li>
+            </ul>
+            <p>Para generar índices si no existen, utilice:</p>
+            <pre><code>samtools index alineamiento.bam
+bcftools index variantes.vcf.gz</code></pre>
+        </section>
+
+        <section>
+            <h3>Configuración de IGV para análisis óptimo</h3>
+            <p>Al abrir IGV, es fundamental personalizar la configuración para facilitar la detección de variantes. Siga estos pasos:</p>
+            <h4>1. Cargar archivos</h4>
+            <p>Use <code>File &gt; Load from File</code> para añadir los archivos .bam y .vcf. IGV se encargará automáticamente de reconocer los índices si están presentes.</p>
+            
+            <h4>2. Configurar colores de cobertura</h4>
+            <p>En <code>View &gt; Preferences</code>, en la pestaña <strong>Alignment</strong>, configure la paleta de colores para la cobertura. Se recomienda usar una paleta de color que destaque diferencias en el número de reads alineados (por ejemplo, rojo para alta cobertura, azul para baja).</p>
+            
+            <h4>3. Habilitar variantes de calidad</h4>
+            <p>En <code>View &gt; Show</code>, active <strong>Variant Annotation</strong> para ver información como <em>QUAL</em>, <em>DP</em> (profundidad de cobertura), <em>AF</em> (frecuencia alélica) y <em>INFO</em> (anotaciones adicionales). También puede personalizar qué campos se muestran en la barra de variantes.</p>
+            
+            <h4>4. Usar filtros de calidad</h4>
+            <p>En <code>Tools &gt; Variant Filtering</code>, establezca filtros mínimos como <code>QUAL &gt; 30</code>, <code>DP &gt; 10</code> o <code>AF &gt; 0.1</code> para reducir el ruido. Esto ayuda a enfocarse en variantes biológicamente relevantes.</p>
+            
+            <h4>5. Visualizar en modo de alta profundidad</h4>
+            <p>Para variantes raras o en regiones de alta complejidad, active <code>View &gt; Show All Reads</code> y ajuste el <strong>Max Coverage</strong> (por ejemplo, 1000) para evitar que se oculten reads.</p>
+        </section>
+
+        <section>
+            <h3>Interpretación de señales visuales</h3>
+            <p>El análisis visual se basa en patrones en la alineación de reads:</p>
+            <ul>
+                <li><strong>Variantes de nucleotido único (SNVs):</strong> Se observa un cambio de color en el nucleótido en una o varias reads, con cobertura suficiente para distinguirlo.</li>
+                <li><strong>Deleciones o inserciones:</strong> Se ve una brecha en la alineación o reads que se extienden más allá del alineamiento esperado.</li>
+                <li><strong>Variantes somáticas:</strong> En análisis tumor-normal, se busca una diferencia de frecuencia alélica entre muestras, especialmente en regiones de pérdida de heterocigosidad (LOH).</li>
+            </ul>
+            <p>Siempre verifique que la variante esté presente en ambos sentidos de lectura (bidireccionalidad) y que no coincida con un error de secuenciación o de alineamiento.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La visualización de variantes con IGV es una práctica indispensable para validar resultados de análisis automático. Una configuración adecuada —con archivos correctamente indexados, filtros de calidad aplicados y representación visual clara— permite identificar con confianza variantes reales, descartar falsos positivos y derivar hipótesis biológicas. Además, IGV facilita la integración de múltiples datos genómicos, como expresión génica o epigenética, en una misma ventana.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>NO cargar archivos sin índice:</strong> IGV puede fallar o ralentizarse sin .bai o .tbi. Siempre genere el índice antes.</li>
+                <li><strong>No confiar solo en el color:</strong> El color de los reads no indica calidad de la variante. Verifique los campos <em>QUAL</em>, <em>DP</em> y <em>AF</em>.</li>
+                <li><strong>Evitar el análisis de variantes con baja cobertura:</strong> Variantes con <code>DP &lt; 10</code> o <code>AF &lt; 0.1</code> son altamente sospechosas de ser artefactos.</li>
+                <li><strong>Usar filtros de calidad en IGV:</strong> No dependa solo del archivo VCF. Aplicar filtros en IGV ayuda a eliminar ruido visual.</li>
+                <li><strong>Verificar en múltiples muestras:</strong> En estudios de cáncer, siempre compare con muestras normales para descartar variantes germinales.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

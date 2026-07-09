@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>variant-calling-pipeline-gatk4</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>variant-calling-pipeline-gatk4</h1>
+    <p class="meta">
+      <a href="https://github.com/gencorefacility/variant-calling-pipeline-gatk4">Repositorio</a> · 
+      Autores: 59 estrellas · Nextflow
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <code>variant-calling-pipeline-gatk4</code> es un pipeline de llamado de variantes genómicas basado en <strong>GATK4</strong> y <strong>Nextflow</strong>. Está diseñado para realizar el análisis de variantes en datos de secuenciación de alto rendimiento (NGS), siguiendo una metodología robusta y reproducible. El pipeline automatiza el flujo completo desde la alineación de lecturas hasta la identificación y filtrado de variantes, incluyendo la generación de archivos de resultados en formatos estándar como VCF.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      El pipeline se ejecuta mediante <strong>Nextflow</strong>, que requiere <strong>Java 8 o superior</strong>. Además, se necesitan los siguientes requisitos previos:
+    </p>
+    <ul>
+      <li><strong>Nextflow</strong>: Instalación recomendada a través de <code>curl -s https://get.nextflow.io | bash</code></li>
+      <li><strong>Java</strong>: Instalar OpenJDK 8 o 11.</li>
+      <li>Dependencias de GATK4 (se manejan automáticamente mediante Nextflow).</li>
+    </ul>
+    <pre><code>curl -s https://get.nextflow.io | bash
+chmod +x nextflow</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Ejecutar el pipeline con un archivo de configuración y datos de entrada. Se recomienda usar <code>nextflow run</code> con un perfil específico (por ejemplo, <code>local</code> o <code>singularity</code>).
+    </p>
+    <pre><code>nextflow run gencorefacility/variant-calling-pipeline-gatk4 \
+  -profile local \
+  --input "data/inputs.csv" \
+  --genome "data/hg38.fasta" \
+  --outDir "results/"</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo de trabajo sigue estas etapas:
+      <ol>
+        <li>Validación y preprocesamiento de datos de entrada (lecturas FASTQ).</li>
+        <li>Alineamiento de las lecturas a un genoma de referencia (usando herramientas como BWA o Bowtie2).</li>
+        <li>Etiquetado de duplicados, corrección de errores de base, y ajuste de calidad.</li>
+        <li>Llamado de variantes usando GATK4 (HaplotypeCaller).</li>
+        <li>Filtrado de variantes y generación de resultados en formato VCF.</li>
+      </ol>
+    </p>
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <style>
+          .step { fill: #e6f3ff; stroke: #1890ff; stroke-width: 1.5; }
+          .arrow { stroke: #1890ff; stroke-width: 1.5; marker-end: url(#arrowhead); }
+          .label { font-family: sans-serif; font-size: 12px; fill: #333; text-anchor: middle; }
+        </style>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#1890ff" />
+          </marker>
+        </defs>
+        <rect x="20" y="20" width="120" height="40" class="step" />
+        <text x="80" y="48" class="label">Datos FASTQ</text>
+        <line x1="140" y1="40" x2="180" y2="40" class="arrow" />
+        <rect x="180" y="20" width="120" height="40" class="step" />
+        <text x="240" y="48" class="label">Alineamiento</text>
+        <line x1="300" y1="40" x2="340" y2="40" class="arrow" />
+        <rect x="340" y="20" width="120" height="40" class="step" />
+        <text x="400" y="48" class="label">Preprocesamiento</text>
+        <line x1="460" y1="40" x2="500" y2="40" class="arrow" />
+        <rect x="500" y="20" width="120" height="40" class="step" />
+        <text x="560" y="48" class="label">Llamado de variantes</text>
+        <line x1="620" y1="40" x2="660" y2="40" class="arrow" />
+        <rect x="660" y="20" width="120" height="40" class="step" />
+        <text x="720" y="48" class="label">Resultados (VCF)</text>
+      </svg>
+      <figcaption>Flujo de trabajo típico del pipeline: datos de entrada → alineamiento → preprocesamiento → llamado de variantes → salida VCF.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Falta de memoria</strong>: GATK4 puede consumir mucho RAM. Asegúrate de asignar suficiente memoria al ejecutar el pipeline (usar <code>--memory</code> en Nextflow).</li>
+      <li><strong>Genoma de referencia no compatible</strong>: Asegúrate de que el archivo de referencia (FASTA) esté indexado con <code>bwa index</code> y <code>gatk CreateSequenceDictionary</code>.</li>
+      <li><strong>Configuración incorrecta del input</strong>: El archivo <code>inputs.csv</code> debe tener el formato esperado (ej: <code>sample_id,fastq1,fastq2</code>).</li>
+      <li><strong>Usar perfiles</strong>: Si se ejecuta en un cluster, usa <code>--profile slurm</code> o <code>--profile singularity</code> para gestionar recursos adecuadamente.</li>
+      <li><strong>Verificar la documentación oficial</strong>: La sintaxis exacta puede variar. Siempre revisa <a href="https://github.com/gencorefacility/variant-calling-pipeline-gatk4">el repositorio</a> para ver los parámetros específicos y ejemplos.</li>
+    </ul>
+  </article>
+
+  
+
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">2 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

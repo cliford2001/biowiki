@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de transcripción alternativa con rMATS y SUPPA2</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Expresión diferencial">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de transcripción alternativa con rMATS y SUPPA2</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la transcripción alternativa y por qué es importante?</h2>
+      <p>La transcripción alternativa es un proceso clave en la regulación génica que permite que un solo gen produzca múltiples isoformas de ARN mensajero (ARNm) mediante diferentes combinaciones de exones. Este fenómeno amplía significativamente la diversidad proteica sin incrementar el número de genes, y está implicado en procesos fisiológicos normales así como en enfermedades como el cáncer, trastornos neurológicos y trastornos del desarrollo.</p>
+      <p>El análisis de la transcripción alternativa permite identificar cambios en la expresión de isoformas entre condiciones biológicas (por ejemplo, tumor vs. tejido normal), lo que puede revelar nuevos mecanismos patológicos, biomarcadores de diagnóstico o dianas terapéuticas. Herramientas como <strong>rMATS</strong> y <strong>SUPPA2</strong> son dos de las más utilizadas en el análisis de datos de secuenciación de ARN (RNA-seq) para detectar y cuantificar eventos de splicing alternativo.</p>
+    </section>
+
+    <section>
+      <h2>Enfoques comparativos: rMATS vs SUPPA2</h2>
+      <p>En el análisis de transcripción alternativa, dos herramientas destacan por su robustez y uso amplio: <strong>rMATS</strong> (replicate Multivariate Analysis of Transcript Splicing) y <strong>SUPPA2</strong> (Splicing Analysis Pipeline Package 2).</p>
+
+      <h3>rMATS: análisis de eventos de splicing con métodos estadísticos robustos</h3>
+      <p>rMATS es una herramienta diseñada para detectar eventos de splicing alternativo con base en datos de RNA-seq con replicados biológicos. Utiliza un modelo estadístico bayesiano para evaluar diferencias significativas en la proporción de splicing entre condiciones, y es especialmente útil para identificar eventos como:</p>
+      <ul>
+        <li><strong>Skipping Exon (SE)</strong>: Exon que se salta en una isoforma.</li>
+        <li><strong>Alternative 5' Splice Site (A5SS)</strong>: Uso de un sitio de splicing 5' distinto.</li>
+        <li><strong>Alternative 3' Splice Site (A3SS)</strong>: Uso de un sitio de splicing 3' distinto.</li>
+        <li><strong>Mutually Exclusive Exons (MXE)</strong>: Dos exones que no se incluyen juntos.</li>
+        <li><strong>Retained Intron (RI)</strong>: Intrón que se mantiene en el ARNm maduro.</li>
+      </ul>
+      <p>rMATS requiere archivos de alineamiento en formato BAM como entrada, y es capaz de manejar múltiples condiciones y replicados. Su salida incluye un archivo de resultados con estadísticas de significancia (p-valor ajustado) y la dirección del cambio (up o down) en la proporción de splicing.</p>
+
+      <h3>SUPPA2: integración de análisis, cuantificación y visualización</h3>
+      <p>SUPPA2 es una plataforma más integral que no solo detecta eventos de splicing alternativo, sino que también permite la cuantificación de isoformas, la integración con datos de expresión génica y la visualización de resultados. A diferencia de rMATS, SUPPA2 puede trabajar directamente con archivos de expresión (como los generados por Salmon o kallisto) y ofrece un flujo de trabajo más completo:</p>
+      <ul>
+        <li>Deteción de eventos de splicing alternativo en múltiples condiciones.</li>
+        <li>Cuantificación de isoformas a partir de datos de expresión.</li>
+        <li>Identificación de patrones de splicing diferencial.</li>
+        <li>Generación de gráficos y análisis de enriquecimiento funcional.</li>
+      </ul>
+      <p>Supplementalmente, SUPPA2 incluye un conjunto de herramientas para la visualización de resultados, como mapas de calor de cambios en el splicing y diagramas de red de eventos relacionados.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo típico: desde alineamiento hasta interpretación</h2>
+      <p>El análisis de transcripción alternativa requiere una serie de pasos interconectados. A continuación se presenta un flujo de trabajo recomendado:</p>
+
+      <h3>Paso 1: Alineamiento de reads</h3>
+      <p>Los reads de RNA-seq deben alinearse a un genoma de referencia. Herramientas como <strong>STAR</strong> o <strong>Hisat2</strong> son ampliamente utilizadas para este propósito. Ejemplo con STAR:</p>
+      <pre><code>STAR \
+  --runThreadN 8 \
+  --genomeDir /path/to/genome \
+  --readFilesIn sample1_R1.fastq sample1_R2.fastq \
+  --outFileNamePrefix sample1_
+</code></pre>
+
+      <h3>Paso 2: Generación de archivos para rMATS</h3>
+      <p>rMATS requiere archivos de alineamiento en formato BAM. Si se usan herramientas como Salmon o kallisto, se puede usar <strong>salmon quant</strong> con el parámetro <code>--gencode</code> para generar archivos de cuantificación que pueden ser usados en SUPPA2.</p>
+      <pre><code>salmon quant \
+  --threads 8 \
+  --libType ISF \
+  --gencode \
+  --transcripts transcripts.fasta \
+  --seqs reads.fastq \
+  -o quant_output
+</code></pre>
+
+      <h3>Paso 3: Análisis con rMATS</h3>
+      <p>Para ejecutar rMATS, se requiere un archivo de configuración con las rutas de los archivos BAM de cada condición. Ejemplo del comando:</p>
+      <pre><code>rMATS --b1 condition1_rep1.bam condition1_rep2.bam \
+      --b2 condition2_rep1.bam condition2_rep2.bam \
+      --gtf annotation.gtf \
+      --task splicing \
+      --out rMATS_output \
+      --nthread 8
+</code></pre>
+      <p>La salida incluye un archivo <code>summary.txt</code> con eventos significativos y un archivo <code>diffSplice.txt</code> con los resultados de diferencias en splicing.</p>
+
+      <h3>Paso 4: Análisis con SUPPA2</h3>
+      <p>SUPPA2 puede procesar los resultados de rMATS o trabajar directamente con cuantificaciones. Ejemplo de análisis:</p>
+      <pre><code>suppa.py --operation=summary --input=quant_output --output=suppa_summary
+suppa.py --operation=splicing --input=quant_output --output=splicing_results
+</code></pre>
+      <p>Esto genera resultados detallados de eventos de splicing con estadísticas adicionales y permite exportar datos para visualización.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de la transcripción alternativa es una herramienta esencial para comprender la regulación post-transcripcional en biología funcional y patológica. <strong>rMATS</strong> ofrece un enfoque estadísticamente riguroso para detectar eventos de splicing diferencial entre condiciones, especialmente útil en estudios con replicados biológicos. <strong>SUPPA2</strong>, por su parte, proporciona una plataforma más completa que integra detección, cuantificación, visualización y análisis funcional, ideal para estudios exploratorios o integrativos.</p>
+      <p>La elección entre rMATS y SUPPA2 depende del objetivo del estudio, el tipo de datos disponibles y el nivel de integración deseado. En muchos casos, se recomienda usar rMATS para identificar eventos significativos y luego SUPPA2 para profundizar en la cuantificación y visualización.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar archivos de alineamiento sin replicados</strong>: rMATS requiere replicados biológicos para una estimación robusta de la variabilidad. Sin replicados, los resultados pueden ser sesgados.</li>
+        <li><strong>No validar el splicing con herramientas externas</strong>: Es recomendable cruzar resultados entre rMATS y SUPPA2, o con otras herramientas como <strong>MAJIQ</strong> o <strong>DEXSeq</strong>, para confirmar hallazgos.</li>
+        <li><strong>Ignorar la calidad de los datos de entrada</strong>: Asegurarse de que los archivos BAM estén correctamente alineados y sin artefactos (usar herramientas como <strong>samtools</strong> y <strong>picard</strong>).</li>
+        <li><strong>Usar un gtf incorrecto</strong>: El archivo de anotación debe coincidir con la versión del genoma utilizada durante el alineamiento.</li>
+        <li><strong>Evaluar múltiples pruebas de significancia</strong>: Cuando se analizan muchos eventos, aplicar correcciones como Benjamini-Hochberg para controlar el FDR (tasa de descubrimiento falso).</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

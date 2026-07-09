@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DESeq2</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Transcriptomica">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>DESeq2</h1>
+    <p class="meta">
+      <a href="https://github.com/thelovelab/DESeq2">Repositorio en GitHub</a> | Autores: 466 estrellas · R
+    </p>
+  </header>
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>DESeq2 es una herramienta de análisis estadístico para detectar diferencias en la expresión génica a partir de datos de secuenciación de ARN (RNA-seq). Utiliza un modelo de distribución binomial negativa para modelar la variabilidad biológica y técnica en los datos, proporcionando robustas estimaciones de expresión diferencial entre condiciones experimentales.</p>
+
+    <h2>Instalación</h2>
+    <p>DESeq2 se instala en R mediante el paquete <code>BiocManager</code>:</p>
+    <pre><code>if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("thelovelab/DESeq2")</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Este ejemplo muestra el flujo básico de análisis. Se asume que se tiene una matriz de recuentos y un diseño experimental.</p>
+    <pre><code>library(DESeq2)
+
+# Crear objeto DESeqDataSet
+dds &lt;- DESeqDataSetFromMatrix(countData = counts,
+                              colData = colData,
+                              design = ~ condition)
+
+# Realizar el análisis de expresión diferencial
+dds &lt;- DESeq(dds)
+
+# Extraer resultados
+res &lt;- results(dds)
+
+# Ver los genes más diferencialmente expresados
+head(res, 10)</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual de análisis con DESeq2 incluye:</p>
+    <ol>
+      <li>Obtener recuentos de genes desde alineamientos (por ejemplo, con HTSeq o featureCounts).</li>
+      <li>Preparar un diseño experimental (factor de condiciones).</li>
+      <li>Construir un objeto <code>DESeqDataSet</code>.</li>
+      <li>Calibrar el modelo con <code>DESeq()</code>.</li>
+      <li>Extraer resultados con <code>results()</code>.</li>
+      <li>Visualizar resultados (por ejemplo, con <code>plotMA()</code> o <code>heatmap</code>).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#f0f0f0" stroke="#000" />
+        <text x="80" y="45" font-size="12" text-anchor="middle">Datos de recuentos</text>
+
+        <rect x="200" y="20" width="120" height="40" fill="#f0f0f0" stroke="#000" />
+        <text x="260" y="45" font-size="12" text-anchor="middle">Diseño experimental</text>
+
+        <rect x="380" y="20" width="120" height="40" fill="#f0f0f0" stroke="#000" />
+        <text x="440" y="45" font-size="12" text-anchor="middle">DESeqDataSet</text>
+
+        <rect x="200" y="120" width="120" height="40" fill="#f0f0f0" stroke="#000" />
+        <text x="260" y="145" font-size="12" text-anchor="middle">Análisis</text>
+
+        <rect x="380" y="120" width="120" height="40" fill="#f0f0f0" stroke="#000" />
+        <text x="440" y="145" font-size="12" text-anchor="middle">Resultados</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="200" y2="40" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="320" y1="40" x2="380" y2="40" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="440" y1="60" x2="440" y2="120" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="260" y1="140" x2="380" y2="140" stroke="#000" marker-end="url(#arrow)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de análisis de expresión diferencial con DESeq2</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores comunes:</strong>
+        <ul>
+          <li>No incluir la variable de diseño correcta en el modelo.</li>
+          <li>Usar datos de recuento sin normalización adecuada (DESeq2 realiza su propia normalización interna, pero la entrada debe ser recuentos brutos).</li>
+          <li>Ignorar la detección de outliers en el diseño experimental.</li>
+        </ul>
+      </li>
+      <li><strong>Buenas prácticas:</strong>
+        <ul>
+          <li>Verificar la calidad de los datos de entrada antes del análisis.</li>
+          <li>Usar <code>plotMA()</code> o <code>plotPCA()</code> para visualizar resultados previamente.</li>
+          <li>Aplicar corrección de múltiples pruebas (por ejemplo, ajuste de FDR con <code>padj</code>).</li>
+        </ul>
+      </li>
+    </ul>
+  </article>
+  
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">5 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42330053.html">CD69 blockade restores the bone marrow niche and delays leukemogenesis in a mouse model of Nras G12D-driven chronic myelomonocytic leukemia.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/15384047.2026.2692184" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42327006.html">Long-term expandable auricular chondrocytes reveal a conserved nine-gene decline module underlying senescence-independent dedifferentiation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1016/j.reth.2026.101146" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42322272.html">Pooled analysis of 2 clinical trials of first-line chemoimmunotherapy for metastatic microsatellite stable colorectal cancer MEDITREME and METIMMOX studies.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/2162402x.2026.2671491" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

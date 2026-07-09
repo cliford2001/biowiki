@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Dense-AI Scientific Agent Skills</title>
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Utilidades / Paquetes" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>K-Dense-AI Scientific Agent Skills</h1>
+    <p class="meta">
+      <a href="https://github.com/K-Dense-AI/scientific-agent-skills">Repositorio: K-Dense-AI/scientific-agent-skills</a>
+      · 30479 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      K-Dense-AI Scientific Agent Skills es la biblioteca de habilidades número uno
+      para agentes de inteligencia artificial en ciencia. Permite transformar cualquier
+      agente de IA en un científico autónomo, capaz de realizar tareas complejas en biología,
+      química, medicina y descubrimiento de fármacos. Cuenta con más de 140 habilidades
+      listas para usar y 100+ bases de datos científicas integradas, todo bajo un estándar
+      abierto de habilidades para agentes.
+    </p>
+
+    <h2>Instalación</h2>
+    <pre><code>pip install k-dense-ai-scientific-agent-skills</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Una vez instalado, puedes importar las habilidades en tu agente de IA y activar
+    funcionalidades científicas directamente. Ejemplo ilustrativo en Python:</p>
+    <pre><code>from k_dense_ai.skills import ScientificAgent
+
+# Inicializar un agente científico
+agent = ScientificAgent()
+
+# Ejecutar una búsqueda en bases de datos científicas
+result = agent.execute_skill(
+    skill="literature_search",
+    query="mecanismos de resistencia bacteriana a penicilina"
+)
+
+print(result)</code></pre>
+    <p><em>Sintaxis ilustrativa; verifica los nombres exactos de habilidades y métodos
+    en la documentación oficial del proyecto.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual para usar esta herramienta en un agente científico incluye:</p>
+    <ol>
+      <li>Instalar el paquete en tu entorno de desarrollo.</li>
+      <li>Inicializar un agente con soporte para habilidades científicas.</li>
+      <li>Cargar las habilidades necesarias (por ejemplo, análisis de literatura, predicción de estructuras proteicas).</li>
+      <li>Ejecutar tareas mediante la invocación de habilidades con parámetros adecuados.</li>
+      <li>Procesar y analizar los resultados generados.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#3498db" rx="10" />
+        <text x="80" y="48" font-size="12" text-anchor="middle" fill="white">Instalar</text>
+
+        <rect x="180" y="20" width="140" height="40" fill="#e67e22" rx="10" />
+        <text x="250" y="48" font-size="12" text-anchor="middle" fill="white">Inicializar Agente</text>
+
+        <rect x="370" y="20" width="150" height="40" fill="#2ecc71" rx="10" />
+        <text x="445" y="48" font-size="12" text-anchor="middle" fill="white">Cargar Habilidades</text>
+
+        <rect x="560" y="20" width="120" height="40" fill="#9b59b6" rx="10" />
+        <text x="620" y="48" font-size="12" text-anchor="middle" fill="white">Ejecutar Tarea</text>
+
+        <rect x="560" y="100" width="120" height="40" fill="#e74c3c" rx="10" />
+        <text x="620" y="128" font-size="12" text-anchor="middle" fill="white">Analizar Resultados</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="180" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="320" y1="40" x2="370" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="520" y1="40" x2="560" y2="40" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="620" y1="60" x2="620" y2="100" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de uso del agente científico con K-Dense-AI.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores comunes:</strong>
+        <ul>
+          <li>Intentar usar habilidades sin haber instalado el paquete correctamente.</li>
+          <li>Usar nombres de habilidades incorrectos o inexistente; siempre verifica la lista oficial.</li>
+          <li>No manejar adecuadamente los errores de conexión cuando se accede a bases de datos externas.</li>
+        </ul>
+      </li>
+      <li><strong>Buenas prácticas:</strong>
+        <ul>
+          <li>Documenta cada habilidad que usas en tu flujo de trabajo para mayor transparencia.</li>
+          <li>Valida siempre los resultados generados por el agente, especialmente en tareas críticas.</li>
+          <li>Actualiza el paquete regularmente para acceder a nuevas habilidades y mejoras.</li>
+        </ul>
+      </li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

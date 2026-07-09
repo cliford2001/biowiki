@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de calidad de reads con FastQC</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Control de calidad de reads con FastQC</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué el control de calidad es fundamental</h2>
+            <p>En el análisis de secuenciación de nueva generación (NGS), la calidad de los datos de entrada es el cimiento de cualquier resultado biológicamente válido. Los reads (fragmentos de secuencia) generados por plataformas como Illumina pueden contener errores técnicos, contaminación, o artefactos que, si no se detectan, pueden sesgar análisis posteriores como alineamiento, ensamblaje, y detección de variantes. El control de calidad (QC) es la primera barrera crítica para garantizar la integridad de los datos.</p>
+            <p>FastQC es una herramienta de código abierto, ampliamente adoptada en el campo de la bioinformática, diseñada específicamente para realizar una evaluación rápida y exhaustiva de la calidad de los reads en formato FASTQ. Su simplicidad, rapidez y capacidad de generar informes visuales interactivos la convierten en una herramienta indispensable en cualquier flujo de trabajo de NGS.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: Cómo funciona FastQC y qué analiza</h2>
+            <p>FastQC no realiza transformaciones en los datos, sino que los examina a través de una serie de métricas estadísticas y gráficas. Al ejecutar FastQC sobre un archivo FASTQ, genera un informe HTML autocontenido que incluye múltiples gráficos y tablas de resumen. Los principales módulos de análisis son:</p>
+
+            <h3>1. Perfil de calidad por posición</h3>
+            <p>Este gráfico muestra la calidad media de los nucleótidos a lo largo de cada posición del read. En reads de alta calidad, la calidad debería ser constante o ligeramente descendente hacia el extremo 3'. Una caída repentina o valores bajos en posiciones internas pueden indicar problemas con el proceso de secuenciación, como el agotamiento de nucleótidos o errores en la detección de señales.</p>
+
+            <h3>2. Distribución de frecuencia de bases</h3>
+            <p>Este módulo analiza la frecuencia de cada base (A, T, C, G) en cada posición del read. En una secuenciación ideal, la distribución debería ser uniforme. Desviaciones significativas, como una sobre-representación de una base en ciertas posiciones, pueden indicar contaminación o artefactos de amplificación (por ejemplo, en PCR).</p>
+
+            <h3>3. Contenido de GC</h3>
+            <p>El contenido de GC se calcula para cada read y se muestra como un histograma. Un contenido de GC inusualmente alto o bajo, o un histograma con múltiples picos, puede sugerir que el fragmento de ADN no es representativo del genoma total, lo cual es común en muestras con alto contenido de GC o en casos de contaminación.</p>
+
+            <h3>4. Duplicados y contaminación</h3>
+            <p>FastQC detecta reads que son idénticos o muy similares, lo que puede deberse a amplificación excesiva durante el preparado de biblioteca (PCR duplicados) o contaminación de muestras. Un alto porcentaje de reads duplicados puede afectar la precisión de estimaciones de expresión o variabilidad.</p>
+
+            <h3>5. Contenido de secuencias de alta complejidad</h3>
+            <p>Este módulo busca secuencias repetitivas o de baja complejidad (como repeticiones de bases), que pueden ser artefactos o indicadores de contaminación. Las secuencias de alta complejidad son comunes en genomas eucariotas, mientras que las de baja complejidad pueden indicar problemas técnicos.</p>
+
+            <h3>6. Longitud de los reads</h3>
+            <p>FastQC verifica si todos los reads tienen la misma longitud, lo cual es esperado en secuenciación de nueva generación. Variaciones inesperadas en la longitud pueden indicar fallos en el procesamiento de datos o en el ensamblaje de los reads.</p>
+
+            <p>Para ejecutar FastQC en la terminal, se utiliza el siguiente comando:</p>
+            <pre><code>fastqc -o ./output_dir -f fastq sample_R1.fastq.gz</code></pre>
+            <p>Este comando procesa el archivo <code>sample_R1.fastq.gz</code> y genera un informe HTML en el directorio <code>output_dir</code>.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>FastQC es una herramienta esencial para el control de calidad de datos de secuenciación. Su análisis detallado permite identificar problemas técnicos en los reads antes de proceder con análisis más complejos, como alineamiento o análisis de expresión. Una evaluación cuidadosa de los informes FastQC puede prevenir errores que de otro modo pasarían desapercibidos y comprometerían la validez de los resultados. Introducir FastQC en el flujo de trabajo es una inversión crítica en la calidad científica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / Buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar los informes FastQC</strong>: No revisar el informe es un error grave. Si FastQC marca un módulo en rojo, investiga el origen del problema.</li>
+                <li><strong>Asumir que los datos son válidos si no hay errores evidentes</strong>: A veces, los problemas son sutiles (por ejemplo, una leve caída de calidad en el extremo 3'). Revisa todos los módulos, incluso los verdes.</li>
+                <li><strong>Procesar datos sin QC</strong>: Nunca alinees o ensamble datos sin haber validado su calidad primero. La contaminación o baja calidad puede invalidar todo el análisis.</li>
+                <li><strong>Usar FastQC sin descomprimir datos</strong>: FastQC puede leer archivos comprimidos (gzip) directamente. Asegúrate de que el archivo tenga la extensión <code>.gz</code> para que FastQC lo reconozca correctamente.</li>
+                <li><strong>No documentar los resultados del QC</strong>: Guarda los informes FastQC y anota las decisiones tomadas (por ejemplo, ¿se recortaron reads? ¿se eliminaron muestras?). Esto es crucial para la reproducibilidad.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

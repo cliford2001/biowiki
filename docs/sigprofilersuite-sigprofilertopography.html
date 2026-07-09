@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SigProfilerTopography</title>
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Anotacion funcional" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>SigProfilerTopography</h1>
+    <p class="meta">
+      <a href="https://github.com/SigProfilerSuite/SigProfilerTopography" target="_blank">Repositorio</a> ·
+      Autores: 24 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      SigProfilerTopography es una herramienta de la suite SigProfilerSuite que permite evaluar el efecto de la organización cromatínica, modificaciones de histonas, unión de factores de transcripción, replicación del ADN y transcripción sobre la actividad de diferentes procesos mutacionales.
+      Esta herramienta revela las características topográficas únicas de las firmas mutacionales, ayudando a comprender cómo los factores de la estructura y dinámica del genoma influyen en la aparición de mutaciones.
+    </p>
+
+    <h2>Instalación</h2>
+    <pre><code>pip install SigProfilerTopography</code></pre>
+
+    <h2>Uso básico</h2>
+    <pre><code>import SigProfilerTopography as topography
+
+# Cargar una firma mutacional
+topography.run_topography(
+    input_file="mutational_signatures.csv",
+    output_directory="output/",
+    reference_genome="hg38"
+)</code></pre>
+    <p class="note">
+      Sintaxis ilustrativa; verifica en la documentación oficial del proyecto.
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo habitual consiste en:
+      1. Preparar un archivo de firmas mutacionales (por ejemplo, generado con SigProfilerMatrixGenerator).
+      2. Ejecutar SigProfilerTopography con el archivo de entrada y especificar el genoma de referencia.
+      3. Analizar los resultados en el directorio de salida, que incluye mapas de asociación y estadísticas.
+    </p>
+    
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Input -->
+        <rect x="20" y="50" width="120" height="40" rx="10" fill="#e3f2fd" stroke="#1976d2" />
+        <text x="80" y="75" font-size="14" text-anchor="middle" fill="#1976d2">Firmas mutacionales</text>
+
+        <!-- Step 1: Chromatin & Features -->
+        <rect x="180" y="30" width="120" height="40" rx="10" fill="#e8f5e9" stroke="#388e3c" />
+        <text x="240" y="55" font-size="14" text-anchor="middle" fill="#388e3c">Cromatina</text>
+        <rect x="180" y="80" width="120" height="40" rx="10" fill="#e8f5e9" stroke="#388e3c" />
+        <text x="240" y="105" font-size="14" text-anchor="middle" fill="#388e3c">Modificaciones</text>
+
+        <!-- Step 2: TF Binding, Replication, Transcription -->
+        <rect x="340" y="30" width="120" height="40" rx="10" fill="#fff3e0" stroke="#ffa726" />
+        <text x="390" y="55" font-size="14" text-anchor="middle" fill="#ffa726">Factores de transcripción</text>
+        <rect x="340" y="80" width="120" height="40" rx="10" fill="#fff3e0" stroke="#ffa726" />
+        <text x="390" y="105" font-size="14" text-anchor="middle" fill="#ffa726">Replicación</text>
+        <rect x="340" y="130" width="120" height="40" rx="10" fill="#fff3e0" stroke="#ffa726" />
+        <text x="390" y="155" font-size="14" text-anchor="middle" fill="#ffa726">Transcripción</text>
+
+        <!-- Step 3: Topography Analysis -->
+        <rect x="500" y="50" width="120" height="40" rx="10" fill="#f3e5f5" stroke="#9c27b0" />
+        <text x="560" y="75" font-size="14" text-anchor="middle" fill="#9c27b0">Topografía mutacional</text>
+
+        <!-- Arrows -->
+        <line x1="140" y1="70" x2="180" y2="70" stroke="#1976d2" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="300" y1="70" x2="340" y2="70" stroke="#388e3c" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="300" y1="120" x2="340" y2="120" stroke="#388e3c" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="460" y1="70" x2="500" y2="70" stroke="#ffa726" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="460" y1="120" x2="500" y2="120" stroke="#ffa726" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="460" y1="170" x2="500" y2="170" stroke="#ffa726" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <!-- Arrowhead definition -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Diagrama del flujo de trabajo típico en SigProfilerTopography: desde las firmas mutacionales hasta el análisis de topografía, considerando múltiples factores genómicos.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Archivo de entrada mal formateado:</strong> Asegúrate de que el archivo CSV de firmas tenga las columnas correctas (por ejemplo, mutaciones, conteos, etc.).</li>
+      <li><strong>Genoma de referencia incorrecto:</strong> Usa "hg38" o "hg19" según tu conjunto de datos.</li>
+      <li><strong>Falta de permisos:</strong> Asegúrate de tener permisos de escritura en el directorio de salida.</li>
+      <li><strong>Memoria insuficiente:</strong> Para grandes datos, considera reducir el tamaño de la región analizada o usar un sistema con más RAM.</li>
+      <li><strong>Actualización del paquete:</strong> Mantén SigProfilerTopography actualizado para aprovechar mejoras y correcciones.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

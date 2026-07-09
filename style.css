@@ -1,0 +1,118 @@
+/* =============================================================================
+   BioWiki — sistema de diseño unificado (estilo nike.com)
+   Negro + acento volt (#00e0a4), tipografía audaz, alto contraste.
+   Coherente con la portada (index.html). Todas las páginas internas usan esto.
+   ============================================================================= */
+:root{
+  --ink:#0a0a0a; --bg:#0a0a0a; --surface:#141414; --card:#141414;
+  --text:#f2f2f2; --paper:#ffffff; --muted:#8a8a8a;
+  --accent:#00e0a4; --volt:#00e0a4; --accent2:#4d7cff;
+  --border:#222; --line:#1c1c1c; --code-bg:#111;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.7;
+  font-family:"Helvetica Neue",Arial,system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none;transition:color .18s}
+a:hover{color:#fff}
+
+/* Barra de progreso de lectura (CSS puro; degrada a invisible en navegadores viejos) */
+body::before{content:"";position:fixed;top:0;left:0;height:3px;width:0;z-index:200;
+  background:linear-gradient(90deg,var(--volt),var(--accent2));
+  animation:readprog linear;animation-timeline:scroll(root)}
+@keyframes readprog{from{width:0}to{width:100%}}
+
+/* ---------- Header + nav (todas las páginas internas) ---------- */
+.site-header{position:relative;padding:3.2rem 1.5rem 2.2rem;text-align:center;
+  background:radial-gradient(900px 420px at 80% -40%,rgba(0,224,164,.14),transparent),
+             radial-gradient(700px 360px at 0% 120%,rgba(77,124,255,.12),transparent),var(--ink);
+  border-bottom:1px solid var(--line)}
+.site-header h1{font-size:clamp(2rem,6vw,3.2rem);margin:0 0 .3rem;font-weight:800;
+  letter-spacing:-.03em;text-transform:uppercase}
+.site-header p{color:var(--muted);margin:0}
+.site-header nav{margin-top:1.2rem;display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1.3rem}
+.site-header nav a{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#cfcfcf}
+.site-header nav a:hover{color:var(--volt)}
+
+/* ---------- Grilla e índice de tarjetas ---------- */
+.index-grid{max-width:1140px;margin:2.2rem auto;padding:0 1.2rem;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:.55rem;
+  transition:transform .22s ease,border-color .22s ease}
+.card:hover{transform:translateY(-6px);border-color:var(--volt);color:var(--text)}
+.card h2{margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-.02em;color:var(--text);line-height:1.2}
+.card span{color:var(--volt);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.card .date{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+
+/* ---------- Página de artículo / doc ---------- */
+.article-header{max-width:780px;margin:0 auto;padding:2.6rem 1.4rem 1rem}
+.article-header a{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.article-header a:hover{color:var(--volt)}
+.article-header h1{font-size:clamp(1.9rem,5vw,2.6rem);margin:.7rem 0 0;line-height:1.15;
+  font-weight:800;letter-spacing:-.03em}
+.article-header .meta{color:var(--muted);font-size:.9rem;margin-top:.5rem}
+article{max-width:780px;margin:0 auto;padding:1rem 1.4rem 4rem;font-size:1.05rem}
+article h2{margin-top:2.4rem;font-size:1.5rem;font-weight:800;letter-spacing:-.02em;
+  border-bottom:2px solid var(--volt);padding-bottom:.35rem;display:inline-block}
+article h3{margin-top:1.7rem;font-size:1.2rem;color:var(--volt);font-weight:700}
+article p{margin:1rem 0;color:#dcdcdc}
+article ul,article ol{padding-left:1.35rem}
+article li{margin:.4rem 0;color:#dcdcdc}
+article strong{color:#fff}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:.9rem}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#1a1a1a;
+  padding:.15em .45em;border-radius:6px;font-size:.9em;color:#e6f7f0}
+pre code{background:none;padding:0;color:#d8d8d8}
+
+/* ---------- Footer ---------- */
+.site-footer{text-align:center;color:var(--muted);padding:2.2rem 1rem;
+  border-top:1px solid var(--line);font-size:.9rem;margin-top:2rem}
+.site-footer a{color:var(--volt)}
+
+/* ---------- Novedades / reseñas ---------- */
+.feed{max-width:840px;margin:2.2rem auto;padding:0 1.2rem;display:flex;flex-direction:column;gap:1.1rem}
+.review-card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:1.4rem 1.6rem;transition:transform .2s,border-color .2s}
+.review-card:hover{transform:translateY(-4px);border-color:var(--volt)}
+.review-card h2{margin:.5rem 0;font-size:1.2rem;font-weight:800;letter-spacing:-.02em}
+.review-card .meta{color:var(--muted);font-size:.85rem;margin:.2rem 0 .7rem}
+.review-card .summary{margin:.5rem 0;color:#dcdcdc}
+.review-card .verdict{margin:.6rem 0 0;font-size:.95rem;color:var(--text)}
+.badge{display:inline-block;font-size:.68rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;padding:.25em .7em;border-radius:999px}
+.badge-paper{background:rgba(77,124,255,.20);color:#8fb3ff}
+.badge-tool{background:rgba(0,224,164,.18);color:var(--volt)}
+.badge-watch{background:rgba(255,193,94,.20);color:#e9b866;margin-left:.4rem}
+.badge-cat{background:rgba(0,224,164,.14);color:var(--volt);border:1px solid rgba(0,224,164,.3)}
+
+/* ---------- Disclaimers, figuras, fechas ---------- */
+.disclaimer{margin-top:2rem;font-size:.82rem;color:var(--muted);
+  border-top:1px dashed var(--border);padding-top:.8rem}
+figure{margin:1.6rem 0;text-align:center;background:#fff;border-radius:12px;padding:1rem}
+figure svg{max-width:100%;height:auto}
+figcaption{color:#333;font-size:.85rem;margin-top:.4rem}
+.date{display:block;color:var(--muted);font-size:.78rem;margin:.2rem 0}
+.date-foot{text-align:right;border-top:1px solid var(--border);padding-top:.4rem;margin-top:.8rem}
+.dated-card{display:contents}
+
+/* ---------- Asociaciones ---------- */
+.usage{background:rgba(77,124,255,.10);border-left:3px solid var(--accent2);
+  padding:.5rem .85rem;border-radius:8px;margin:.6rem 0}
+.assoc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.3rem 1.5rem;margin-bottom:1.1rem}
+.assoc h2{margin:.2rem 0;font-size:1.2rem;font-weight:800}
+.assoc ul{margin:.4rem 0 0;padding-left:1.2rem}
+.assoc li{margin:.35rem 0}
+.associated-papers{margin-top:2rem;background:rgba(0,224,164,.06);border:1px solid var(--border);
+  border-radius:14px;padding:1rem 1.3rem}
+.associated-papers h2{border:none;margin-top:.3rem;font-size:1.15rem}
+.associated-papers ul{padding-left:1.2rem}
+.associated-papers li{margin:.4rem 0}
+.associated-papers .date{display:inline;font-size:.75rem}
+
+/* reading-time badge en tarjetas */
+.readtime{color:var(--muted);font-size:.75rem;font-weight:600;text-transform:none;letter-spacing:0}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}body::before{animation:none}}

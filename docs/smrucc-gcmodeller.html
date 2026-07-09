@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMRUCC/GCModeller</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>SMRUCC/GCModeller</h1>
+    <p class="meta">
+      <a href="https://github.com/SMRUCC/GCModeller">Repositorio en GitHub</a> · Autores: 37 estrellas · Visual Basic .NET
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      GCModeller es un sistema de modelado en genómica asistido por computadora (CAD, por sus siglas en inglés), desarrollado en el lenguaje .NET. Su propósito principal es facilitar el diseño, edición y análisis de construcciones genómicas complejas, como circuitos genéticos, elementos reguladores o sistemas sintéticos. Es una herramienta especializada para investigadores en biología sintética que requieren una interfaz gráfica para planificar y visualizar modificaciones genéticas de forma modular.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      GCModeller está desarrollado en <strong>Visual Basic .NET</strong>, por lo que su instalación requiere el entorno de desarrollo .NET Framework o .NET SDK. No está disponible en paquetes estándar como pip o R packages. Los usuarios deben compilar el código desde el repositorio o utilizar una versión precompilada si está disponible.
+    </p>
+    <pre><code>git clone https://github.com/SMRUCC/GCModeller.git
+# Luego, abrir el proyecto en Visual Studio o Visual Studio Code con soporte para .NET
+# Compilar desde el IDE o usando:
+msbuild GCModeller.sln</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Al abrir GCModeller, se presenta una interfaz gráfica con una librería de elementos genéticos (promotores, terminadores, genes, etc.) y un área de diseño principal. El usuario puede arrastrar y soltar componentes para armar una secuencia genética, y utilizar herramientas de validación y análisis integradas.
+    </p>
+    <pre><code>En la interfaz gráfica:
+1. Abrir GCModeller.exe (compilado)
+2. Seleccionar un componente desde la barra lateral
+3. Arrastrarlo al área de trabajo
+4. Conectar componentes con conexiones lógicas o de secuencia
+5. Usar "Validar diseño" para verificar compatibilidad</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo habitual en GCModeller sigue estos pasos:
+      <ol>
+        <li>Definir el objetivo biológico (por ejemplo, un sistema de expresión inducible).</li>
+        <li>Seleccionar componentes genéticos de la librería (promotores, genes, terminadores).</li>
+        <li>Construir el diseño modular en el área de trabajo.</li>
+        <li>Validar la integridad del diseño (interacciones, compatibilidad de secuencias).</li>
+        <li>Exportar el diseño como archivo FASTA o en formato propio para uso en laboratorio.</li>
+      </ol>
+    </p>
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Componentes -->
+        <rect x="20" y="40" width="120" height="40" fill="#f0f8ff" stroke="black" />
+        <text x="80" y="65" font-size="14" text-anchor="middle">Promotor</text>
+
+        <rect x="160" y="40" width="120" height="40" fill="#f0f8ff" stroke="black" />
+        <text x="220" y="65" font-size="14" text-anchor="middle">Gen</text>
+
+        <rect x="300" y="40" width="120" height="40" fill="#f0f8ff" stroke="black" />
+        <text x="360" y="65" font-size="14" text-anchor="middle">Terminador</text>
+
+        <rect x="440" y="40" width="120" height="40" fill="#f0f8ff" stroke="black" />
+        <text x="500" y="65" font-size="14" text-anchor="middle">Vector</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="60" x2="160" y2="60" stroke="black" marker-end="url(#arrow)" />
+        <line x1="280" y1="60" x2="300" y2="60" stroke="black" marker-end="url(#arrow)" />
+        <line x1="420" y1="60" x2="440" y2="60" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Diagrama de flujo típico: secuencia de componentes genéticos en GCModeller</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores de compilación:</strong> Asegúrate de tener instalado el .NET Framework 4.8 o posterior. Si el proyecto no compila, verifica que todos los paquetes NuGet estén restaurados.</li>
+      <li><strong>Problemas de validación:</strong> Algunas combinaciones de componentes pueden no ser biológicamente viables. Usa la herramienta de validación para detectar conflictos de secuencias o estructuras.</li>
+      <li><strong>Buenas prácticas:</strong> Documenta tus diseños con etiquetas y comentarios. Usa nombres descriptivos para los componentes. Exporta regularmente en formato estándar (FASTA) para garantizar compatibilidad con otros sistemas.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

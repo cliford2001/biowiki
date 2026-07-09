@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>genomoncology/biomcp</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Modelado">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>genomoncology/biomcp</h1>
+    <p class="meta">
+      <a href="https://github.com/genomoncology/biomcp">Repositorio</a> · 546 estrellas · Rust
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>BioMCP (Biomedical Model Context Protocol) es una herramienta en Rust diseñada para definir, compartir y gestionar contextos de modelos en aplicaciones de bioinformática. Su objetivo principal es estandarizar cómo se describen y transmiten los entornos de ejecución, configuraciones y datos necesarios para reproducir modelos biomédicos. Esto facilita la interoperabilidad entre diferentes sistemas, el intercambio de modelos entre investigadores y la replicación de resultados en estudios de ciencia de datos biomédicos.</p>
+
+    <h2>Instalación</h2>
+    <p>BioMCP está implementado en Rust, por lo que se recomienda usar <code>cargo</code> para su instalación. Asegúrate de tener instalado <a href="https://rustup.rs">Rust</a> antes de continuar.</p>
+    <pre><code>cargo install biomcp</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Una vez instalado, BioMCP permite crear y validar contextos de modelos mediante un archivo de configuración en formato JSON o YAML. A continuación se muestra un ejemplo ilustrativo de cómo crear un contexto básico y ejecutarlo:</p>
+    <pre><code>use biomcp::ModelContext;
+
+// Crear un contexto desde un archivo de configuración
+let context = ModelContext::from_file("config.json").expect("No se pudo cargar el contexto");
+
+// Validar el contexto
+if context.is_valid() {
+    println!("Contexto válido. Iniciando modelo...");
+    context.run_model();
+} else {
+    eprintln!("Error: el contexto contiene errores");
+}</code></pre>
+    <p><em>Sintaxis ilustrativa; verifica en la documentación oficial.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo de trabajo habitual con BioMCP implica los siguientes pasos:</p>
+    <ol>
+      <li>Definir el contexto del modelo mediante un archivo de configuración (JSON/YAML).</li>
+      <li>Validar el contexto con <code>biomcp validate</code>.</li>
+      <li>Generar un archivo de contexto empaquetado (con <code>biomcp package</code>) para compartir.</li>
+      <li>Reproducir el modelo en otro entorno usando <code>biomcp run</code>.</li>
+    </ol>
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <style>
+          .box { fill: #e0f7fa; stroke: #006064; stroke-width: 2; }
+          .label { fill: #006064; font-size: 12px; font-family: sans-serif; text-anchor: middle; }
+          .arrow { stroke: #006064; stroke-width: 2; marker-end: url(#arrowhead); }
+          .title { fill: #006064; font-size: 14px; font-weight: bold; font-family: sans-serif; text-anchor: middle; }
+        </style>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#006064" />
+          </marker>
+        </defs>
+        <!-- Boxes -->
+        <rect x="50" y="40" width="120" height="50" class="box" />
+        <rect x="200" y="40" width="120" height="50" class="box" />
+        <rect x="350" y="40" width="120" height="50" class="box" />
+        <rect x="500" y="40" width="120" height="50" class="box" />
+        <!-- Labels -->
+        <text x="110" y="70" class="label">Definir contexto</text>
+        <text x="260" y="70" class="label">Validar</text>
+        <text x="410" y="70" class="label">Empaquetar</text>
+        <text x="560" y="70" class="label">Ejecutar</text>
+        <!-- Arrows -->
+        <line x1="170" y1="65" x2="200" y2="65" class="arrow" />
+        <line x1="320" y1="65" x2="350" y2="65" class="arrow" />
+        <line x1="470" y1="65" x2="500" y2="65" class="arrow" />
+        <!-- Title -->
+        <text x="300" y="20" class="title">Pipeline de BioMCP</text>
+      </svg>
+      <figcaption>Diagrama del flujo típico de trabajo con BioMCP: definición → validación → empaquetado → ejecución.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Problemas con la versión de Rust:</strong> Asegúrate de usar una versión compatible de Rust (recomendado: stable). Usa <code>cargo --version</code> para verificar.</li>
+      <li><strong>Archivos de configuración mal formados:</strong> Usa herramientas como <code>jsonlint</code> o <code>yaml-lint</code> para validar el formato del archivo de contexto antes de usarlo.</li>
+      <li><strong>Uso de rutas relativas:</strong> Cuando empaquetas un modelo, verifica que todas las rutas en el contexto sean relativas al archivo de configuración para garantizar portabilidad.</li>
+      <li><strong>Documentar el contexto:</strong> Incluye comentarios en el archivo de configuración para explicar parámetros clave, especialmente si se comparte con otros investigadores.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustering de células con Leiden y Louvain</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Clustering de células con Leiden y Louvain</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Por qué el clustering de células es clave en bioinformática?</h2>
+            <p>El clustering de células es una técnica fundamental en el análisis de datos de secuenciación de transcritoma de una sola célula (scRNA-seq). Su objetivo es agrupar células con perfiles de expresión génica similares, lo que permite identificar tipos celulares, estados de activación, y trayectorias de diferenciación en tejidos complejos. Herramientas como <strong>Scanpy</strong> y <strong>Seurat</strong> implementan algoritmos de clustering que han revolucionado la biología celular al permitir la exploración de sistemas biológicos a escala celular con una precisión sin precedentes.</p>
+            <p>Dos de los algoritmos más utilizados son <strong>Louvain</strong> y <strong>Leiden</strong>. Aunque ambos se basan en la detección de comunidades en grafos, sus diferencias en diseño han hecho que <strong>Leiden</strong> se convierta en la opción preferida en muchos escenarios modernos.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: Fundamentos y comparación técnica</h2>
+
+            <h3>Construcción del grafo de células</h3>
+            <p>El primer paso en cualquier clustering basado en grafos es la construcción de un grafo de similitud entre células. En scRNA-seq, esto se suele hacer mediante una matriz de distancias (como la distancia euclidiana o la distancia de Jaccard en expresión génica) seguida de la construcción de un grafo k-NN (k más cercanos), donde cada célula es un nodo y se conecta a sus k vecinos más similares.</p>
+
+            <h3>Algoritmo Louvain: optimización de modularidad</h3>
+            <p>El algoritmo <strong>Louvain</strong> busca maximizar la <em>modularidad</em> del grafo, una medida que cuantifica la densidad de conexiones internas dentro de una comunidad frente a las conexiones externas. El algoritmo realiza iterativamente dos pasos:</p>
+            <ol>
+                <li>Para cada nodo, se evalúa si moverlo a una comunidad vecina mejora la modularidad.</li>
+                <li>Se reagrupan los nodos en comunidades basadas en las decisiones anteriores y se reconstruye el grafo de comunidades.</li>
+            </ol>
+            <p>Este proceso se repite hasta que no se puede mejorar más la modularidad. Aunque es rápido y eficiente, Louvain puede sufrir de <em>efecto de la comunidad pequeña</em> (small community problem), donde algunas comunidades se subdividen de forma artificial, especialmente en grafos con baja densidad o alta heterogeneidad.</p>
+
+            <h3>Algoritmo Leiden: una mejora sustancial</h3>
+            <p>El algoritmo <strong>Leiden</strong> fue desarrollado como una solución al problema de la división de comunidades en Louvain. A diferencia de Louvain, Leiden garantiza que todas las comunidades sean <em>conexas</em> (es decir, cada comunidad forma un subgrafo donde todos los nodos están interconectados directa o indirectamente).</p>
+            <p>Además, Leiden utiliza un enfoque más riguroso: en lugar de mover nodos arbitrariamente, realiza una <em>optimización local de calidad</em> con una verificación de conectividad en cada paso. Esto previene la creación de comunidades no conectadas y mejora la robustez del clustering.</p>
+
+            <h3>Implementación práctica en Python</h3>
+            <p>En <strong>Scanpy</strong>, el clustering se realiza con <code>scanpy.tl.leiden()</code> y <code>scanpy.tl.louvain()</code>. Ambos requieren un grafo vecino previamente calculado con <code>scanpy.pp.neighbors()</code>.</p>
+
+            <pre><code>import scanpy as sc
+
+# Cargar datos
+adata = sc.read_h5ad("data/adata.h5ad")
+
+# Calcular vecinos
+sc.pp.neighbors(adata, n_neighbors=15, n_pcs=20)
+
+# Aplicar clustering Leiden
+sc.tl.leiden(adata, resolution=0.8)
+
+# Aplicar clustering Louvain
+sc.tl.louvain(adata, resolution=0.8)</code></pre>
+
+            <p>El parámetro <code>resolution</code> controla la granularidad del clustering: valores altos generan más clusters (más granularidad), valores bajos fusionan más células en grupos más amplios.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El clustering de células es una piedra angular en el análisis de scRNA-seq. Mientras que <strong>Louvain</strong> sigue siendo una opción válida y eficiente, <strong>Leiden</strong> representa un avance significativo gracias a su garantía de conectividad y mayor robustez en la detección de comunidades. En la práctica actual, <strong>Leiden</strong> es ampliamente recomendado, especialmente en conjuntos de datos con alta heterogeneidad o en análisis de tipos celulares raros.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar un número adecuado de vecinos</strong>: valores muy bajos (por ejemplo, <code>n_neighbors=3</code>) pueden generar grafos demasiado dispersos; valores muy altos (<code>n_neighbors=50</code>) pueden crear conexiones artificiales. Se recomienda probar valores entre 10 y 30.</li>
+                <li><strong>Ignorar el parámetro de resolución</strong>: el valor de <code>resolution</code> tiene un impacto directo en el número de clusters. No debe fijarse arbitrariamente. Se sugiere explorar una gama de valores (por ejemplo, 0.1 a 2.0) y evaluar el resultado con visualizaciones como t-SNE o UMAP.</li>
+                <li><strong>Usar el mismo grafo para múltiples análisis sin reevaluar</strong>: si se cambia el número de componentes principales (n_pcs), el grafo vecino debe regenerarse, ya que el espacio de expresión ha cambiado.</li>
+                <li><strong>Asumir que el clustering es óptimo</strong>: el clustering es un paso intermedio. Siempre debe validarse con visualización, análisis de marcadores diferencial y conocimiento biológico del sistema estudiado.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

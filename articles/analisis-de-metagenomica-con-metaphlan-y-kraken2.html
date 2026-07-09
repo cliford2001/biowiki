@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de metagenómica con MetaPhlAn y Kraken2</title>
+    <meta name="categoria" content="Análisis de metagenómica">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Análisis de metagenómica con MetaPhlAn y Kraken2</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Desentrañando la composición microbiana</h2>
+            <p>El análisis de metagenómica permite estudiar el conjunto de microorganismos presentes en un entorno biológico sin necesidad de cultivarlos. Esta técnica es fundamental en microbiología, medicina, ecología y biotecnología, ya que revela la diversidad, función y dinámica de comunidades microbianas complejas. Dos herramientas clave en esta área son <strong>MetaPhlAn</strong> (Metagenomic Phylogenetic Analysis) y <strong>Kraken2</strong>, cada una con un enfoque distinto: MetaPhlAn se centra en la identificación taxonómica precisa de microorganismos, mientras que Kraken2 ofrece un análisis rápido y sensible de secuencias de ADN, ideal para estudios de gran escala.</p>
+        </section>
+
+        <section>
+            <h2>MetaPhlAn: Identificación taxonómica de alta precisión</h2>
+            <p>MetaPhlAn utiliza una base de datos de marcadores genéticos únicos (single-copy genes) para asignar cada lectura de secuenciación a su taxonomía de origen. Este enfoque permite un análisis profundo y específico a nivel de género, especie y, en algunos casos, cepa. MetaPhlAn es especialmente útil cuando se requiere una resolución taxonómica fina y se busca minimizar el ruido de secuencias no relevantes.</p>
+
+            <h3>Flujo de trabajo con MetaPhlAn</h3>
+            <p>El proceso típico comienza con el preprocesamiento de datos (eliminación de contaminantes, adaptadores). Luego, se alinea cada lectura a una base de datos de marcadores genéticos usando algoritmos de búsqueda de patrones. Finalmente, se genera un perfil taxonómico que muestra la abundancia relativa de cada taxón en la muestra.</p>
+
+            <pre><code class="language-bash"># Preprocesamiento de datos
+trimmomatic PE -phred33 reads_1.fastq reads_2.fastq \
+    trimmed_1.fastq trimmed_1.unpaired.fastq \
+    trimmed_2.fastq trimmed_2.unpaired.fastq \
+    ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:8:TRUE
+
+# Ejecutar MetaPhlAn
+metaphlan2.py trimmed_1.fastq trimmed_2.fastq \
+    --input_type fastq \
+    --nproc 4 \
+    --bowtie2out metaphlan2.bowtie2out \
+    --output_file metaphlan2_output.txt
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Kraken2: Análisis rápido y sensible de metagenómica</h2>
+            <p>En contraste con MetaPhlAn, Kraken2 utiliza un enfoque de k-mer para clasificar secuencias. Divide cada lectura en fragmentos de k-mer (generalmente k=31) y compara estos fragmentos con una base de datos de k-mers previamente construida. Al utilizar k-mers, Kraken2 logra un análisis muy rápido, ideal para estudios de alta capacidad, aunque con una resolución taxonómica que puede ser menos precisa que MetaPhlAn en ciertos casos.</p>
+
+            <h3>Flujo de trabajo con Kraken2</h3>
+            <p>El proceso comienza con la construcción de una base de datos de k-mer a partir de genomas de referencia. Luego, se clasifican las lecturas de secuenciación mediante la comparación de sus k-mers con la base de datos. Kraken2 también permite la clasificación de secuencias basadas en la presencia de marcadores taxonómicos, combinando velocidad y sensibilidad.</p>
+
+            <pre><code class="language-bash"># Construir base de datos de k-mers
+kraken2 --build --threads 8 --db kraken2_db \n    --download-taxonomy \n    --download-library \n    --download-references
+
+# Clasificar lecturas
+kraken2 --db kraken2_db \n    --fastq-input \n    --threads 8 \n    --output kraken2_output.txt \n    reads_1.fastq reads_2.fastq
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Comparación y selección de herramientas</h2>
+            <p>La elección entre MetaPhlAn y Kraken2 depende del objetivo del estudio. MetaPhlAn es ideal para análisis detallados de la composición microbiana con alta resolución taxonómica, especialmente cuando se necesita identificar especies específicas o cepas. Kraken2, por otro lado, es más adecuado para estudios de gran escala donde la velocidad de análisis es crítica, como en estudios de microbioma humano o ambiental.</p>
+
+            <ul>
+                <li><strong>MetaPhlAn:</strong> Alta precisión taxonómica, uso de marcadores genéticos únicos, ideal para estudios de profundidad.</li>
+                <li><strong>Kraken2:</strong> Alta velocidad de análisis, sensibilidad a bajo abundancia, ideal para estudios de alto volumen.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>MetaPhlAn y Kraken2 son dos herramientas complementarias en el análisis de metagenómica. MetaPhlAn ofrece una identificación taxonómica precisa y detallada, mientras que Kraken2 proporciona un análisis rápido y sensible. Su uso combinado permite una comprensión más completa de la composición y funcionalidad de comunidades microbianas. La elección de una herramienta sobre la otra debe basarse en el objetivo del estudio, el volumen de datos y la necesidad de resolución taxonómica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / Buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar bases de datos actualizadas:</strong> Asegúrese de que las bases de datos de MetaPhlAn y Kraken2 estén actualizadas para incluir la última información taxonómica.</li>
+                <li><strong>Validar resultados:</strong> Nunca confíe ciegamente en los resultados. Realice validaciones cruzadas con herramientas alternativas cuando sea posible.</li>
+                <li><strong>Control de contaminantes:</strong> Realice un preprocesamiento riguroso de los datos para eliminar contaminantes y adaptadores.</li>
+                <li><strong>Considerar el tamaño de k:</strong> En Kraken2, el tamaño de k puede afectar la sensibilidad y especificidad. El valor estándar es 31, pero puede ajustarse según el tipo de datos.</li>
+                <li><strong>Documentar el flujo de trabajo:</strong> Registre todos los pasos y parámetros utilizados para garantizar la reproducibilidad.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

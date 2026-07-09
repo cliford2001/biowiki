@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrección de efectos de lote con Harmony</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Corrección de efectos de lote con Harmony</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es la corrección de efectos de lote y por qué importa?</h2>
+            <p>En bioinformática, especialmente en análisis de secuenciación de ARN (RNA-seq), los <strong>efectos de lote</strong> (batch effects) son variaciones técnicas no biológicas que surgen debido a diferencias en los procesos experimentales: fechas de muestreo, reactivos, operadores, plataformas de secuenciación o condiciones de laboratorio. Estos efectos pueden distorsionar significativamente los resultados, haciendo que muestras biológicamente similares parezcan diferentes y viceversa.</p>
+            <p>La corrección de efectos de lote es una etapa crítica en el análisis de datos de expresión génica. Ignorarlos puede llevar a conclusiones erróneas, como la detección falsa de genes diferencialmente expresados o la pérdida de señales biológicas reales. Herramientas como <strong>Harmony</strong> han surgido como soluciones robustas para este desafío, permitiendo separar la variación biológica de la variación técnica.</p>
+        </section>
+
+        <section>
+            <h2>¿Cómo funciona Harmony?</h2>
+            <p>Harmony es un algoritmo basado en <em>regularización de vecindad</em> (neighborhood regularization) que se utiliza principalmente para ajustar datos de alta dimensionalidad, especialmente en análisis de células individuales (single-cell RNA-seq) y en RNA-seq de múltiples muestras. A diferencia de métodos como ComBat o limma, que operan en el espacio de expresión directo, Harmony trabaja en un espacio de <em>vecindad</em> (neighborhood space), donde cada celda o muestra se representa por su vecindad de puntos similares.</p>
+            <p>El proceso clave de Harmony consiste en:</p>
+            <ol>
+                <li>Construir una matriz de vecindad a partir de las distancias entre muestras (usando PCA o UMAP).</li>
+                <li>Definir un <em>factor de lote</em> (batch factor) que indica qué grupo de muestras pertenece a cada lote.</li>
+                <li>Ajustar los vectores de vecindad para minimizar la diferencia entre vecindades de muestras del mismo lote, mientras se preserva la estructura biológica.</li>
+                <li>Proyectar de nuevo los datos al espacio original, ahora corregido del efecto de lote.</li>
+            </ol>
+            <p>Este enfoque permite corregir el efecto de lote sin necesidad de modelar explícitamente las covariables técnicas, lo que lo hace más flexible y robusto en escenarios complejos.</p>
+        </section>
+
+        <section>
+            <h2>Código de ejemplo: Corrección de efectos de lote con Harmony en R</h2>
+            <p>Harmony se puede usar con datos de expresión obtenidos de herramientas como <strong>Seurat</strong> o <strong>Scanpy</strong>. A continuación, se muestra un ejemplo con R y el paquete <code>harmony</code>:</p>
+
+            <pre><code>library(Seurat)
+library(harmony)
+
+# Supongamos que ya tenemos un objeto Seurat llamado "seurat_obj"
+# con datos de expresión y un campo de lote en "orig.louvain" o similar
+
+# 1. Normalización y PCA
+seurat_obj &lt;- NormalizeData(seurat_obj)
+seurat_obj &lt;- FindVariableFeatures(seurat_obj, nfeatures = 2000)
+seurat_obj &lt;- ScaleData(seurat_obj, features = VariableFeatures(seurat_obj))
+seurat_obj &lt;- RunPCA(seurat_obj, features = VariableFeatures(seurat_obj), verbose = FALSE)
+
+# 2. Ajuste de efectos de lote con Harmony
+seurat_obj &lt;- RunHarmony(seurat_obj, group.by = "batch", reduction.key = "pca", dims = 1:30)
+
+# 3. Visualización
+seurat_obj &lt;- RunUMAP(seurat_obj, reduction = "harmony", dims = 1:30)
+DimPlot(seurat_obj, group.by = "batch")
+DimPlot(seurat_obj, group.by = "cell_type")</code></pre>
+            <p>Este código muestra cómo integrar Harmony en un flujo de trabajo típico de Seurat. El argumento <code>group.by = "batch"</code> especifica el campo que contiene la información de lote (puede ser "orig.louvain", "donor", "run", etc.).</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La corrección de efectos de lote es una necesidad fundamental en el análisis de datos biológicos, especialmente en el contexto de estudios multi-lote o multi-plataforma. Harmony ofrece una solución poderosa y eficaz al trabajar directamente en el espacio de vecindad, permitiendo preservar la variación biológica real mientras se corrige la variación técnica. Su flexibilidad y robustez lo convierten en una herramienta preferida en análisis de células individuales y en RNA-seq integrado. Su uso adecuado requiere una comprensión clara de los factores de lote y una validación post-corrección para asegurar que no se hayan eliminado señales biológicas reales.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No identificar el factor de lote correctamente:</strong> Asegúrate de que el campo usado para <code>group.by</code> contiene realmente la información de lote (no confundas con <code>cell_type</code> o <code>orig.louvain</code>).</li>
+                <li><strong>Aplicar Harmony antes del PCA o sin normalización:</strong> Siempre normaliza los datos antes de PCA, ya que Harmony opera sobre la matriz de vecindad construida a partir de PCA.</li>
+                <li><strong>Ignorar la validación:</strong> Después de corregir el efecto de lote, verifica que los grupos biológicos se mantienen separados (por ejemplo, usando UMAP/PCA con colores por tipo celular).</li>
+                <li><strong>Usar demasiados componentes:</strong> Aunque Harmony puede manejar hasta 30 dimensiones, usar un número muy alto puede sobreajustar. Comienza con 10–20 y ajusta si es necesario.</li>
+                <li><strong>Confundir con otros métodos:</strong> Harmony no reemplaza a métodos de diferencial expresión como <code>DESeq2</code> o <code>edgeR</code>. Corrige el lote antes del análisis diferencial.</li>
+            </ul>
+            <p>Siempre documenta el proceso de corrección de lote para reproducibilidad.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

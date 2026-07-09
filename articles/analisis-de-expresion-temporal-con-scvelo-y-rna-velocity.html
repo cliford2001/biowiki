@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de expresión temporal con scVelo y RNA velocity</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de expresión temporal con scVelo y RNA velocity</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Comprender el flujo de expresión génica en células individuales</h2>
+      <p>El análisis de la expresión temporal en datos de secuenciación de RNA de células individuales (scRNA-seq) permite reconstruir trayectorias de diferenciación celular, transiciones de estado y dinámicas de expresión génica a nivel de tiempo. Aunque las técnicas tradicionales de agrupamiento y reducción de dimensionalidad (como UMAP o t-SNE) ofrecen una visión estática del espacio celular, no capturan el orden temporal ni las direcciones de cambio. En este contexto, <strong>scVelo</strong> y <strong>RNA velocity</strong> emergen como herramientas clave para inferir el estado futuro de las células a partir de la proporción de transcripciones recién sintetizadas (unspliced) y maduras (spliced).</p>
+      <p>RNA velocity se basa en el principio de que las células en proceso de activación génica presentan una mayor proporción de mRNA no procesado (unspliced) respecto a su correspondiente mRNA procesado (spliced). Esta diferencia temporal en la acumulación de transcripciones permite estimar la dirección y velocidad de los cambios en la expresión génica. scVelo implementa este cálculo y lo integra con modelos de regresión y grafos de transición para generar un mapa de dirección celular dinámico.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo: De los datos a la inferencia de trayectorias</h2>
+
+      <h3>Preprocesamiento de datos</h3>
+      <p>El proceso comienza con datos de scRNA-seq en formato <code>h5ad</code> (de Scanpy) o <code>loom</code>. Es fundamental realizar un preprocesamiento riguroso: filtrado de células y genes por calidad, normalización (por ejemplo, con <code>scanpy.pp.normalize_total</code>), y transformación logarítmica. scVelo requiere matrices de contadores de genes para transcripciones spliced y unspliced, que suelen generarse durante el alineamiento con herramientas como <strong>STAR</strong> o <strong>kallisto</strong> con el modo <code>--quant</code> y <code>--include-intron-exons</code>.</p>
+
+      <h3>Estimación de RNA velocity</h3>
+      <p>Una vez preparados los datos, se utiliza <code>scv.tl.velocity</code> para calcular la velocidad de expresión. Este paso estima la tasa de producción y degradación de mRNA y genera un vector de velocidad por célula. El código de ejemplo en Python es:</p>
+
+      <pre><code>import scanpy as sc
+import scvelo as scv
+
+# Cargar datos
+adata = sc.read_h5ad("data/filtered_gene_bc_matrices.h5ad")
+
+# Preprocesar
+scv.pp.normalize_per_cell(adata)
+scv.pp.log1p(adata)
+
+# Calcular velocidad
+scv.tl.velocity(adata, n_jobs=8)
+</code></pre>
+
+      <p>Este paso puede requerir ajustes si los datos no contienen información sobre transcripciones spliced/unspliced. En caso contrario, se debe usar <code>scv.tl.velocity_graph</code> para construir un grafo de transición basado en la velocidad.</p>
+
+      <h3>Reconstrucción de trayectorias celulares</h3>
+      <p>scVelo permite reconstruir trayectorias mediante la inferencia de un grafo de transición. Se aplica <code>scv.tl.recover_dynamics</code> para ajustar un modelo de dinámica genética por célula, lo que permite predecir el estado futuro de cada célula. Este modelo se basa en ecuaciones diferenciales que relacionan la velocidad con la expresión actual.</p>
+
+      <pre><code>scv.tl.recover_dynamics(adata, fit_scatter=True)
+scv.tl.velocity_graph(adata)
+</code></pre>
+
+      <p>El grafo resultante puede visualizarse con <code>scv.pl.velocity</code> o <code>scv.pl.velocity_graph</code>, mostrando direcciones de cambio y conexiones entre estados celulares.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de expresión temporal con scVelo y RNA velocity permite ir más allá de la representación estática de células, ofreciendo un mapa dinámico de diferenciación y transición de estados. Al combinar información de transcripciones recién sintetizadas y maduras, se pueden inferir direcciones de cambio, predecir estados futuros y validar hipótesis sobre los mecanismos reguladores del desarrollo celular. Esta aproximación es esencial en estudios de biología del desarrollo, regeneración, y enfermedad, donde el orden temporal es clave para comprender la función celular.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar datos sin información de spliced/unspliced:</strong> scVelo requiere matrices separadas. Si no se tiene, no se puede aplicar RNA velocity.</li>
+        <li><strong>No normalizar adecuadamente:</strong> El uso de raw counts puede sesgar la estimación de velocidad. Siempre normalizar antes de calcular.</li>
+        <li><strong>Ignorar la calidad de los datos:</strong> Células con baja cobertura o alta fracción de genes mitocondriales deben filtrarse.</li>
+        <li><strong>Aplicar <code>recover_dynamics</code> sin verificar la calidad del grafo:</strong> Es recomendable revisar el resultado con <code>scv.pl.velocity_graph</code> para asegurarse de que las direcciones son coherentes.</li>
+        <li><strong>Interpretar el grafo como un árbol estricto:</strong> Aunque puede sugerir trayectorias, el grafo puede contener ciclos o bifurcaciones, lo que refleja la heterogeneidad biológica real.</li>
+      </ul>
+      <p>En resumen, scVelo es una herramienta poderosa, pero requiere cuidado en el preprocesamiento y una interpretación crítica de los resultados. Su uso combinado con otros métodos de análisis (como pseudotiempos de Seurat o Pseudobulk) mejora la robustez de las inferencias.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

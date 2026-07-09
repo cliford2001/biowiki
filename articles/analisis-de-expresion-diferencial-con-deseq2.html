@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de expresión diferencial con DESeq2</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de expresión diferencial con DESeq2</h1>
+    </header>
+    
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El análisis de expresión diferencial (DE) es una de las tareas fundamentales en bioinformática funcional, especialmente en estudios transcriptómicos. Su objetivo consiste en identificar genes cuya expresión se modifica significativamente entre diferentes condiciones biológicas, como tratamientos, enfermedades o estados celulares. <strong>DESeq2</strong>, desarrollado por Michael I. Love, Wolfgang Huber y Simon Anders, es uno de los paquetes más ampliamente utilizados para este fin en R, especialmente para datos de secuenciación de ARN (RNA-seq).</p>
+            <p>DESeq2 combina modelos estadísticos robustos con métodos de ajuste de dispersión, lo que permite manejar eficazmente la variabilidad biológica y técnica en los datos. Su enfoque basado en la distribución de negative binomial y el uso de estimadores empíricos de dispersión lo distingue de herramientas anteriores como <strong>edgeR</strong> y <strong>limma-voom</strong>. Además, ofrece una API clara y extensa, con funciones para visualización, filtrado de genes y validación de resultados.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+            
+            <h3>Preprocesamiento y entrada de datos</h3>
+            <p>Antes de aplicar DESeq2, es esencial contar con un conteo de reads por gen, obtenido a partir de archivos de alineación (por ejemplo, <strong>STAR</strong> o <strong>kallisto</strong>). El paquete <strong>tximport</strong> facilita la importación de resultados de herramientas como <strong>Salmon</strong> o <strong>StringTie</strong> en un formato compatible con DESeq2.</p>
+            
+            <pre><code>library(tximport)
+library(DESeq2)
+
+# Importar datos de Salmon
+files &lt;- list.files("./salmon_output", full.names = TRUE)
+tx2gene &lt;- read.table("./data/tx2gene.txt", header = FALSE, stringsAsFactors = FALSE)
+
+txi &lt;- tximport(files, type = "salmon", tx2gene = tx2gene)
+</code></pre>
+
+            <h3>Construcción del diseño experimental y análisis</h3>
+            <p>El primer paso en DESeq2 es crear un objeto de diseño experimental. Esto implica definir el diseño de factores (como tratamiento, tiempo, genotipo) y el grupo de comparación.</p>
+            
+            <pre><code>colData &lt;- data.frame(
+    condition = factor(c("control", "treated", "control", "treated")),
+    batch = factor(c(1, 1, 2, 2))
+)
+
+dds &lt;- DESeqDataSetFromTximport(txi, colData, design = ~ batch + condition)
+</code></pre>
+
+            <p>El modelo incluye un efecto de <em>batch</em> para controlar variaciones técnicas entre diferentes secuencias de laboratorio.</p>
+
+            <h3>Estimación de dispersión y prueba estadística</h3>
+            <p>DESeq2 ajusta la dispersión de los datos usando un modelo que combina información de todos los genes. La función <code>DESeq()</code> realiza esta estimación y realiza la prueba de hipótesis para cada gen.</p>
+            
+            <pre><code>dds &lt;- DESeq(dds)
+</code></pre>
+
+            <p>Este paso genera un objeto con todos los parámetros estimados, incluyendo la dispersión, los efectos de los factores y los valores p.</p>
+
+            <h3>Extracción de resultados y filtrado</h3>
+            <p>Se pueden extraer los resultados con <code>results()</code>, especificando el factor y el nivel de comparación de interés.</p>
+            
+            <pre><code>res &lt;- results(dds, name = "condition_treated_vs_control")
+
+# Filtrar genes con valor p ajustado &lt; 0.05 y log2 fold change &gt; 1
+res_sig &lt;- subset(res, padj &lt; 0.05 &amp; abs(log2FoldChange) &gt; 1)
+</code></pre>
+
+            <h3>Visualización de resultados</h3>
+            <p>DESeq2 incluye funciones de visualización integradas. Por ejemplo, el <em>MA plot</em> muestra la relación entre el fold change y la expresión media, destacando genes diferencialmente expresados.</p>
+            
+            <pre><code>plotMA(res, alpha = 0.05)
+</code></pre>
+
+            <p>Los <em>volcano plots</em> también son útiles para visualizar la relación entre el log2 fold change y el valor p ajustado.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de expresión diferencial con DESeq2 es una metodología robusta, estadísticamente rigurosa y ampliamente validada. Su capacidad para modelar la variabilidad biológica y técnica, junto con su integración con flujos de trabajo modernos de secuenciación de ARN, lo convierte en una herramienta esencial en cualquier proyecto de transcriptómica. A través de un diseño experimental bien definido, estimación de dispersión empírica y pruebas estadísticas ajustadas, DESeq2 permite identificar genes diferencialmente expresados con alta confianza y reproducibilidad.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar datos raw de conteo sin validación</strong>: Asegúrate de que los archivos de conteo sean correctos y representen datos de secuenciación de ARN (no de otros tipos).</li>
+                <li><strong>Ignorar el diseño experimental</strong>: El diseño en <code>design = ~ factor</code> debe reflejar la estructura del experimento, incluyendo factores de confusión como <em>batch</em>.</li>
+                <li><strong>Usar valores p sin ajuste</strong>: Siempre trabaja con valores p ajustados (<code>padj</code>) para controlar el error de tipo I.</li>
+                <li><strong>Filtrar genes antes del análisis</strong>: Es recomendable filtrar genes con muy baja expresión (por ejemplo, <em>count &lt; 10 en al menos 3 muestras</em>) antes de aplicar DESeq2 para mejorar la sensibilidad.</li>
+                <li><strong>Visualizar resultados</strong>: Usa <code>plotMA()</code>, <code>plotDispEsts()</code> y <code>vsn()</code> para validar el modelo y detectar anomalías.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

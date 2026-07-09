@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanpy</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>Scanpy</h1>
+    <p class="meta">
+      <a href="https://github.com/scverse/scanpy" target="_blank">Repositorio</a> · 2507 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>Scanpy es una herramienta de análisis de datos de secuenciación de células individuales (single-cell RNA-seq) desarrollada en Python. Está diseñada para manejar grandes conjuntos de datos, escalando a más de 100 millones de células. Permite realizar análisis integrados, incluyendo preprocesamiento, análisis de expresión génica, visualización, clustering y análisis de diferenciación celular, todo dentro de un entorno de código Python eficiente y extensible.</p>
+
+    <h2>Instalación</h2>
+    <pre><code>pip install scanpy
+</code></pre>
+    <p>Para un entorno de análisis de datos biológicos, se recomienda usar <code>conda</code>:</p>
+    <pre><code>conda install -c conda-forge scanpy
+</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>A continuación se muestra un ejemplo ilustrativo de uso mínimo y realista para cargar datos de expresión génica y realizar un análisis básico:</p>
+    <pre><code>import scanpy as sc
+
+# Cargar datos (por ejemplo, desde un archivo .h5ad)
+adata = sc.read_h5ad("datos_celula.h5ad")
+
+# Preprocesamiento
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+
+# Selección de genes variables
+sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+
+# Reducción dimensional
+sc.tl.pca(adata, n_comps=50)
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+
+# Clustering
+sc.tl.leiden(adata)
+
+# Visualización
+sc.pl.umap(adata, color=["leiden", "gene_name"], legend_loc="on data")
+</code></pre>
+    <p><strong>Nota:</strong> La sintaxis ilustrativa; verifica en la documentación oficial del proyecto para los parámetros exactos y métodos disponibles.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <figure>
+      <svg width="800" height="300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="50" y="20" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="125" y="50" font-size="14" text-anchor="middle" fill="#005a9c">Datos raw</text>
+
+        <rect x="220" y="20" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="295" y="50" font-size="14" text-anchor="middle" fill="#005a9c">Preprocesamiento</text>
+
+        <rect x="400" y="20" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="475" y="50" font-size="14" text-anchor="middle" fill="#005a9c">Variable genes</text>
+
+        <rect x="580" y="20" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="655" y="50" font-size="14" text-anchor="middle" fill="#005a9c">PCA</text>
+
+        <rect x="580" y="100" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="655" y="130" font-size="14" text-anchor="middle" fill="#005a9c">Vecinos</text>
+
+        <rect x="580" y="180" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="655" y="210" font-size="14" text-anchor="middle" fill="#005a9c">UMAP</text>
+
+        <rect x="750" y="100" width="150" height="50" fill="#f0f8ff" stroke="#005a9c" />
+        <text x="825" y="130" font-size="14" text-anchor="middle" fill="#005a9c">Clustering</text>
+
+        <!-- Flechas -->
+        <line x1="200" y1="45" x2="220" y2="45" stroke="#005a9c" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="370" y1="45" x2="400" y2="45" stroke="#005a9c" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="550" y1="45" x2="550" y2="100" stroke="#005a9c" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="550" y1="125" x2="550" y2="180" stroke="#005a9c" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="550" y1="205" x2="750" y2="205" stroke="#005a9c" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Flecha en SVG -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#005a9c" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de análisis en Scanpy: desde datos raw hasta visualización en UMAP con clustering.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Uso de memoria:</strong> Scanpy puede consumir mucha memoria con grandes conjuntos de datos. Usa <code>adata = adata[:50000]</code> para pruebas o trabaja con subconjuntos si es necesario.</li>
+      <li><strong>Preprocesamiento inadecuado:</strong> Asegúrate de normalizar correctamente los datos antes de reducir la dimensionalidad. No saltes <code>sc.pp.normalize_total()</code> y <code>sc.pp.log1p()</code> si no tienes datos ya procesados.</li>
+      <li><strong>Seleccionar genes variables:</strong> Ajusta el número de genes variables según tu conjunto de datos (por ejemplo, 2000-3000 para datasets típicos).</li>
+      <li><strong>Visualización:</strong> No uses <code>sc.pl.umap()</code> con muchos clusters sin etiquetar; usa <code>legend_loc="on data"</code> o <code>legend_fontsize</code> para mejorar la legibilidad.</li>
+      <li><strong>Versiones:</strong> Mantén actualizada la versión de Scanpy y sus dependencias (AnnData, numpy, scipy).</li>
+    </ul>
+  </article>
+
+  
+
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">5 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42290662.html">Uncovering genes driving developmental stage progression in prostate cancer through spatial transcriptomics.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1016/j.gendis.2025.101983" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41631690.html">Age-associated differences in XBB.1.5 trivalent booster vaccine-induced adaptive responses revealed by single-cell RNA sequencing.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/22221751.2026.2627067" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41496551.html">Oncolytic virus OVV-03 enhances CAR-T cell therapy against glioblastoma via immune modulation and specific HER2 upregulation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/2162402x.2025.2612377" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

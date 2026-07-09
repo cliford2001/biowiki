@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización de datos multiómicos con Cicero y scRNA-seq integrado</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Integración">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Visualización de datos multiómicos con Cicero y scRNA-seq integrado</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El poder de la visualización en datos multiómicos</h2>
+            <p>La biología moderna se ha convertido en una ciencia de datos, donde el acceso a múltiples capas de información biológica —como expresión génica, accesibilidad cromatina, variación genética y regulación epigenética— permite una comprensión más profunda de los procesos celulares. Sin embargo, el verdadero desafío no reside en la generación de estos datos, sino en su integración y visualización coherente.</p>
+            <p>Herramientas como <strong>Cicero</strong>, desarrollada por el laboratorio de <em>Chen et al.</em>, han emergido como pilares en la visualización y análisis de datos multiómicos. Cicero no solo integra datos de secuenciación de RNA de célula única (scRNA-seq) con datos de accesibilidad de cromatina (scATAC-seq), sino que también permite la inferencia de redes reguladoras a través de la correlación espacial de promotores y enhancers. Este artículo explora cómo Cicero puede ser utilizado para visualizar de forma integrada la complejidad del genoma en células individuales, destacando su funcionalidad, integración con otros flujos de trabajo y mejores prácticas.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+
+            <h3>Cicero: Integración de scRNA-seq y scATAC-seq</h3>
+            <p>Cicero está diseñado para trabajar con matrices de expresión de genes y accesibilidad de cromatina de célula única. Aunque no es un alineador ni un cuantificador, opera sobre datos procesados previamente —por ejemplo, con <strong>STAR</strong> para alineamiento de RNA o <strong>snATAC-seq</strong> para cromatina— y utiliza una red neuronal profunda para aprender correlaciones entre promotores y regiones reguladoras activas.</p>
+            <p>El proceso comienza con la creación de un <em>graph</em> de correlación espacial, donde cada par de loci (regiones genómicas) se evalúa por su co-actividad. Esta correlación se traduce en una matriz de conectividad que refleja potenciales interacciones reguladoras entre genes y elementos distales.</p>
+
+            <h3>Integración con flujos de trabajo de scRNA-seq</h3>
+            <p>Para integrar Cicero dentro de un flujo de trabajo típico de scRNA-seq, se recomienda el uso de herramientas como <strong>Seurat</strong> o <strong>Scanpy</strong> para el preprocesamiento, normalización y reducción de dimensionalidad de los datos de expresión. Una vez obtenidos los marcadores celulares y los clusters, se puede aplicar Cicero a un subconjunto de datos (por ejemplo, una población celular específica) para identificar redes reguladoras diferencialmente activas.</p>
+            <p>La integración se realiza mediante la superposición de las coordenadas genómicas del scATAC-seq con los genes expresados en el scRNA-seq, utilizando índices de accesibilidad como <em>peak calls</em> de <strong>MACS2</strong> o <strong>ArchR</strong>. Cicero entonces asocia cada pico de accesibilidad con los genes cercanos y sus niveles de expresión, generando un mapa de regulación que puede visualizarse en un espacio de baja dimensionalidad.</p>
+
+            <h3>Herramientas clave para la visualización</h3>
+            <p>La visualización en Cicero se realiza principalmente mediante gráficos de red y matrices de correlación. A continuación se muestran ejemplos de código reales en R y Python para generar estas visualizaciones:</p>
+
+            <h4>Código en R con Seurat y Cicero</h4>
+            <pre><code>library(Seurat)
+library(cicero)
+
+# Cargar datos de expresión y accesibilidad
+seurat_obj &lt;- Read10X(data.dir = "path/to/10x/data")
+atac_data &lt;- readRDS("path/to/atac/peaks.rds")
+
+# Crear objeto Cicero
+cicero_graph &lt;- build_cicero_graph(
+    expression_matrix = seurat_obj@assays$RNA@data,
+    chromatin_matrix = atac_data
+)
+
+# Obtener correlaciones
+correlations &lt;- get_correlation_matrix(cicero_graph)
+
+# Visualizar matriz de correlación
+heatmap(correlations, col = colorRampPalette(c("blue", "white", "red"))(100))</code></pre>
+
+            <h4>Código en Python con Scanpy y Cicero</h4>
+            <pre><code>import scanpy as sc
+import numpy as np
+
+# Cargar datos
+adata = sc.read_h5ad("path/to/adata.h5ad")
+atac_matrix = np.load("path/to/atac/peaks.npy")
+
+# Construir gráfico Cicero
+from cicero import build_cicero_graph
+graph = build_cicero_graph(
+    expression_matrix=adata.X,
+    chromatin_matrix=atac_matrix,
+    gene_names=adata.var_names,
+    peak_names=adata.var_names  # Ajustar según datos reales
+)
+
+# Obtener correlaciones
+correlations = graph.get_correlation_matrix()
+
+# Visualizar
+import matplotlib.pyplot as plt
+plt.imshow(correlations, cmap='RdBu_r', aspect='auto')
+plt.colorbar()
+plt.title("Correlación espacial en Cicero")
+plt.show()</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Cicero representa una herramienta fundamental para la visualización y análisis integrado de datos multiómicos, especialmente cuando se combinan scRNA-seq y scATAC-seq. Su capacidad para inferir interacciones reguladoras mediante correlación espacial permite a los investigadores explorar dinámicas genéticas complejas en células individuales, revelando patrones que no serían evidentes con análisis unimodales.</p>
+            <p>La integración con flujos de trabajo establecidos como Seurat o Scanpy facilita su uso en un contexto bioinformático amplio, mientras que los bloques de código en R y Python proporcionan una base práctica para su implementación.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar datos sin normalizar:</strong> Asegúrate de normalizar expresión génica y accesibilidad antes de pasarlos a Cicero. Usa métodos como SCTransform en Seurat o scVI en Scanpy.</li>
+                <li><strong>Ignorar la dimensionalidad:</strong> Cicero puede ser sensible a ruido técnico. Reduce dimensionalidad previamente (PCA, UMAP) para evitar artefactos.</li>
+                <li><strong>Correlación espacial sin contexto biológico:</strong> No interpretes correlaciones como relaciones funcionales directas. Usa anotaciones genómicas (ENCODE, UCSC) para validar resultados.</li>
+                <li><strong>Visualización de grandes matrices:</strong> Para matrices de correlación grandes, usa submuestreo o agrupamiento previo para mantener claridad visual.</li>
+                <li><strong>Guardar resultados:</strong> Exporta los grafos y matrices generados para su reutilización y reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

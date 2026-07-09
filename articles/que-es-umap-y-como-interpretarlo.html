@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qué es UMAP y cómo interpretarlo</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Qué es UMAP y cómo interpretarlo</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Qué es UMAP y por qué importa?</h2>
+      <p>UMAP (Uniform Manifold Approximation and Projection) es una técnica de reducción de dimensionalidad no lineal ampliamente utilizada en análisis de datos de alta dimensión, especialmente en bioinformática. A diferencia de métodos clásicos como PCA (Análisis de Componentes Principales), UMAP preserva tanto la estructura local como la global de los datos, lo que lo convierte en una herramienta poderosa para visualizar patrones complejos en conjuntos de datos como secuenciación de expresión génica, citometría de flujo, o datos de célula única.</p>
+      <p>En el contexto de bioinformática, UMAP se utiliza para visualizar clústeres biológicos, identificar transiciones celulares, o explorar heterogeneidad en muestras. Por ejemplo, tras la normalización y filtrado de datos de RNA-seq con herramientas como <strong>Salmon</strong>, <strong>kallisto</strong>, o <strong>STAR</strong>, se aplican métodos de análisis diferencial con <strong>DESeq2</strong> o <strong>edgeR</strong>. Luego, para explorar la organización de las células, se usa UMAP a partir de los datos de expresión diferencial o de matrices de características (como en <strong>Scanpy</strong> o <strong>Seurat</strong>).</p>
+      <p>La capacidad de UMAP para revelar relaciones no triviales en datos altamente complejos lo ha convertido en un estándar en la visualización de datos de célula única. Comprender cómo interpretar correctamente estos mapas es esencial para evitar conclusiones erróneas y sacar el máximo provecho de los análisis.</p>
+    </section>
+
+    <section>
+      <h2>Qué es UMAP en profundidad</h2>
+      <p>UMAP se basa en la teoría de variedades manifolds, asumiendo que los datos se distribuyen sobre una variedad de baja dimensión en un espacio de alta dimensión. Su objetivo es encontrar una representación de baja dimensión (usualmente 2D o 3D) que preserve las distancias relativas entre puntos vecinos, tanto a nivel local como global.</p>
+      <h3>Algoritmo y principios clave</h3>
+      <p>El algoritmo de UMAP consta de dos fases principales:</p>
+      <ol>
+        <li><strong>Construcción del grafo de similitud</strong>: UMAP calcula la similitud entre cada par de puntos usando una función de distancia (como euclídea o canberra) y define un grafo de similitud basado en vecinos cercanos. Este grafo es un mapa de las relaciones locales entre los datos.</li>
+        <li><strong>Optimización del embedding</strong>: Se busca una representación de baja dimensión donde los pesos del grafo se conserven. Esto se hace minimizando una función de pérdida (similar al t-SNE), pero con un enfoque más matemáticamente robusto que permite mejorar la escalabilidad y la interpretación.</li>
+      </ol>
+      <h3>Comparación con t-SNE</h3>
+      <p>Si bien tanto UMAP como t-SNE son técnicas de visualización no lineal, UMAP ofrece varias ventajas:</p>
+      <ul>
+        <li><strong>Mayor velocidad</strong>: UMAP es significativamente más rápido, especialmente con grandes conjuntos de datos.</li>
+        <li><strong>Mejor preservación de la estructura global</strong>: A diferencia de t-SNE, que tiende a distorsionar distancias globales, UMAP mantiene una representación más fiel de las relaciones entre clústeres distantes.</li>
+        <li><strong>Escalabilidad</strong>: UMAP es más adecuado para datasets grandes, gracias a su uso de grafos de vecindad aproximados.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Cómo interpretar un mapa UMAP</h2>
+      <p>Interpretar un mapa UMAP requiere considerar varios aspectos clave:</p>
+      <h3>1. Distancias y agrupamientos</h3>
+      <p>Los puntos cercanos en el mapa representan muestras o células con expresión génica similar. Los clústeres bien definidos indican grupos biológicos distintos (por ejemplo, tipos celulares). Sin embargo, la distancia absoluta en el mapa no es interpretable como distancia de expresión; solo las relaciones de proximidad relativa son válidas.</p>
+      <h3>2. Transiciones y continuos</h3>
+      <p>En datos de desarrollo celular o diferenciación, UMAP puede revelar trayectorias continuas entre clústeres. Estos "continuos" pueden indicar procesos biológicos como la diferenciación celular, el ciclo celular, o la respuesta a estímulos. Para confirmar estos patrones, se recomienda usar herramientas de inferencia de trayectorias como <strong>Monocle3</strong> o <strong>Pseudotime</strong> (en Scanpy).</p>
+      <h3>3. Efectos del preprocesamiento</h3>
+      <p>El resultado del UMAP es altamente sensible al preprocesamiento de datos. Los pasos clave incluyen:</p>
+      <ul>
+        <li>Filtrado de genes de baja expresión.</li>
+        <li>Normalización (por ejemplo, con <strong>Combat</strong> o <strong>scTransform</strong>).</li>
+        <li>Selección de genes altamente variables.</li>
+        <li>Uso de matrices de expresión logarítmicas.</li>
+      </ul>
+      <p>Pequeños cambios en estos pasos pueden alterar significativamente el mapa.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <h3>Errores comunes</h3>
+      <ul>
+        <li><strong>Interpretar distancias absolutas como métricas de diferencia</strong>: No es válido decir que "el clúster A está más lejos del B que el C", porque el espacio UMAP no preserva distancias métricas.</li>
+        <li><strong>Usar UMAP sin preprocesamiento adecuado</strong>: Sin filtrar genes o normalizar, los resultados pueden estar sesgados por artefactos técnicos.</li>
+        <li><strong>Ignorar el impacto de los parámetros</strong>: El número de vecinos cercanos (n_neighbors) y la distancia mínima (min_dist) influyen directamente en la forma del mapa. Valores muy bajos pueden causar sobreagrupamiento; valores muy altos, desintegración de clústeres.</li>
+      </ul>
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li><strong>Usar UMAP como exploración, no como prueba de hipótesis</strong>: Es una herramienta de visualización, no un método inferencial.</li>
+        <li><strong>Validar clústeres con métodos adicionales</strong>: Combinar UMAP con análisis de clústeres (como <strong>Leiden</strong> o <strong>louvain</strong>) y marcadores de tipo celular.</li>
+        <li><strong>Comparar múltiples visualizaciones</strong>: Usar PCA, t-SNE y UMAP para validar la robustez de los patrones observados.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>UMAP es una técnica esencial en el arsenal del bioinformático moderno, especialmente para análisis de datos de célula única. Su capacidad para preservar tanto la estructura local como global lo hace superior a métodos tradicionales como t-SNE. Sin embargo, su interpretación requiere cautela: no debe tomarse como una métrica de distancia, y sus resultados dependen críticamente del preprocesamiento y los parámetros elegidos. Al seguir buenas prácticas y combinar UMAP con otros métodos, se puede obtener una comprensión profunda y confiable de la heterogeneidad biológica en los datos.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

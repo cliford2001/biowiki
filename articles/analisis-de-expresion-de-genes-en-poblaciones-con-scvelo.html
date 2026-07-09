@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de expresión de genes en poblaciones con scVelo</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de expresión de genes en poblaciones con scVelo</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es scVelo y por qué es clave?</h2>
+            <p>scVelo es una librería de Python diseñada para el análisis de expresión génica en células individuales (scRNA-seq) con enfoque en la inferencia de dinámicas transcriptómicas. A diferencia de métodos tradicionales que se centran únicamente en el estado de expresión de genes en un momento dado, scVelo permite modelar la dirección del flujo de expresión génica, es decir, <strong>predice si un gen está siendo activado o reprimido en una población celular</strong>.</p>
+            <p>Este enfoque es revolucionario porque permite reconstruir el <em>estado transitorio</em> de las células durante procesos biológicos como la diferenciación, el ciclo celular o la respuesta a señales. En lugar de solo clasificar células en tipos, scVelo ofrece una <strong>visión dinámica</strong> del desarrollo celular, proporcionando una dimensión temporal a datos estáticos.</p>
+        </section>
+
+        <section>
+            <h2>Base técnica: cómo scVelo infiere el estado de expresión</h2>
+            <p>El algoritmo de scVelo se basa en la descomposición de la expresión génica en dos componentes:</p>
+            <ul>
+                <li><strong>Velocidad (velocity)</strong>: el cambio instantáneo en la expresión de un gen, estimado a partir de la correlación entre transcripciones recién producidas (spliced) y sin procesar (unspliced).</li>
+                <li><strong>Expresión (expression)</strong>: el estado actual de un gen en la célula.</li>
+            </ul>
+            <p>scVelo utiliza el modelo de <em>splicing kinetics</em> para estimar la tasa de producción y degradación de ARN, permitiendo inferir la dirección de la expresión en cada célula. Esta información se resume en un <em>vector de velocidad</em> para cada célula, que se puede visualizar en espacios de reducción de dimensionalidad como t-SNE o UMAP.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo típico con scVelo</h2>
+            <p>Un análisis típico con scVelo sigue estos pasos:</p>
+            <ol>
+                <li>Preprocesamiento de datos con herramientas como <code>Scanpy</code> o <code>Seurat</code>.</li>
+                <li>Cálculo de la expresión de genes y conteos de spliced/unspliced.</li>
+                <li>Estimación de velocidades usando <code>scv.tl.velocity</code>.</li>
+                <li>Visualización del flujo en UMAP/t-SNE con <code>scv.pl.velocity_embedding</code>.</li>
+                <li>Integración con señales de diferenciación o ciclos celulares.</li>
+            </ol>
+            <p>El siguiente código muestra una porción clave del flujo:</p>
+            <pre><code>import scanpy as sc
+import scvelo as scv
+
+# Cargar datos
+adata = sc.read_h5ad("data.h5ad")
+
+# Preprocesar
+scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
+
+# Estimar velocidades
+scv.tl.velocity(adata, mode="dynamical")
+
+# Visualizar
+scv.pl.velocity_embedding(adata, basis="umap", color="cell_type")</code></pre>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <p>Para obtener resultados fiables con scVelo, es crucial evitar estos errores frecuentes:</p>
+            <ul>
+                <li><strong>Usar datos sin preprocesamiento adecuado</strong>: siempre asegúrate de que los datos estén normalizados, con eliminación de genes de baja expresión y corrección de artefactos técnicos antes de usar scVelo.</li>
+                <li><strong>No verificar la calidad del modelo de splicing</strong>: revisa la correlación entre spliced y unspliced con <code>scv.pl.moments</code>. Una correlación baja puede indicar problemas en la calidad de los datos.</li>
+                <li><strong>Interpretar velocidades sin contexto biológico</strong>: las velocidades son una inferencia. Deben validarse con marcadores conocidos de diferenciación o ciclos celulares.</li>
+                <li><strong>Ignorar la cantidad de datos</strong>: scVelo requiere un número mínimo de células y genes expresados. Si el dataset es muy pequeño, las velocidades pueden ser ruidosas.</li>
+                <li><strong>Usar el modo incorrecto</strong>: el modo <code>"dynamical"</code> es el más recomendado para datos de alta calidad. Evita <code>"stochastic"</code> o <code>"steady_state"</code> si no tienes una justificación específica.</li>
+            </ul>
+            <p>Buenas prácticas:</p>
+            <ul>
+                <li>Usa <code>scv.tl.velocity_graph</code> para evaluar la coherencia del flujo a nivel de red.</li>
+                <li>Complementa los resultados con métodos de inferencia de trayectorias como <code>scVelo</code> o <code>Monocle3</code>.</li>
+                <li>Revisa los resultados con <code>scv.pl.velocity</code> y <code>scv.pl.velocity_embedding</code> en múltiples bases.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>scVelo representa un avance fundamental en el análisis de scRNA-seq, al permitir la inferencia de dinámicas transcriptómicas en células individuales. Su capacidad para predecir la dirección del cambio en la expresión génica abre nuevas vías para estudiar procesos biológicos en tiempo real, como la diferenciación celular o la respuesta a tratamientos. Sin embargo, su uso requiere datos de alta calidad, preprocesamiento cuidadoso y una interpretación biológica rigurosa. Cuando se aplica correctamente, scVelo no solo describe qué genes están activos, sino <strong>hacia dónde se mueve la célula</strong>.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

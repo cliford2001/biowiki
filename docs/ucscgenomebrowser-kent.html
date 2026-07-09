@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ucscGenomeBrowser/kent</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>ucscGenomeBrowser/kent</h1>
+    <p class="meta">
+      <a href="https://github.com/ucscGenomeBrowser/kent">Repositorio en GitHub</a> · <span class="authors">274 estrellas · C</span>
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <code>ucscGenomeBrowser/kent</code> es el código fuente del <strong>UCSC Genome Browser</strong>, una herramienta fundamental en bioinformática para visualizar datos genómicos. 
+      Proporciona la infraestructura técnica detrás del navegador web del UCSC, permitiendo la carga, visualización y análisis de grandes volúmenes de datos genómicos, como secuencias, variantes, regiones funcionales, y expresión génica.
+      El repositorio incluye versiones de prueba (<code>beta</code>) y de desarrollo (<code>master</code>), y está escrito principalmente en lenguaje C.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      <strong>Nota:</strong> Este repositorio contiene el código fuente del servidor del UCSC Genome Browser. No es una herramienta que se instale como paquete en Python o R. 
+      Para usar el navegador, generalmente se accede a través del sitio web oficial: <a href="https://genome.ucsc.edu">https://genome.ucsc.edu</a>. 
+      Si deseas construirlo localmente, sigue los pasos de compilación del repositorio.
+    </p>
+    <pre><code>git clone https://github.com/ucscGenomeBrowser/kent.git
+cd kent
+make</code></pre>
+    <p>
+      La compilación requiere herramientas de desarrollo como <code>gcc</code>, <code>make</code>, y librerías de sistema. 
+      Verifica el archivo <code>README.md</code> en el repositorio para las dependencias específicas.
+    </p>
+
+    <h2>Uso básico</h2>
+    <p>
+      El UCSC Genome Browser no se ejecuta directamente como un script. Su uso principal es a través de un servidor web que sirve el frontend (HTML/CSS/JS) y el backend (C) para procesar consultas genómicas.
+      Una vez compilado y configurado, el servidor puede arrancarse con:
+    </p>
+    <pre><code>./kent/src/trackHub/trackHubServer</code></pre>
+    <p>
+      Luego, accede a <code>http://localhost:8080</code> para interactuar con el navegador. 
+      El uso real requiere configurar bases de datos genómicas, archivos de datos (como BED, BAM, WIG), y definir pistas (tracks).
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo habitual para trabajar con el UCSC Genome Browser (o un clon local) incluye los siguientes pasos:
+    </p>
+    <ol>
+      <li><strong>Configurar el entorno:</strong> Instalar el software C y las dependencias.</li>
+      <li><strong>Compilar:</strong> Usar <code>make</code> para generar los binarios.</li>
+      <li><strong>Preparar datos:</strong> Convertir datos genómicos a formatos soportados (BED, BigBed, BigWig, etc.).</li>
+      <li><strong>Crear pistas:</strong> Definir cómo se mostrarán los datos en el navegador.</li>
+      <li><strong>Iniciar el servidor:</strong> Ejecutar el servidor web del navegador.</li>
+      <li><strong>Visualizar:</strong> Abrir el navegador web y explorar regiones genómicas.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="50" y="40" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="110" y="65" font-size="12" text-anchor="middle" fill="#006064">Datos genómicos</text>
+
+        <rect x="200" y="40" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="260" y="65" font-size="12" text-anchor="middle" fill="#006064">Conversión</text>
+
+        <rect x="350" y="40" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="410" y="65" font-size="12" text-anchor="middle" fill="#006064">Servidor</text>
+
+        <rect x="500" y="40" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="560" y="65" font-size="12" text-anchor="middle" fill="#006064">Navegador</text>
+
+        <!-- Flechas -->
+        <line x1="170" y1="60" x2="200" y2="60" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="320" y1="60" x2="350" y2="60" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="470" y1="60" x2="500" y2="60" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <!-- Flecha final -->
+        <line x1="500" y1="60" x2="500" y2="100" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="500" y1="100" x2="560" y2="100" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <!-- Flecha retro -->
+        <line x1="560" y1="100" x2="560" y2="60" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="560" y1="60" x2="500" y2="60" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+      </svg>
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#006064" />
+        </marker>
+      </defs>
+      <figcaption>
+        Diagrama del flujo típico: datos genómicos se convierten, se procesan en el servidor C, y se visualizan en el navegador web.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores al compilar:</strong> Asegúrate de tener instaladas todas las dependencias de desarrollo, especialmente <code>make</code>, <code>gcc</code>, y librerías como <code>libz</code> y <code>libpng</code>.</li>
+      <li><strong>Formato de datos incorrecto:</strong> Los formatos como BED, BigBed, y BigWig son sensibles a la estructura. Usa herramientas como <code>bedtools</code> o <code>bigBedToBed</code> para validar y convertir.</li>
+      <li><strong>Configuración del servidor:</strong> Revisa los archivos de configuración <code>trackDb.txt</code> y <code>hub.txt</code> para definir correctamente las pistas.</li>
+      <li><strong>Uso de versiones:</strong> Usa la rama <code>beta</code> para uso estable. La rama <code>master</code> es para pruebas y desarrollo.</li>
+      <li><strong>Revisión de documentación:</strong> Siempre consulta el <code>README.md</code> del repositorio y el sitio web oficial para actualizaciones.</li>
+    </ul>
+  </article>
+
+  <p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

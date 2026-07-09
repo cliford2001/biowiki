@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de enriquecimiento funcional GO y GSEA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de enriquecimiento funcional GO y GSEA</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es el enriquecimiento funcional?</h2>
+            <p>El análisis de enriquecimiento funcional (Functional Enrichment Analysis) es una técnica fundamental en bioinformática que permite interpretar listas de genes diferencialmente expresados en términos biológicos. Tras un experimento de secuenciación de RNA (RNA-seq) o un análisis de microarreglos, los investigadores obtienen listas de genes que se han regulado significativamente. Sin embargo, estos resultados no revelan directamente su función biológica, por lo que se requiere una forma de interpretarlos a nivel de vía, proceso biológico o componente celular.</p>
+            <p>Los dos métodos más utilizados para este fin son el <strong>Análisis de enriquecimiento de Gene Ontology (GO)</strong> y el <strong>Gene Set Enrichment Analysis (GSEA)</strong>. Aunque ambos buscan responder preguntas similares, se diferencian en su enfoque, supuestos y aplicaciones. Este artículo explica sus fundamentos, diferencias clave, uso práctico en R y Python, y las mejores prácticas para evitar errores comunes.</p>
+        </section>
+
+        <section>
+            <h2>Gene Ontology (GO): análisis basado en conjuntos de genes</h2>
+            <p>GO es una base de conocimiento estructurada que describe la función de los genes en tres categorías:</p>
+            <ul>
+                <li><strong>Proceso biológico (Biological Process)</strong>: una serie de eventos que contribuyen a un fenómeno biológico, como la replicación del ADN o la respuesta inmune.</li>
+                <li><strong>Componente celular (Cellular Component)</strong>: estructuras o localizaciones dentro de la célula, como el núcleo, la membrana plasmática o el ribosoma.</li>
+                <li><strong>Actividad molecular (Molecular Function)</strong>: la función molecular específica que realiza una proteína, como la unión de ADN o la transferencia de electrones.</li>
+            </ul>
+            <p>El análisis de enriquecimiento GO compara una lista de genes de interés (por ejemplo, genes diferencialmente expresados) con una base de datos de genes asociados a términos GO. El objetivo es identificar si ciertos términos GO están sobrerepresentados en la lista de genes, lo que indica que esos procesos están significativamente involucrados en el fenómeno estudiado.</p>
+            
+            <h3>Ejemplo de uso en R con clusterProfiler</h3>
+            <pre><code class="language-r">
+library(clusterProfiler)
+library(org.Hs.eg.db)
+
+# Supongamos que `upregulated_genes` es una lista de genes con p-valor &lt; 0.05
+upregulated_genes &lt;- c("TP53", "CDK2", "BCL2", "MYC", "CASP3")
+
+# Convertir IDs de genes a símbolos de organismos (ej. humano)
+up_genes &lt;- bitr(upregulated_genes, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+
+# Realizar análisis de enriquecimiento GO
+ego <- enrichGO(gene = up_genes$ENTREZID,
+                universe = keys(org.Hs.eg.db),
+                OrgDb = org.Hs.eg.db,
+                ont = "BP", # o "CC" o "MF"
+                pAdjustMethod = "BH")
+
+# Ver resultados
+head(ego@result)
+
+# Visualizar resultados
+barplot(ego, showCategory = 10)
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Gene Set Enrichment Analysis (GSEA): análisis basado en rango de expresión</h2>
+            <p>A diferencia de GO, que opera sobre listas binarias de genes (incluso/no incluido), GSEA utiliza el <em>ranking</em> de todos los genes en función de su nivel de expresión (por ejemplo, log2FC o p-valor). Este enfoque permite detectar cambios sutiles en vías que pueden no alcanzar un umbral de significancia individual, pero que se manifiestan colectivamente.</p>
+            <p>El algoritmo de GSEA calcula una estadística de enriquecimiento (ES) para cada vía (gene set), que mide cuán fuerte está el rango de expresión en una vía en comparación con el resto. Si el rango está concentrado en los genes de la vía (es decir, todos los genes altamente expresados están en esa vía), se considera enriquecido. Luego se evalúa la significancia estadística mediante permutaciones.</p>
+            
+            <h3>Ejemplo de uso en Python con GSEApy</h3>
+            <pre><code class="language-python">
+import gseapy as gp
+
+# Supongamos que `gene_scores` es un diccionario con genes y sus valores de log2FC
+# Ejemplo: {'TP53': 2.1, 'CDK2': 1.8, 'BCL2': -0.5, 'MYC': 3.0, 'CASP3': 1.2}
+
+# Cargar una colección de vías (por ejemplo, MSigDB)
+gene_sets = gp.get_gmt('c2.cgp.v7.5.1.symbols.gmt')
+
+# Realizar GSEA
+results = gp.gsea(
+    data=gene_scores,
+    gene_sets=gene_sets,
+    nperm=1000,
+    outdir='./gsea_results',
+    min_size=15,
+    max_size=500,
+    method='signal2noise',
+    verbose=True
+)
+
+# Obtener resultados
+results['gsea_results'].head()
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Comparación y elección del método</h2>
+            <p>La elección entre GO y GSEA depende del tipo de pregunta que se quiere responder:</p>
+            <ul>
+                <li>Usa <strong>GO</strong> cuando tienes una lista clara de genes diferencialmente expresados (por ejemplo, tras aplicar un umbral de p-valor) y deseas identificar vías biológicas específicas asociadas a ellos.</li>
+                <li>Usa <strong>GSEA</strong> cuando sospechas que una vía puede estar afectada de forma sutil, pero no todos sus genes son significativos individualmente, o cuando el análisis se basa en un ranking continuo de expresión.</li>
+            </ul>
+            <p>Además, GSEA es más robusto frente al ruido y permite detectar vías con efectos combinados. Sin embargo, requiere más tiempo computacional y una base de datos más rica (como MSigDB).</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de enriquecimiento funcional es una pieza clave en la interpretación de datos de alto rendimiento. El <strong>análisis GO</strong> es ideal para identificar vías biológicas significativamente representadas en listas de genes diferencialmente expresados, mientras que el <strong>GSEA</strong> es más sensible a cambios sutiles y colectivos en vías. Ambos métodos, aunque distintos en su enfoque, complementan al investigador al ofrecer una visión biológica profunda más allá de los números.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar una base de datos actualizada</strong>: siempre verifica que estés usando una versión reciente de GO o MSigDB. Las bases de datos evolucionan constantemente.</li>
+                <li><strong>Ignorar el ajuste de múltiples pruebas</strong>: siempre aplica métodos como BH (Benjamini-Hochberg) para controlar el FDR (False Discovery Rate).</li>
+                <li><strong>Tratar todos los genes como iguales</strong>: en GSEA, el ranking es clave. Asegúrate de que la métrica de ranking (p-valor, log2FC) sea adecuada para tu pregunta.</li>
+                <li><strong>Interpretar resultados sin validación biológica</strong>: los resultados estadísticos deben ser combinados con conocimiento biológico y pruebas experimentales.</li>
+                <li><strong>Olvidar el tamaño de las vías</strong>: vías muy grandes pueden tener más genes, lo que aumenta el riesgo de enriquecimiento falso. Usa filtros de tamaño (por ejemplo, entre 15 y 500 genes).</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

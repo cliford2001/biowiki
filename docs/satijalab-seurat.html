@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seurat</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>Seurat</h1>
+    <p class="meta">
+      <a href="https://github.com/satijalab/seurat">Repositorio en GitHub</a> · 
+      2768 estrellas · R
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      Seurat es una herramienta de análisis de datos de secuenciación de células individuales (scRNA-seq) desarrollada en R. 
+      Está diseñada para integrar, visualizar, analizar y explorar datos de expresión génica a nivel de célula individual.
+      Permite identificar poblaciones celulares, detectar diferencias de expresión entre condiciones, realizar análisis de estados celulares y visualizar resultados de forma interactiva.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>Seurat se instala en R usando el gestor de paquetes de Bioconductor. Asegúrate de tener R y Bioconductor instalados.</p>
+    <pre><code>if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("Seurat")
+</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Este ejemplo muestra cómo cargar datos, crear un objeto Seurat, realizar filtrado y visualización básica.</p>
+    <pre><code>library(Seurat)
+
+# Cargar datos de expresión (ejemplo: matriz de genes x células)
+data <- Read10X(data.dir = "path/to/your/data")
+
+# Crear objeto Seurat
+seurat_obj <- CreateSeuratObject(counts = data)
+
+# Filtrar células por número de genes expresados y por expresión total
+seurat_obj <- subset(seurat_obj, subset = nFeature_RNA > 200 & nFeature_RNA < 2500)
+seurat_obj <- subset(seurat_obj, subset = nCount_RNA < 10000)
+
+# Normalizar datos
+seurat_obj <- NormalizeData(seurat_obj)
+
+# Encontrar genes variables
+seurat_obj <- FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
+
+# Escalar datos
+seurat_obj <- ScaleData(seurat_obj)
+
+# Reducción de dimensionalidad
+seurat_obj <- RunPCA(seurat_obj, verbose = FALSE)
+
+# Clustering y visualización
+seurat_obj <- FindNeighbors(seurat_obj, dims = 1:30)
+seurat_obj <- FindClusters(seurat_obj, resolution = 0.5)
+seurat_obj <- RunUMAP(seurat_obj, dims = 1:30)
+
+# Visualizar resultados
+DimPlot(seurat_obj, group.by = "seurat_clusters")
+</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo estándar de análisis con Seurat incluye:</p>
+    <ol>
+      <li>Carga de datos desde archivos 10x (o formatos compatibles).</li>
+      <li>Creación del objeto Seurat.</li>
+      <li>Filtrado de células y genes.</li>
+      <li>Normalización y escalado.</li>
+      <li>Identificación de genes variables.</li>
+      <li>Reducción de dimensionalidad (PCA).</li>
+      <li>Clustering y visualización (UMAP, t-SNE).</li>
+      <li>Identificación de marcadores diferenciales y análisis funcional.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="80" y="45" font-size="12" text-anchor="middle" fill="#0055aa">Datos 10x</text>
+
+        <rect x="160" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="220" y="45" font-size="12" text-anchor="middle" fill="#0055aa">Crear objeto</text>
+
+        <rect x="300" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="360" y="45" font-size="12" text-anchor="middle" fill="#0055aa">Filtrado</text>
+
+        <rect x="440" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="500" y="45" font-size="12" text-anchor="middle" fill="#0055aa">Normalización</text>
+
+        <rect x="20" y="80" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="80" y="105" font-size="12" text-anchor="middle" fill="#0055aa">PCA</text>
+
+        <rect x="160" y="80" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="220" y="105" font-size="12" text-anchor="middle" fill="#0055aa">Clustering</text>
+
+        <rect x="300" y="80" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="360" y="105" font-size="12" text-anchor="middle" fill="#0055aa">UMAP</text>
+
+        <rect x="440" y="80" width="120" height="40" fill="#f0f8ff" stroke="#0055aa" />
+        <text x="500" y="105" font-size="12" text-anchor="middle" fill="#0055aa">Visualización</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="160" y2="40" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="280" y1="40" x2="300" y2="40" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="420" y1="40" x2="440" y2="40" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <line x1="70" y1="60" x2="70" y2="80" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="220" y1="60" x2="220" y2="80" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="370" y1="60" x2="370" y2="80" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="520" y1="60" x2="520" y2="80" stroke="#0055aa" stroke-width="2" marker-end="url(#arrowhead)" />
+      </svg>
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#0055aa" />
+        </marker>
+      </defs>
+      <figcaption>Flujo típico de análisis con Seurat: desde carga de datos hasta visualización interactiva en UMAP.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Problemas de memoria:</strong> Seurat puede consumir mucha RAM con grandes conjuntos de datos. Usa el parámetro <code>features</code> en <code>Read10X</code> para cargar solo los genes necesarios.</li>
+      <li><strong>Filtrado inadecuado:</strong> Filtra células por número de genes y expresión total para eliminar células basura. Ajusta los umbrales según tus datos.</li>
+      <li><strong>Resolución de clustering:</strong> El parámetro <code>resolution</code> en <code>FindClusters</code> controla el número de clústeres. Valores bajos (<0.5) dan menos clústeres; altos (>1.0) pueden sobrecategorizar.</li>
+      <li><strong>Normalización:</strong> Asegúrate de normalizar después del filtrado. La normalización no debe hacerse antes de filtrar.</li>
+      <li><strong>Visualización:</strong> Usa <code>DimPlot</code> y <code>FeaturePlot</code> para explorar datos antes de tomar decisiones biológicas.</li>
+      <li><strong>Actualizaciones:</strong> Seurat se actualiza frecuentemente. Usa <code>BiocManager::install("Seurat")</code> para obtener la última versión.</li>
+    </ul>
+
+    
+
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">4 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42315974.html">A four-gene signature for diagnosis of acute kidney injury following kidney transplantation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/0886022x.2026.2687235" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42247321.html">Neoplastic CD3⁺ B cells remodel the DLBCL tumor microenvironment via single-cell and spatial transcriptomics.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/15384047.2026.2684140" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+      Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+    </p>
+  </article>
+</body>
+</html>

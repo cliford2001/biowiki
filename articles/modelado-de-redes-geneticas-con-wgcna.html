@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de redes genéticas con WGCNA</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Reducción de dimensionalidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de redes genéticas con WGCNA</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Redes genéticas y la necesidad de modelado</h2>
+      <p>El análisis de la expresión génica a gran escala ha revelado que los genes no actúan de forma aislada, sino que participan en complejas redes de interacción. El <strong>Modelado de Redes Genéticas</strong> mediante <strong>WGCNA</strong> (Weighted Gene Co-expression Network Analysis) es una metodología estadística robusta que permite identificar grupos de genes con patrones de expresión similares, lo que sugiere funciones biológicas compartidas o regulación conjunta. Esta técnica es fundamental en estudios de biología del sistema, especialmente en la identificación de módulos génicos clave asociados a fenotipos, enfermedades o respuestas a tratamientos.</p>
+      <p>WGCNA supera las limitaciones de análisis univariados al considerar relaciones multivariadas entre genes, ofreciendo una visión más integrada del sistema. A diferencia de métodos como el clustering tradicional, WGCNA construye una red ponderada donde la conexión entre genes refleja la fuerza de su correlación de expresión, permitiendo la detección de módulos con alta coherencia interna.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo: Fundamentos y pasos clave</h2>
+
+      <h3>1. Preprocesamiento de datos de expresión</h3>
+      <p>El primer paso consiste en obtener una matriz de expresión génica con genes como filas y muestras como columnas. Los datos deben estar previamente normalizados y limpios. Herramientas como <code>DESeq2</code> o <code>edgeR</code> se usan comúnmente para la cuantificación y ajuste de expresión diferencial, pero para WGCNA es crucial tener datos expresados en escala logarítmica o transformados (por ejemplo, con <code>log2</code>).</p>
+
+      <h3>2. Construcción de la matriz de correlación</h3>
+      <p>Se calcula la matriz de correlación de expresión entre todos los pares de genes. En lugar de usar correlaciones lineales simples (como el coeficiente de Pearson), WGCNA aplica una función de potencia no lineal (usualmente <code>power = 6</code> o <code>8</code>) para convertir las correlaciones en valores de conexión ponderados. Esto permite que genes altamente correlacionados tengan una fuerte conexión, mientras que genes con baja correlación se debilitan drásticamente.</p>
+
+      <h3>3. Construcción de la red y detección de módulos</h3>
+      <p>La matriz ponderada se convierte en una red genética. Se utiliza un algoritmo de agrupamiento jerárquico (por ejemplo, <code>hclust</code> en R) para identificar módulos, que son subgrupos de genes altamente interconectados. Cada módulo se asigna un color único y se puede asociar con características clínicas o de muestra mediante análisis de correlación (por ejemplo, con <code>cor</code> o <code>cor.test</code>).</p>
+
+      <h3>4. Asociación de módulos con fenotipos</h3>
+      <p>Se evalúa la correlación entre las características de muestra (como edad, estado de enfermedad, respuesta terapéutica) y la expresión promedio de cada módulo (llamada <em>gene module eigengene</em>). Los módulos con alta correlación con fenotipos son candidatos a tener funciones biológicas relevantes.</p>
+
+      <h3>5. Análisis funcional de módulos</h3>
+      <p>Se realizan análisis de enriquecimiento funcional (GO, KEGG) sobre los genes de cada módulo usando herramientas como <code>clusterProfiler</code> o <code>gProfiler2</code>. Esto ayuda a interpretar biológicamente los módulos identificados.</p>
+    </section>
+
+    <section>
+      <h2>Código de ejemplo en R</h2>
+      <pre><code>library(WGCNA)
+
+# Cargar datos: matriz de expresión (genes x muestras)
+# dataExpr &lt;- read.csv("expression_data.csv", row.names = 1)
+
+# Asegurarse de que no haya valores faltantes
+# dataExpr &lt;- dataExpr[complete.cases(dataExpr), ]
+
+# Calcular la matriz de correlación y seleccionar el poder
+# powerTest &lt;- pickSoftThreshold(dataExpr, powerVector = c(1:10), verbose = 5)
+# power &lt;- 6 # Elegido según el test
+
+# Construir la red
+# adj &lt;- adjacency(dataExpr, power = power)
+# TOM &lt;- TOMsimilarity(adj)
+
+# Construir el módulo
+# moduleColors &lt;- cutreeStatic(TOM, cutHeight = 0.25, deepSplit = 2)
+
+# Calcular el eigengene
+# moduleEigengenes &lt;- moduleEigengenes(dataExpr, moduleColors)
+
+# Asociación con fenotipos
+# traitColors &lt;- colorizeTraits(traitData)
+# moduleTraitCor &lt;- cor(moduleEigengenes, traitData, use = "p")
+# moduleTraitP &lt;- corPvalueStudent(moduleTraitCor, nSamples = ncol(dataExpr))
+
+# Visualizar
+# plotDendrogram(moduleColors)
+# plotModuleColors(moduleColors, traitColors)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>WGCNA es una herramienta poderosa para modelar redes genéticas y descubrir grupos funcionales de genes a partir de datos de expresión. Al integrar correlaciones de expresión ponderadas y análisis de módulos, permite identificar patrones biológicos ocultos que no se detectan con análisis convencionales. Su aplicación se extiende desde la biología básica hasta la investigación clínica, facilitando la generación de hipótesis sobre mecanismos moleculares subyacentes a enfermedades.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / Buenas prácticas</h2>
+      <ul>
+        <li><strong>Seleccionar un poder de red inadecuado</strong>: Usar un valor demasiado bajo puede generar una red demasiado densa; uno demasiado alto puede fragmentarla. Siempre realizar <code>pickSoftThreshold</code> para evaluar el grado de red.</li>
+        <li><strong>Ignorar la calidad de los datos</strong>: No preprocesar adecuadamente los datos (por ejemplo, omitir valores faltantes) puede sesgar los resultados. Verificar la distribución de expresión y normalizar correctamente.</li>
+        <li><strong>Interpretar módulos sin validación funcional</strong>: Un módulo correlacionado con un fenotipo no implica causalidad. Siempre complementar con análisis de enriquecimiento funcional y pruebas biológicas.</li>
+        <li><strong>Usar la misma muestra en múltiples análisis</strong>: Evita la sobreajuste. Siempre mantener muestras de entrenamiento y validación separadas cuando sea posible.</li>
+        <li><strong>Ignorar la estabilidad de los módulos</strong>: Evaluar la robustez de los módulos mediante bootstrap o análisis de sensibilidad.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

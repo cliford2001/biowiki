@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GATK best practices para variant calling</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>GATK best practices para variant calling</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>
+        El <strong>Genome Analysis Toolkit (GATK)</strong> es una de las plataformas más utilizadas en bioinformática para el análisis de variantes genómicas, especialmente para variantes de un solo nucleótido (SNVs) y variantes de inserción/deleción (indels). Su uso se ha extendido ampliamente en estudios de genómica de cáncer, enfermedades hereditarias, y poblaciones. Sin embargo, el éxito de un llamado de variantes (variant calling) depende críticamente de seguir las <em>best practices</em> establecidas por el equipo de GATK. 
+      </p>
+      <p>
+        Este artículo explora las prácticas recomendadas para realizar llamados de variantes con GATK, desde la preparación de datos hasta el filtrado final, con el objetivo de maximizar la precisión y la reproducibilidad. Ignorar estos pasos puede generar falsos positivos, falsos negativos o sesgos sistemáticos en los resultados.
+      </p>
+    </section>
+
+    <section>
+      <h2>Preparación de los datos de entrada</h2>
+      <p>
+        Antes de ejecutar GATK, es fundamental preparar los archivos de alineamiento (BAM) adecuadamente. El proceso típico incluye:
+      </p>
+      <ul>
+        <li>Reparación de alineamientos dañados o incompletos con <code>samtools fixmate</code> o <code>picard FixMateInformation</code>.</li>
+        <li>Marcar duplicados de PCR con <code>picard MarkDuplicates</code> para evitar sobreestimación de variantes.</li>
+        <li>Reajuste de los mapas de alineamiento para corregir desviaciones en el alineamiento (realigning) con <code>gatk RealignerTargetCreator</code> y <code>gatk IndelRealigner</code> (si se usa GATK versión anterior a 4.x).</li>
+        <li>Para GATK 4.x, se recomienda usar <code>gatk BaseRecalibrator</code> y <code>gatk ApplyBQSR</code> para corregir la calidad de base sesgada por artefactos de secuenciación.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Variant Calling con HaplotypeCaller</h2>
+      <p>
+        El algoritmo <code>HaplotypeCaller</code> es el estándar de facto para variant calling en GATK 4.x. A diferencia de métodos anteriores que llamaban variantes localmente, HaplotypeCaller usa una estrategia de reconstrucción de haplotipos que mejora la detección de indels y SNVs en regiones complejas.
+      </p>
+      <p>
+        Un comando típico de llamado de variantes es:
+      </p>
+      <pre><code>gatk HaplotypeCaller \
+  -I input.bam \
+  -R reference.fasta \
+  -O output.vcf \
+  --emit-ref-confidence GVCF \
+  -stand-call-conf 30 \
+  -pcr-indel-tolerance 10</code></pre>
+      <p>
+        Algunos parámetros clave:
+      </p>
+      <ul>
+        <li><code>--emit-ref-confidence GVCF</code>: Emite llamados de referencia en formato GVCF para posterior genotipado conjunto (joint genotyping).</li>
+        <li><code>-stand-call-conf 30</code>: Umbral de confianza para llamar variantes (30 es recomendado para alto fidelidad).</li>
+        <li><code>-pcr-indel-tolerance</code>: Aumenta tolerancia a errores de PCR en indels (útil en regiones con repetición).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Post-procesamiento y filtrado</h2>
+      <p>
+        Tras el llamado, es esencial filtrar los resultados. El primer paso es usar <code>gatk VariantFiltration</code> para aplicar reglas basadas en calidad del llamado, profundidad, y distribución de alelos.
+      </p>
+      <pre><code>gatk VariantFiltration \
+  -V input.vcf \
+  -O filtered.vcf \
+  --filter-expression "QD < 2.0" --filter-name "LowQD" \
+  --filter-expression "FS > 60.0" --filter-name "StrandBias" \
+  --filter-expression "MQ < 40.0" --filter-name "LowMQ" \
+  --filter-expression "SOR > 3.0" --filter-name "StrandOddsRatio"</code></pre>
+      <p>
+        Además, se recomienda realizar un <strong>joint genotyping</strong> cuando se analizan múltiples muestras, usando <code>gatk GenotypeGVCFs</code> sobre todos los GVCFs generados.
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        Para un llamado de variantes robusto y reproducible con GATK, es esencial:
+      </p>
+      <ul>
+        <li>Preparar los datos de entrada con corrección de alineamientos, marcado de duplicados y recalibración de base.</li>
+        <li>Usar <code>HaplotypeCaller</code> en modo GVCF para permitir genotipado conjunto.</li>
+        <li>Filtrar variantes con criterios bien definidos basados en métricas como QD, FS, MQ y SOR.</li>
+        <li>Evitar configuraciones por defecto sin ajustar umbrals de confianza.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <h3>Errores comunes</h3>
+      <ul>
+        <li><strong>No aplicar BQSR</strong>: Ignorar la recalibración de base genera llamados de variantes con alto sesgo en calidad.</li>
+        <li><strong>Usar llamado de variantes sin filtrado</strong>: Puede llevar a resultados contaminados por artefactos.</li>
+        <li><strong>Configurar valores por defecto sin ajustar</strong>: Por ejemplo, usar <code>stand-call-conf 10</code> en lugar de 30 puede aumentar falsos positivos.</li>
+        <li><strong>Ignorar el uso de GVCF</strong>: En estudios de múltiples muestras, omitir el GVCF reduce la capacidad de detección de variantes raras.</li>
+      </ul>
+      
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li>Utilizar <code>gatk ValidateSamFile</code> para verificar la integridad de los archivos BAM.</li>
+        <li>Verificar que el índice de referencia (FASTA) y el archivo de variantes de referencia (como dbsnp) estén actualizados.</li>
+        <li>Documentar cada paso con comandos y versiones de herramientas usadas.</li>
+        <li>Validar resultados con herramientas como <code>bcftools</code> o <code>vcftools</code> para verificar calidad de VCF.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

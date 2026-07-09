@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de calidad de ensamblajes con QUAST</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Evaluación de calidad de ensamblajes con QUAST</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Por qué evaluar un ensamblaje?</h2>
+            <p>El ensamblaje genómico es un paso crítico en la bioinformática, especialmente en estudios de genómica de nuevos organismos, metagenómica o secuenciación de organismos con genomas complejos. Sin embargo, un ensamblaje no es solo una secuencia; es una representación computacional que puede contener errores, fragmentaciones, falsas fusiones o regiones contaminadas. Evaluar la calidad de un ensamblaje es esencial para determinar su confiabilidad antes de usarlo en análisis posteriores como anotación funcional, comparación genómica o detección de variantes.</p>
+            <p>QUAST (Quality Assessment Tool for Genome Assemblies) es una herramienta de referencia ampliamente utilizada para evaluar la calidad de ensamblajes genómicos. Su principal ventaja radica en que proporciona un conjunto exhaustivo de métricas estándar, comparables entre diferentes ensamblajes, lo que permite una evaluación objetiva y reproducible.</p>
+        </section>
+
+        <section>
+            <h2>Principios de evaluación con QUAST</h2>
+            <p>QUAST no compara directamente el ensamblaje con el genoma de referencia; en su lugar, realiza una serie de análisis computacionales que estiman la calidad del ensamblaje en base a su estructura, cobertura y consistencia. Estos análisis se basan en alineaciones del ensamblaje contra un genoma de referencia (si está disponible) o en análisis internos del ensamblaje, como el número de contigs, su longitud y la distribución de la cobertura.</p>
+            <p>La herramienta genera un informe detallado con más de 20 métricas clave, que incluyen:</p>
+            <ul>
+                <li><strong>Contigs N50 y L50:</strong> Longitud del contig más largo que representa el 50% del genoma ensamblado. Una N50 alta indica un ensamblaje más continuo.</li>
+                <li><strong>Longitud total del ensamblaje:</strong> Suma de las longitudes de todos los contigs.</li>
+                <li><strong>Número de contigs:</strong> Cuántos fragmentos distintos forman el ensamblaje.</li>
+                <li><strong>Cobertura promedio:</strong> Relación entre el número de reads alineados y la longitud del genoma.</li>
+                <li><strong>Porcentaje de bases alineadas:</strong> Proporción de bases del ensamblaje que se alinean con el genoma de referencia.</li>
+                <li><strong>Errores de estructura:</strong> Detecta inserciones, deleciones y fusiones en comparación con la referencia.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Uso de QUAST en la práctica</h2>
+            <p>El uso más común de QUAST implica el alineamiento del ensamblaje contra un genoma de referencia. Esto se puede hacer con herramientas como <code>bwa</code> o <code>minimap2</code> antes de ejecutar QUAST.</p>
+
+            <h3>Comandos de ejemplo</h3>
+            <pre><code>#!/bin/bash
+# 1. Alinear el ensamblaje (contigs.fa) con el genoma de referencia (ref_genome.fasta)
+# Usando minimap2 para alineación rápida
+minimap2 -t 8 -x asm5 ref_genome.fasta contigs.fa &gt; aligned.sam
+
+# 2. Convertir SAM a BAM y ordenar
+samtools view -bS aligned.sam | samtools sort -o aligned_sorted.bam -
+
+# 3. Ejecutar QUAST
+quast.py -t 8 -o quast_results \ 
+    -r ref_genome.fasta \ 
+    -s aligned_sorted.bam \ 
+    contigs.fa</code></pre>
+
+            <p>Este comando genera un directorio <code>quast_results</code> con:</p>
+            <ul>
+                <li><code>quast_report.txt</code>: Tabla con todas las métricas.</li>
+                <li><code>report.html</code>: Informe web interactivo con gráficos.</li>
+                <li><code>contigs_report.txt</code>: Informe por contig.</li>
+            </ul>
+            <p>Si no hay genoma de referencia, QUAST puede evaluar el ensamblaje internamente (usando <code>--no-reference</code>), pero las métricas como cobertura y errores estructurales se reducen significativamente.</p>
+        </section>
+
+        <section>
+            <h2>Interpretación de resultados y buenas prácticas</h2>
+            <p>La interpretación de los resultados de QUAST debe ser crítica. Una N50 alta no garantiza calidad; puede deberse a una fusión de contigs incorrecta. Es fundamental revisar:</p>
+            <ul>
+                <li><strong>La distribución de los contigs:</strong> Una gran cantidad de contigs cortos puede indicar fragmentación, mientras que un solo contig muy largo puede ser una fusión falsa.</li>
+                <li><strong>La cobertura:</strong> Variaciones extremas pueden indicar duplicaciones o regiones con baja cobertura por artefactos.</li>
+                <li><strong>Los errores de estructura:</strong> Muchas inserciones o deleciones pueden señalar un problema en el ensamblaje.</li>
+            </ul>
+
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>No usar un genoma de referencia cuando está disponible:</strong> Esto limita la evaluación a métricas internas, que son menos informativas.</li>
+                <li><strong>Ignorar el informe HTML:</strong> El informe gráfico permite visualizar rápidamente patrones, como picos de cobertura o distribuciones anómalas.</li>
+                <li><strong>Confundir N50 con calidad total:</strong> N50 es una métrica útil, pero no suficiente. Combinarla con otros indicadores es clave.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Siempre usar QUAST en combinación con otros métodos (por ejemplo, <code>CheckM</code> para calidad de genomas bacterianos).</li>
+                <li>Ejecutar QUAST con múltiples ensambladores (como SPAdes, Megahit, Canu) para comparar resultados.</li>
+                <li>Usar el flag <code>--no-reference</code> solo cuando no hay referencia disponible, y entender sus limitaciones.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>QUAST es una herramienta esencial para la evaluación de calidad de ensamblajes genómicos. Proporciona un conjunto estandarizado de métricas que permiten comparar diferentes ensamblajes y validar la fiabilidad de un resultado. Su uso adecuado requiere comprender sus limitaciones, especialmente en ausencia de un genoma de referencia, y complementarlo con otros métodos de validación. La correcta interpretación de los resultados es clave para evitar conclusiones erróneas en estudios posteriores.</p>
+        </section>
+    </article>
+</body>
+</html>

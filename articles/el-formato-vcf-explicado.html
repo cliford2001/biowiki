@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El formato VCF explicado</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>El formato VCF explicado</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es el formato VCF?</h2>
+            <p>El formato VCF (Variant Call Format) es un estándar de texto plano ampliamente utilizado en bioinformática para almacenar información sobre variantes genéticas, especialmente variantes de un solo nucleótido (SNVs), inserciones, deleciones y otros tipos de variantes estructurales. Fue desarrollado por el <strong>1000 Genomes Project</strong> y ahora es el formato de referencia para compartir resultados de llamado de variantes en estudios de genómica y proteómica.</p>
+            <p>La principal ventaja de VCF es su capacidad para representar de forma estructurada y legible una gran cantidad de información sobre variantes: desde la posición genómica y las bases alternativas, hasta cualidades de llamado, filtros, y anotaciones funcionales. Esto lo convierte en un pilar esencial en el análisis de datos genómicos, desde estudios de enfermedades hasta evolución y farmacogenómica.</p>
+        </section>
+
+        <section>
+            <h2>Estructura del archivo VCF</h2>
+            <p>Un archivo VCF está compuesto por dos secciones principales: el encabezado (<code>##</code>) y los datos de las variantes (líneas que comienzan con un cromosoma, posición y bases).</p>
+
+            <h3>Encabezado</h3>
+            <p>El encabezado contiene metadatos clave que definen la estructura del archivo. Cada línea comienza con <code>##</code> y puede incluir:</p>
+            <ul>
+                <li><code>##fileformat=VCFv4.3</code>: especifica la versión del formato.</li>
+                <li><code>##contig</code>: descripción de los cromosomas o contigs en el genoma de referencia.</li>
+                <li><code>##INFO</code>: define campos personalizados que almacenan información adicional sobre cada variante (por ejemplo, <code>AC</code> para número de copias de alelo alternativo).</li>
+                <li><code>##FORMAT</code>: describe cómo se estructuran los datos por muestra (por ejemplo, <code>GT</code> para genotipo, <code>DP</code> para profundidad).</li>
+                <li><code>##FILTER</code>: lista los filtros aplicados durante el llamado (como <code>LowQual</code>).</li>
+            </ul>
+
+            <h3>Cuerpo del archivo</h3>
+            <p>Las líneas de datos comienzan con un cromosoma, seguido de la posición (1-based), ID de la variante (o <code>.</code> si no hay), la base principal (ref), la base alterna (alt), el cualidad (QUAL), el filtro (FILTER), y luego los campos FORMAT y datos por muestra.</p>
+
+            <pre><code>chr1    12345   rs6789  G       A       30.5    PASS    GT:DP:GQ      0/1:12:25</code></pre>
+            
+            <p>En este ejemplo:</p>
+            <ul>
+                <li><code>chr1</code>: cromosoma</li>
+                <li><code>12345</code>: posición (1-based)</li>
+                <li><code>rs6789</code>: identificador dbSNP</li>
+                <li><code>G</code>: base de referencia</li>
+                <li><code>A</code>: base alterna</li>
+                <li><code>30.5</code>: puntuación de calidad del llamado</li>
+                <li><code>PASS</code>: el llamado pasó todos los filtros</li>
+                <li><code>GT:DP:GQ</code>: campos de formato (genotipo, profundidad, calidad genotípica)</li>
+                <li><code>0/1:12:25</code>: datos para una muestra (heterocigoto, profundidad 12, calidad 25)</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Herramientas comunes que usan VCF</h2>
+            <p>El formato VCF es ampliamente soportado por herramientas de análisis genómico. Algunas de las más importantes incluyen:</p>
+            <ul>
+                <li><strong>BCFtools</strong>: herramienta de línea de comandos para manipular archivos VCF y BCF (formato binario de VCF).</li>
+                <li><strong>vt</strong>: herramienta especializada para operaciones sobre VCF (filtros, combinación, normalización).</li>
+                <li><strong>PLINK</strong>: para análisis de asociación (GWAS) con datos de variantes.</li>
+                <li><strong>Annovar</strong>: para anotar variantes con información funcional (efectos sobre genes, variantes de interés, frecuencias en poblaciones).</li>
+                <li><strong>GATK</strong>: en su pipeline de llamado de variantes (HaplotypeCaller), genera archivos VCF como salida.</li>
+            </ul>
+            
+            <p>Además, herramientas como <strong>bcftools annotate</strong>, <strong>bcftools filter</strong>, y <strong>bcftools view</strong> permiten procesar, filtrar y modificar archivos VCF de forma eficiente.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <p>El uso incorrecto del formato VCF puede llevar a errores graves en análisis posteriores. Aquí algunas prácticas clave:</p>
+
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>Usar cromosomas no estándar</strong>: asegurarse de que los cromosomas en el archivo coincidan con el genoma de referencia (por ejemplo, <code>chr1</code> vs <code>1</code>).</li>
+                <li><strong>Ignorar la normalización</strong>: variantes como <code>AC</code> y <code>AT</code> en una región de repetición deben normalizarse para evitar duplicación de variantes.</li>
+                <li><strong>Dejar campos vacíos sin sentido</strong>: evitar valores como <code>0/0</code> en datos no llamados o usar <code>.</code> para valores faltantes.</li>
+                <li><strong>Combinar VCFs sin validar</strong>: los archivos de diferentes pipelines o genomas de referencia no deben combinarse sin normalización y validación previa.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Usar <code>bcftools norm -m -</code> para normalizar variantes (elimina redundancias en regiones de repeticiones).</li>
+                <li>Validar el archivo con <code>bcftools stats</code> o <code>vcf-validator</code> antes de compartirlo.</li>
+                <li>Documentar los campos personalizados con <code>##INFO</code> y <code>##FORMAT</code> para mayor reproducibilidad.</li>
+                <li>Usar el genoma de referencia correcto y mantener consistencia entre el VCF y el índice de referencia.</li>
+                <li>Evitar almacenar datos sensibles (como identificadores de pacientes) en el archivo VCF.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

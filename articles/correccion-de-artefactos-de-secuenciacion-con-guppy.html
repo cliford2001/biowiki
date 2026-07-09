@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrección de artefactos de secuenciación con Guppy</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="General">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Corrección de artefactos de secuenciación con Guppy</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué la corrección de artefactos es esencial</h2>
+            <p>En el campo de la secuenciación de nueva generación (NGS), los artefactos son una fuente común y crítica de error que puede distorsionar los resultados biológicos. Estos artefactos —como los llamados <em>homopolimeros</em>, <em>inserciones/eliminaciones no verdaderas</em>, o <em>errores de base en regiones de baja complejidad</em>— surgen durante el proceso de secuenciación, especialmente en tecnologías de secuenciación en tiempo real como las de Oxford Nanopore Technologies (ONT). La herramienta <strong>Guppy</strong>, desarrollada por Oxford Nanopore, juega un papel fundamental como <em>basecaller</em> y <em>corrector de artefactos</em> en este flujo de trabajo.</p>
+            <p>El objetivo principal de Guppy no es solo convertir las señales eléctricas de los nanoporos en secuencias de nucleótidos, sino también minimizar los errores introducidos por el hardware y el proceso biológico. Una corrección adecuada de artefactos es crucial para el éxito de todos los análisis posteriores: alineamiento, llamado de variantes, cuantificación de expresión y ensamblaje de genomas. Ignorar estos artefactos puede llevar a falsos positivos en variantes, sesgos en la expresión génica, o incluso a conclusiones biológicas erróneas.</p>
+        </section>
+
+        <section>
+            <h2>¿Qué son los artefactos de secuenciación y cómo genera Guppy su corrección?</h2>
+            <p>Los artefactos en secuenciación ONT se deben principalmente a:</p>
+            <ul>
+                <li><strong>Deslizamientos en homopolimeros</strong>: cuando se secuencian largas series de la misma base (por ejemplo, AAAA), el sistema puede perder la sincronización y registrar una cantidad incorrecta de repeticiones.</li>
+                <li><strong>Errores de base en regiones de baja complejidad</strong>: secuencias con patrones simples (como ATATAT) tienen mayor probabilidad de ser mal interpretadas.</li>
+                <li><strong>Errores de base en la transición entre nucleótidos</strong>: en particular, errores entre adenina (A) y guanina (G) o citosina (C) y timina (T), que pueden ocurrir por interferencias eléctricas.</li>
+            </ul>
+            
+            <p>Guppy utiliza un modelo de red neuronal profunda entrenado sobre millones de datos de secuenciación reales para predecir la secuencia más probable a partir de las señales raw del nanoporo. Este modelo está optimizado para reconocer patrones de ruido y asociarlos con errores específicos. Al aplicar algoritmos de corrección basados en <em>likelihood</em> y <em>backtracking</em>, Guppy corrige errores en tiempo real durante el proceso de basecalling.</p>
+        </section>
+
+        <section>
+            <h2>Uso de Guppy: Comandos clave y configuración recomendada</h2>
+            <p>El uso básico de Guppy se realiza a través de la línea de comandos. A continuación se presenta un ejemplo de comando para basecalling y corrección de artefactos:</p>
+
+            <pre><code>guppy_basecaller \
+    --input_path ./raw_data/ \
+    --save_path ./basecalled/ \
+    --flowcell FLO-MIN106 \
+    --kit SQK-LSK109 \
+    --device cuda:all \
+    --fast5_out \
+    --recursive \
+    --config dna_r9.4.1_450bps_fast.cfg</code></pre>
+
+            <p>En este comando:</p>
+            <ul>
+                <li><code>--config</code> especifica el archivo de configuración que incluye parámetros de corrección y modelo para el kit y el flowcell utilizados.</li>
+                <li><code>--device cuda:all</code> permite aprovechar las GPU para acelerar el procesamiento.</li>
+                <li><code>--fast5_out</code> guarda los datos de salida en formato Fast5 (no solo Fastq).</li>
+                <li>La configuración recomendada depende del kit (por ejemplo, SQK-LSK109, R9.4.1, etc.) y se puede obtener de la documentación oficial de Oxford Nanopore.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Mejores prácticas y errores comunes</h2>
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>Usar una configuración incorrecta del kit</strong>: si se usa un archivo <code>.cfg</code> inadecuado (por ejemplo, para un kit R9.4.1 en lugar de R10.4), la corrección de artefactos será ineficaz y se aumentará el porcentaje de errores.</li>
+                <li><strong>Ignorar la GPU</strong>: en grandes datasets, el procesamiento en CPU es impráctico. Asegúrese de que Guppy esté compilado con soporte para CUDA y que el dispositivo esté disponible.</li>
+                <li><strong>No validar los resultados</strong>: es esencial revisar el <code>guppy_basecaller</code> report, el archivo <code>guppy_metrics.json</code>, o usar herramientas como <code>nanopolish</code> para validar la calidad de la llamada.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Utilice siempre la configuración <em>recommended</em> proporcionada por Oxford Nanopore para su kit y flowcell.</li>
+                <li>Compare el error rate antes y después de la corrección usando <code>minimap2</code> + <code>guppy</code> o herramientas como <code>nanopolish</code>.</li>
+                <li>Considere el uso de <code>guppy postbasecall</code> para aplicar una segunda capa de corrección si se requiere mayor precisión (por ejemplo, para llamado de variantes en variantes raras).</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La corrección de artefactos de secuenciación con Guppy es un paso esencial en cualquier flujo de trabajo ONT. Al aprovechar modelos de aprendizaje profundo entrenados en datos reales, Guppy mejora significativamente la calidad de las secuencias baseadas en señales eléctricas. Aunque no elimina todos los errores, su impacto en la reducción del error rate es notable. La elección correcta de configuración, el uso de GPU y la validación posterior son clave para garantizar que los resultados biológicos finales sean robustos y confiables.</p>
+        </section>
+    </article>
+</body>
+</html>

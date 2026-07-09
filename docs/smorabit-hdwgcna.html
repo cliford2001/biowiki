@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>smorabit/hdWGCNA</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>smorabit/hdWGCNA</h1>
+    <p class="meta">
+      <a href="https://github.com/smorabit/hdWGCNA">Ver en GitHub</a> · 482 estrellas · R
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <strong>hdWGCNA</strong> es una herramienta de análisis de red de coexpresión génica ponderada para datos de alta dimensión, desarrollada en R. Permite identificar módulos de genes con patrones de coexpresión significativos en conjuntos de datos de expresión génica, como aquellos generados por secuenciación de RNA (RNA-seq) o microarreglos. 
+      Se especializa en el análisis de datos con muchos genes y muestras, mejorando la robustez y sensibilidad de los métodos tradicionales de WGCNA al incorporar enfoques de regularización y selección de genes relevantes.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>Para instalar <code>hdWGCNA</code>, se recomienda usar <code>devtools::install_github()</code> ya que se encuentra en GitHub. Asegúrate de tener instalado el paquete <code>devtools</code> si aún no lo tienes.</p>
+    <pre><code class="language-r"># Si no tienes devtools instalado
+if (!require(devtools)) install.packages("devtools")
+
+# Instalar hdWGCNA desde GitHub
+devtools::install_github("smorabit/hdWGCNA")</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Un ejemplo mínimo de uso en R, asumiendo que tienes un objeto <code>expr_matrix</code> con genes como filas y muestras como columnas.</p>
+    <pre><code class="language-r">library(hdWGCNA)
+
+# Cargar datos (ejemplo sintáctico; ajusta según tus datos)
+# expr_matrix <- read.csv("datos_expresion.csv", row.names = 1)
+
+# Calcular la matriz de coexpresión
+# La función exacta puede variar; este es un ejemplo ilustrativo
+result <- hdWGCNA_analysis(
+  expr_matrix,
+  power = 6,  # Poder de la red (ajustar según datos)
+  minModuleSize = 30,  # Tamaño mínimo de módulo
+  # Otros parámetros opcionales
+  verbose = TRUE
+)
+
+# Obtener módulos detectados
+modules <- result$modules
+print(modules)</code></pre>
+    <p><em>Sintaxis ilustrativa; verifica en la documentación oficial del proyecto para los nombres exactos de funciones y parámetros.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual para usar <code>hdWGCNA</code> incluye los siguientes pasos:</p>
+    <ol>
+      <li><strong>Preprocesamiento de datos:</strong> filtrar genes con baja expresión, normalizar expresiones, eliminar muestras con alta variabilidad.</li>
+      <li><strong>Construcción de la red:</strong> calcular la matriz de coexpresión ponderada usando una función de peso (e.g., poder de red).</li>
+      <li><strong>Detección de módulos:</strong> aplicar algoritmos de agrupamiento jerárquico para identificar módulos de genes coexpresados.</li>
+      <li><strong>Asociación de módulos con fenotipos:</strong> correlacionar la expresión promedio de cada módulo con variables clínicas o biológicas.</li>
+      <li><strong>Interpretación biológica:</strong> enriquecimiento funcional, análisis de caminos, visualización de redes.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="10" y="20" width="150" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="180" y="20" width="150" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="350" y="20" width="150" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <rect x="520" y="20" width="150" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        
+        <!-- Texto en cajas -->
+        <text x="85" y="45" text-anchor="middle" font-size="12" fill="#000">Datos de expresión</text>
+        <text x="255" y="45" text-anchor="middle" font-size="12" fill="#000">Preprocesamiento</text>
+        <text x="425" y="45" text-anchor="middle" font-size="12" fill="#000">Construcción de red</text>
+        <text x="595" y="45" text-anchor="middle" font-size="12" fill="#000">Detección de módulos</text>
+        
+        <!-- Flechas -->
+        <line x1="160" y1="40" x2="180" y2="40" stroke="black" marker-end="url(#arrowhead)" />
+        <line x1="330" y1="40" x2="350" y2="40" stroke="black" marker-end="url(#arrowhead)" />
+        <line x1="500" y1="40" x2="520" y2="40" stroke="black" marker-end="url(#arrowhead)" />
+        
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo de trabajo típico en <code>hdWGCNA</code>: desde los datos hasta la detección de módulos de coexpresión.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Matriz de expresión mal formada:</strong> Asegúrate de que los genes estén como filas y las muestras como columnas. Evita valores NA o columnas duplicadas.</li>
+      <li><strong>Elección inapropiada del poder de red:</strong> Usa un valor entre 4 y 10; puede ser ajustado mediante análisis de la escalabilidad de la red (e.g., <code>pickSoftThreshold</code>).</li>
+      <li><strong>Demasiados módulos pequeños:</strong> Aumenta <code>minModuleSize</code> si obtienes muchos módulos con muy pocos genes.</li>
+      <li><strong>Interpretación sin validación:</strong> Siempre valida la biología de los módulos con enriquecimiento funcional (GO, KEGG).</li>
+      <li><strong>Usar el paquete sin revisar su documentación:</strong> <code>hdWGCNA</code> puede tener funcionalidades específicas; consulta el README de GitHub antes de usarlo.</li>
+    </ul>
+  </article>
+
+  
+
+
+
+
+
+
+<!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">5 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42248268.html">Multi-omics analysis identifies CD48 and ITIH5 as potential diagnostic biomarkers and therapeutic targets for metabolic disorders associated with obesity.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1016/j.gene.2026.150261" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41918402.html">Single-cell transcriptome deciphers key targets of thrombopoietin receptor agonists and immune microenvironment characteristics of immune thrombocytopenia.</a> <span class="date">2026-07-07</span> · <a href="https://doi.org/10.1080/09537104.2026.2651849" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41655191.html">ANXA2, DBN1, ZNF385D, and IL6ST: Endothelial cell biomarkers linking atherosclerosis progression to immune microenvironment dysregulation.</a> <span class="date">2026-07-07</span> · <a href="https://doi.org/10.1080/10641963.2026.2627352" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

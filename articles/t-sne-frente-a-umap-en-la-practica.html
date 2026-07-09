@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>t-SNE frente a UMAP en la práctica</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>t-SNE frente a UMAP en la práctica</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es t-SNE y UMAP y por qué importan?</h2>
+            <p>En el análisis de datos de alta dimensión, especialmente en bioinformática genómica, la visualización de estructuras de datos es crucial. Dos técnicas de reducción de dimensionalidad no lineal, <strong>t-SNE</strong> (t-distributed Stochastic Neighbor Embedding) y <strong>UMAP</strong> (Uniform Manifold Approximation and Projection), se han convertido en herramientas fundamentales para explorar conjuntos de datos de expresión génica, citometría de flujo y secuenciación de células individuales.</p>
+            <p>Si bien ambas buscan representar datos complejos en 2D o 3D para facilitar su interpretación, sus fundamentos matemáticos, comportamientos en la práctica, y resultados visuales pueden diferir significativamente. Comprender sus fortalezas, limitaciones y escenarios de aplicación es esencial para obtener interpretaciones biológicas válidas.</p>
+        </section>
+
+        <section>
+            <h2>Conceptos fundamentales: cómo funcionan t-SNE y UMAP</h2>
+            <h3>t-SNE: basado en probabilidades de vecindad</h3>
+            <p>t-SNE modela la proximidad entre puntos en el espacio de alta dimensión como probabilidades de vecindad. Utiliza una distribución gaussiana para definir estas probabilidades en el espacio original y una distribución t de Student con un grado de libertad de 1 (distribución de Cauchy) en el espacio de baja dimensión. El algoritmo minimiza la divergencia de Kullback-Leibler entre ambas distribuciones mediante descenso del gradiente.</p>
+            <p>Este enfoque tiene un efecto dominante: preserva la estructura local (puntos cercanos en alta dimensión permanecen cercanos en 2D), pero puede distorsionar las distancias globales. Los clusters pueden aparecer 
