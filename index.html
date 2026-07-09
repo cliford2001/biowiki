@@ -120,6 +120,17 @@ nav .live .pulse{width:8px;height:8px;border-radius:50%;background:var(--volt);b
 .proc-foot{margin-top:1.6rem;color:var(--muted);font-size:.85rem}
 .proc-foot b{color:#ddd}
 
+/* CAJA DE SUGERENCIAS */
+.sg-desc{color:#c8c8c8;max-width:580px;margin-bottom:1.2rem}
+.sg{max-width:660px}
+.sg-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.sg-tab{cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:700;color:#cfcfcf;background:#161616;border:1px solid #2a2a2a;border-radius:100px;padding:.5rem 1.1rem;transition:background .2s,color .2s,border-color .2s}
+.sg-tab.active{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.sg-row{display:flex;gap:.6rem;flex-wrap:wrap}
+#sgInput{flex:1;min-width:240px;padding:1rem 1.2rem;border-radius:100px;border:1px solid #2a2a2a;background:#121212;color:var(--paper);font-size:1rem;outline:none}
+#sgInput:focus{border-color:var(--volt)}
+.sg-note{color:var(--muted);font-size:.82rem;margin-top:.9rem}
+
 /* EXPLORE TILES */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem}
 .tile{position:relative;border-radius:20px;overflow:hidden;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end;
@@ -156,6 +167,7 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
       <a href="novedades.html">Novedades</a>
       <a href="asociaciones.html">Asociaciones</a>
       <a href="estado.html">Estado</a>
+      <a href="#sugerir">Sugerir</a>
       <a href="showcase.html">Showcase</a>
     </div>
     <span class="live"><span class="pulse"></span>En loop</span>
@@ -184,7 +196,7 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
   <div class="stat"><div class="num" data-target="36">0</div><div class="lbl">Artículos</div></div>
   <div class="stat"><div class="num" data-target="20">0</div><div class="lbl">Papers reseñados</div></div>
   <div class="stat"><div class="num" data-target="18">0</div><div class="lbl">Programas documentados</div></div>
-  <div class="stat"><div class="num" data-target="23">0</div><div class="lbl">En watchlist</div></div>
+  <div class="stat"><div class="num" data-target="25">0</div><div class="lbl">En watchlist</div></div>
 </section>
 
 <section class="section" id="proc">
@@ -192,9 +204,9 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
   <h2 class="reveal">El loop,<br>en vivo</h2>
   <div class="proc-grid">
     <div class="proc-card reveal">
-      <div class="proc-h"><span class="proc-t">Vigilancia</span><span class="proc-n">23</span></div>
+      <div class="proc-h"><span class="proc-t">Vigilancia</span><span class="proc-n">25</span></div>
       <p class="proc-sub">Términos que el vigía rastrea en papers (Europe PMC) y GitHub. La lista la amplía el propio modelo con sus búsquedas.</p>
-      <div class="wl-pills"><span class="wl-pill">hdWGCNA</span><span class="wl-pill">Seurat</span><span class="wl-pill">Scanpy</span><span class="wl-pill">DESeq2</span><span class="wl-pill">edgeR</span><span class="wl-pill">STAR</span><span class="wl-pill">Salmon</span><span class="wl-pill">Bowtie2</span><span class="wl-pill">HISAT2</span><span class="wl-pill">GATK</span><span class="wl-pill">SAMtools</span><span class="wl-pill">Kraken2</span><span class="wl-pill">QIIME2</span><span class="wl-pill">Cell Ranger</span><span class="wl-pill">Harmony</span><span class="wl-pill">Monocle</span><span class="wl-pill">Trimmomatic</span><span class="wl-pill">FastQC</span><span class="wl-pill">BWA</span><span class="wl-pill">Cutadapt</span><span class="wl-pill">limma</span><span class="wl-pill">Cufflinks</span><span class="wl-pill">Sleuth</span></div>
+      <div class="wl-pills"><span class="wl-pill">hdWGCNA</span><span class="wl-pill">Seurat</span><span class="wl-pill">Scanpy</span><span class="wl-pill">DESeq2</span><span class="wl-pill">edgeR</span><span class="wl-pill">STAR</span><span class="wl-pill">Salmon</span><span class="wl-pill">Bowtie2</span><span class="wl-pill">HISAT2</span><span class="wl-pill">GATK</span><span class="wl-pill">SAMtools</span><span class="wl-pill">Kraken2</span><span class="wl-pill">QIIME2</span><span class="wl-pill">Cell Ranger</span><span class="wl-pill">Harmony</span><span class="wl-pill">Monocle</span><span class="wl-pill">Trimmomatic</span><span class="wl-pill">FastQC</span><span class="wl-pill">BWA</span><span class="wl-pill">Cutadapt</span><span class="wl-pill">limma</span><span class="wl-pill">Cufflinks</span><span class="wl-pill">Sleuth</span><span class="wl-pill">BWA-MEM</span><span class="wl-pill">MACS2</span></div>
     </div>
     <div class="proc-card reveal">
       <div class="proc-h"><span class="proc-t">En cola</span><span class="proc-n">6</span></div>
@@ -313,6 +325,23 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
   </div>
 </section>
 
+<section class="section" id="sugerir">
+  <div class="eyebrow reveal">Caja de sugerencias</div>
+  <h2 class="reveal">Sugerí<br>algo</h2>
+  <p class="sg-desc reveal">¿Falta un programa o un paper? Sugerílo: el sistema lo busca, lo documenta o reseña, y evita duplicados. Se registra como propuesta y se procesa en la próxima corrida.</p>
+  <div class="sg reveal">
+    <div class="sg-tabs">
+      <button class="sg-tab active" data-t="programa" type="button">Programa</button>
+      <button class="sg-tab" data-t="paper" type="button">Paper (DOI o título)</button>
+    </div>
+    <div class="sg-row">
+      <input id="sgInput" type="text" autocomplete="off" placeholder="Ej: Seurat">
+      <a id="sgSend" class="btn primary" href="#" target="_blank" rel="noopener">Enviar &rarr;</a>
+    </div>
+    <p class="sg-note">Se abre un formulario en GitHub para confirmar el envío (requiere una cuenta gratuita de GitHub).</p>
+  </div>
+</section>
+
 <section class="how">
   <div class="section">
     <p class="reveal"><span class="tag">Autónomo.</span> Un modelo Qwen3 corriendo en local escribe el contenido; un vigía por cron sigue la literatura y el software nuevos; y todo se publica solo. Nadie escribe estas páginas a mano.</p>
@@ -321,7 +350,7 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
 
 <footer>
   BioWiki &middot; contenido generado por Qwen3-30B local vía goose, en loop autónomo<br>
-  36 artículos &middot; 20 papers &middot; 18 programas &middot; actualizado 2026-07-08 21:11
+  36 artículos &middot; 20 papers &middot; 18 programas &middot; actualizado 2026-07-08 21:58
 </footer>
 
 <script>
@@ -343,6 +372,28 @@ footer{padding:3rem 2rem;text-align:center;color:var(--muted);font-size:.85rem;l
     requestAnimationFrame(step);
   });},{threshold:.5});
   document.querySelectorAll(".num[data-target]").forEach(function(el){co.observe(el);});
+
+  /* Caja de sugerencias: arma un issue prellenado en GitHub */
+  var sgTabs=document.querySelectorAll(".sg-tab");
+  var sgInput=document.getElementById("sgInput");
+  var sgSend=document.getElementById("sgSend");
+  if(sgTabs.length&&sgInput&&sgSend){
+    var sgType="programa";
+    function sgUpd(){
+      var v=sgInput.value.trim();
+      var title="["+sgType+"] "+(v||"...");
+      var body="tipo: "+sgType+"\nvalor: "+v+"\n\n(sugerencia enviada desde la web de BioWiki)";
+      sgSend.href="https://github.com/cliford2001/biowiki/issues/new?labels=sugerencia&title="+encodeURIComponent(title)+"&body="+encodeURIComponent(body);
+    }
+    sgTabs.forEach(function(b){b.addEventListener("click",function(){
+      sgType=b.getAttribute("data-t");
+      sgTabs.forEach(function(x){x.classList.toggle("active",x===b);});
+      sgInput.placeholder=(sgType==="paper")?"Ej: 10.1101/2024.01.01.573000  o el título del paper":"Ej: Seurat";
+      sgUpd();
+    });});
+    sgInput.addEventListener("input",sgUpd);
+    sgUpd();
+  }
 
   /* Buscador de programas por tipo de análisis */
   var input=document.getElementById("progSearch");
