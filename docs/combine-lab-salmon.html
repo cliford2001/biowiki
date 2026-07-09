@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>salmon</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Transcriptomica">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>salmon</h1>
+    <p class="meta">
+      <a href="https://github.com/COMBINE-lab/salmon" target="_blank">Repositorio</a> · 
+      <span class="authors">914 estrellas · Rust</span>
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <code>salmon</code> es una herramienta de alto rendimiento y alta precisión para la cuantificación a nivel de transcripción a partir de lecturas de secuenciación de ARN (RNA-seq). 
+      Utiliza alineamiento selectivo (selective alignment) para calcular eficientemente las abundancias de transcripciones, minimizando el costo computacional sin sacrificar precisión.
+      Es especialmente útil en estudios de expresión génica diferencial y en análisis de variantes transcriptómicas.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      <code>salmon</code> está escrito en Rust y se distribuye como binario precompilado. Puedes instalarlo usando <code>conda</code> o <code>homebrew</code>:
+    </p>
+    <pre><code class="language-bash">
+# Usando conda (recomendado)
+conda install -c bioconda salmon
+
+# Usando homebrew (macOS)
+brew install salmon
+    </code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      El uso mínimo de <code>salmon</code> implica el índice de transcripciones y la cuantificación.
+      Aquí un ejemplo ilustrativo de un flujo típico con datos simulados:
+    </p>
+    <pre><code class="language-bash">
+# 1. Construir índice de transcripciones
+salmon index -t transcripts.fasta -i salmon_index
+
+# 2. Cuantificar lecturas
+salmon quant -i salmon_index \
+               -r reads.fastq \
+               -o quant_output \
+               --libType ISF
+    </code></pre>
+    <p><em>Sintaxis ilustrativa; verifica en la documentación oficial.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      Un flujo típico de análisis con <code>salmon</code> incluye:
+      <ol>
+        <li>Obtener la transcripción de referencia (FASTA).</li>
+        <li>Construir un índice con <code>salmon index</code>.</li>
+        <li>Alinear y cuantificar lecturas de RNA-seq con <code>salmon quant</code>.</li>
+        <li>Exportar resultados para análisis diferencial (ej. con <code>tximport</code> en R).</li>
+      </ol>
+    </p>
+    <figure>
+      <svg width="600" height="160" xmlns="http://www.w3.org/2000/svg">
+        <!-- Transcripciones de referencia -->
+        <rect x="20" y="20" width="120" height="30" fill="#4CAF50" rx="5" />
+        <text x="80" y="40" font-size="12" text-anchor="middle" fill="white">Transcripciones (FASTA)</text>
+        
+        <!-- Índice -->
+        <rect x="200" y="20" width="120" height="30" fill="#2196F3" rx="5" />
+        <text x="260" y="40" font-size="12" text-anchor="middle" fill="white">Índice (salmon index)</text>
+        
+        <!-- Lecturas -->
+        <rect x="400" y="20" width="120" height="30" fill="#FF9800" rx="5" />
+        <text x="460" y="40" font-size="12" text-anchor="middle" fill="white">Lecturas (FASTQ)</text>
+        
+        <!-- Flechas -->
+        <line x1="140" y1="35" x2="200" y2="35" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="320" y1="35" x2="400" y2="35" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        
+        <!-- Resultados -->
+        <rect x="200" y="80" width="120" height="30" fill="#9C27B0" rx="5" />
+        <text x="260" y="100" font-size="12" text-anchor="middle" fill="white">Abundancias (TSV)</text>
+        
+        <!-- Flecha hacia resultados -->
+        <line x1="260" y1="50" x2="260" y2="80" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        
+        <!-- Flecha de retorno al flujo -->
+        <line x1="260" y1="110" x2="260" y2="130" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        
+        <!-- Flecha de análisis posterior -->
+        <line x1="320" y1="110" x2="320" y2="130" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+      </svg>
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+        </marker>
+      </defs>
+      <figcaption>Diagrama del flujo típico: desde transcripciones y lecturas hasta la cuantificación de abundancias.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Usar <code>--libType</code> incorrecto:</strong> Asegúrate de especificar el tipo de biblioteca correcto (ISF, SF, FR, etc.) según tu protocolo de preparación de biblioteca.</li>
+      <li><strong>No validar el índice:</strong> Comprueba que el índice se ha generado sin errores usando <code>salmon index --check</code>.</li>
+      <li><strong>Ignorar el preprocesamiento:</strong> Aunque <code>salmon</code> no requiere alineamiento completo, el preprocesamiento de lecturas (cortar adaptadores, filtro de baja calidad) es clave para resultados precisos.</li>
+      <li><strong>Usar <code>tximport</code> en R:</strong> Para análisis diferencial, exporta resultados a <code>tximport</code> para obtener matrices de expresión.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">2 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42388454.html">Per- and polyfluoroalkyl substances in commercially important marine species of fish and shellfish from Alaska and implications for human exposure.</a> <span class="date">2026-07-09</span> · <a href="https://doi.org/10.1016/j.toxrep.2026.102302" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42298774.html">Monochromatic light reprograms transcription, metabolism, and rhizosphere microbial communities in Salvia miltiorrhiza.</a> <span class="date">2026-07-09</span> · <a href="https://doi.org/10.1080/15592324.2026.2686334" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

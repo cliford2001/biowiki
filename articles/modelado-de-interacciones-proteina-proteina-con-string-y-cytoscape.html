@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de interacciones proteína-proteína con STRING y Cytoscape</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de interacciones proteína-proteína con STRING y Cytoscape</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Por qué modelar interacciones proteína-proteína</h2>
+      <p>Las interacciones proteína-proteína (PPI, por sus siglas en inglés) son fundamentales para la función celular, regulación génica, señalización y respuesta a estímulos. Comprender estas redes permite descifrar mecanismos biológicos complejos, identificar dianas terapéuticas en enfermedades como el cáncer o trastornos neurodegenerativos, y validar resultados de experimentos de alto rendimiento como proteómica de afinidad o secuenciación de ARN. En este artículo, exploramos cómo utilizar el recurso público <strong>STRING</strong> (Search Tool for the Retrieval of Interacting Genes/Proteins) y la herramienta <strong>Cytoscape</strong> para modelar, visualizar y analizar interacciones proteína-proteína de manera robusta y visualmente informativa.</p>
+    </section>
+
+    <section>
+      <h2>Construcción de redes de interacciones con STRING</h2>
+      <p>STRING es una base de datos de interacciones proteína-proteína que integra evidencia de múltiples fuentes: interacciones experimentales directas (como co-inmunoprecipitación), evidencia de bases de datos (como BioGRID), predicciones basadas en genómica (como conservación de genes vecinos), y evidencia de coexpresión. Su principal ventaja es que ofrece un puntaje de confianza (confidence score) para cada interacción, que varía entre 0 y 1, permitiendo filtrar redes según la fiabilidad deseada.</p>
+
+      <h3>Acceso a STRING y entrada de proteínas</h3>
+      <p>Para comenzar, accede a <a href="https://string-db.org">https://string-db.org</a>. Ingresa una lista de proteínas de interés, identificadas por sus nombres de genes, IDs de proteína (como UniProtKB), o secuencias. Puedes ingresar múltiples proteínas separadas por espacios o en una lista. STRING también soporta la carga de archivos.</p>
+
+      <h3>Personalización de la red</h3>
+      <p>Después de cargar las proteínas, puedes ajustar los parámetros clave:
+        <ul>
+          <li><strong>Confianza mínima:</strong> Filtra interacciones con un score de confianza inferior al valor establecido (por ejemplo, 0.4 para redes más conservadoras).</li>
+          <li><strong>Mostrar interacciones entre miembros:</strong> Si quieres una red densa, deja activa esta opción.</li>
+          <li><strong>Mostrar interacciones con otros genes:</strong> Útil para obtener contextos más amplios.</li>
+          <li><strong>Esquema de color:</strong> Puedes colorear nodos por funciones, tipos de interacción o niveles de expresión.</li>
+        </ul>
+      </p>
+
+      <p>Una vez configurado, haz clic en "Buscar". La red se generará y mostrará en el navegador. Puedes exportarla en varios formatos, siendo <strong>JSON</strong> y <strong>TSV</strong> los más comunes para su posterior análisis en Cytoscape.</p>
+    </section>
+
+    <section>
+      <h2>Visualización y análisis en Cytoscape</h2>
+      <p><strong>Cytoscape</strong> es una plataforma de software de código abierto diseñada para la visualización, análisis e integración de redes biológicas. Es ideal para profundizar en las redes generadas por STRING, aplicar análisis de topología y personalizar visualizaciones.</p>
+
+      <h3>Importar redes desde STRING</h3>
+      <p>En Cytoscape, ve a <strong>File &gt; Import &gt; Network from File</strong>. Elige el archivo TSV o JSON exportado desde STRING. Asegúrate de que el formato sea reconocido correctamente. Cytoscape reconstruirá la red con nodos (proteínas) y aristas (interacciones).</p>
+
+      <h3>Personalización visual</h3>
+      <p>Con la red cargada, puedes mejorar su legibilidad y valor informativo:
+        <ul>
+          <li><strong>Disposición de la red:</strong> Usa algoritmos como <em>Force-directed</em> o <em>Organic</em> para organizar los nodos de forma clara.</li>
+          <li><strong>Estilos de nodos:</strong> Cambia el tamaño, color y forma según atributos como el grado (número de interacciones), función celular, o expresión diferencial.</li>
+          <li><strong>Etiquetas:</strong> Mostrar nombres de proteínas o IDs.</li>
+          <li><strong>Colores de aristas:</strong> Asigna colores según el tipo de evidencia (experimento, coexpresión, etc.).</li>
+        </ul>
+      </p>
+
+      <h3>Análisis de topología y funciones biológicas</h3>
+      <p>Cytoscape ofrece múltiples complementos (apps) para análisis avanzado:
+        <ul>
+          <li><strong>ClusterMaker2:</strong> Identifica comunidades o módulos funcionales dentro de la red usando algoritmos como MCODE o Greedy Modularity.</li>
+          <li><strong>BiNGO:</strong> Realiza análisis de enriquecimiento funcional (GO) sobre los nodos en un módulo.</li>
+          <li><strong>NetworkAnalyzer:</strong> Calcula métricas como grado, centralidad, coeficiente de clustering, caminos más cortos.</li>
+        </ul>
+      </p>
+
+      <pre><code>## Ejemplo: Calcular el grado de nodos en Cytoscape usando el complemento NetworkAnalyzer
+# En Cytoscape: Apps &gt; NetworkAnalyzer &gt; Run
+# Se generará un reporte con estadísticas de la red.
+# El nodo con mayor grado puede ser un hub crítico.</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El modelado de interacciones proteína-proteína con STRING y Cytoscape combina la potencia de la integración de datos de múltiples fuentes con herramientas visuales y analíticas de alto nivel. STRING permite crear redes basadas en evidencia confiable, mientras que Cytoscape permite transformar esas redes en modelos interpretables, realizar análisis topológicos profundos y visualizar hallazgos de manera efectiva. Esta combinación es esencial en bioinformática funcional, especialmente en el descubrimiento de rutas biológicas, identificación de dianas terapéuticas y comprensión de enfermedades complejas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar el score de confianza:</strong> No filtrar interacciones por confianza puede introducir ruido. Siempre revisa el score mínimo recomendado (por ejemplo, 0.4 para datos experimentales).</li>
+        <li><strong>Redes excesivamente grandes:</strong> Cargar muchas proteínas puede generar redes irreconocibles. Comienza con un conjunto de interés y amplía según sea necesario.</li>
+        <li><strong>Confundir tipos de interacción:</strong> Las interacciones predichas (por coexpresión) no implican interacción física directa. Usa la visualización en Cytoscape para distinguir tipos de evidencia.</li>
+        <li><strong>Usar solo un algoritmo de disposición:</strong> Prueba diferentes algoritmos para encontrar la mejor representación visual.</li>
+        <li><strong>Desactivar análisis funcionales:</strong> No dejes de usar BiNGO o ClusterMaker2 para descubrir funciones biológicas subyacentes.</li>
+        <li><strong>Exportar en formato adecuado:</strong> Usa TSV para redes simples y JSON para redes con metadatos complejos.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

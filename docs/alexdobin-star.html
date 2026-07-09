@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>alexdobin/STAR</title>
+  <meta name="categoria" content="Alineamiento" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>alexdobin/STAR</h1>
+    <p class="meta">
+      <a href="https://github.com/alexdobin/STAR">Repositorio en GitHub</a> ·
+      <span class="authors">2219 estrellas · C</span>
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      STAR (Spliced Transcripts Alignment to a Reference) es un alineador de secuencias de RNA-seq de alta eficiencia y precisión, diseñado para alinear lecturas de RNA de alta profundidad a genomas de referencia, incluso en presencia de splicing alternativo. Es ampliamente utilizado en estudios de transcriptómica para detectar isoformas, identificar eventos de splicing y cuantificar expresión génica.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      STAR se distribuye como código fuente. Para su compilación, se requiere un compilador C++ compatible (como g++).
+    </p>
+    <pre><code>git clone https://github.com/alexdobin/STAR.git
+cd STAR
+make</code></pre>
+    <p>
+      Tras compilar, el ejecutable <code>STAR</code> se generará en el directorio raíz. Puedes copiarlo a un directorio del <code>PATH</code> para usarlo globalmente:
+    </p>
+    <pre><code>sudo cp STAR /usr/local/bin/</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Un ejemplo de uso típico consiste en alinear lecturas de RNA-seq (en formato FASTQ) a un genoma de referencia previamente indexado. Este comando es ilustrativo; el uso real puede requerir ajustes según el tipo de datos.
+    </p>
+    <pre><code>STAR \
+  --genomeDir /path/to/genome/index \
+  --readFilesIn reads_1.fastq reads_2.fastq \
+  --outFileNamePrefix output/ \
+  --outSAMtype BAM SortedByCoordinate</code></pre>
+    <p>
+      <strong>Nota:</strong> Los parámetros exactos pueden variar según la versión de STAR y el tipo de datos. Consulta la documentación oficial para opciones detalladas.
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo habitual con STAR incluye:
+      <ol>
+        <li>Generar un índice del genoma de referencia usando <code>STAR --runMode genomeGenerate</code>.</li>
+        <li>Alinar lecturas de RNA-seq a dicho índice.</li>
+        <li>Post-procesar los resultados (por ejemplo, cuantificar genes con tools como HTSeq o featureCounts).</li>
+      </ol>
+    </p>
+    <figure>
+      <svg width="600" height="180" xmlns="http://www.w3.org/2000/svg">
+        <!-- Genoma de referencia -->
+        <rect x="20" y="30" width="120" height="30" fill="#4a90e2" stroke="black" />
+        <text x="80" y="50" font-size="12" text-anchor="middle" fill="white">Genoma</text>
+
+        <!-- Lecturas de RNA -->
+        <rect x="20" y="90" width="100" height="20" fill="#e67e22" stroke="black" />
+        <text x="70" y="105" font-size="10" text-anchor="middle" fill="white">Lectura 1</text>
+
+        <rect x="130" y="90" width="100" height="20" fill="#e67e22" stroke="black" />
+        <text x="180" y="105" font-size="10" text-anchor="middle" fill="white">Lectura 2</text>
+
+        <!-- Flechas de alineamiento -->
+        <line x1="50" y1="60" x2="50" y2="90" stroke="black" marker-end="url(#arrow)" />
+        <line x1="180" y1="60" x2="180" y2="90" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Resultado: BAM -->
+        <rect x="300" y="60" width="100" height="40" fill="#2ecc71" stroke="black" />
+        <text x="350" y="85" font-size="12" text-anchor="middle" fill="white">BAM alineado</text>
+
+        <!-- Flecha de proceso -->
+        <line x1="140" y1="100" x2="260" y2="100" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Línea de separación -->
+        <line x1="280" y1="0" x2="280" y2="140" stroke="gray" stroke-dasharray="5,5" />
+
+        <!-- Definiciones de flechas -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Diagrama esquemático de un flujo típico de alineación con STAR. Lecturas de RNA se alinean a un genoma de referencia, generando un archivo BAM ordenado por coordenadas.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Índice incompleto:</strong> Asegúrate de que el directorio <code>genomeDir</code> contiene todos los archivos generados por <code>STAR --runMode genomeGenerate</code>.</li>
+      <li><strong>Formato de entrada:</strong> Verifica que los archivos FASTQ estén en formato correcto (no comprimidos, a menos que se especifique).</li>
+      <li><strong>Memoria:</strong> STAR requiere mucha memoria para grandes genomas o profundidades altas. Ajusta <code>--outSAMattributes</code> o usa <code>--limitOutSAMoneReadBufferN</code> para controlar el uso.</li>
+      <li><strong>Parámetros de splicing:</strong> Para datos de splicing complejo, considera ajustar <code>--sjdbOverhang</code> (usualmente 99 para RNA-seq).</li>
+      <li><strong>Verificación:</strong> Siempre valida los resultados con herramientas de control de calidad como <code>samtools flagstat</code> o <code>Qualimap</code>.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">3 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42338460.html">Menstrual blood-derived stromal cells exhibit superior protection against lung injury in myocardial Infarction-Induced heart failure in rats compared to bone marrow-derived stromal cells.</a> <span class="date">2026-07-09</span> · <a href="https://doi.org/10.1016/j.reth.2026.101127" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>
