@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluación de la calidad de ensamblaje de transcritos con StringTie y RSEM</title>
+  <meta name="categoria" content="Control de calidad">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Evaluación de la calidad de ensamblaje de transcritos con StringTie y RSEM</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>El ensamblaje de transcritos es un paso clave en el análisis de datos de secuenciación de ARN (RNA-seq), especialmente en el contexto de la cuantificación de expresión génica. Herramientas como <strong>StringTie</strong> y <strong>RSEM</strong> permiten reconstruir los transcritos a partir de alineamientos de lecturas (por ejemplo, generados con <em>STAR</em> o <em>Hisat2</em>) y estimar sus abundancias. Sin embargo, la calidad del ensamblaje final no siempre es óptima, y es fundamental evaluarla para garantizar que los resultados de cuantificación y análisis posterior (como expresión diferencial) sean confiables.</p>
+      <p>Este artículo explora métodos prácticos y herramientas específicas para evaluar la calidad del ensamblaje obtenido con StringTie y RSEM, destacando indicadores clave, procedimientos de verificación y buenas prácticas para asegurar un análisis robusto.</p>
+    </section>
+
+    <section>
+      <h2>Parámetros clave en el ensamblaje con StringTie</h2>
+      <p>StringTie utiliza una serie de parámetros que influyen directamente en la calidad del ensamblaje. Algunos de los más importantes son:</p>
+      <ul>
+        <li><code>--min_intronlen</code> y <code>--max_intronlen</code>: definen el rango de longitud de intrones permitidos. Valores muy bajos pueden generar falsos positivos; muy altos pueden omitir intrones reales.</li>
+        <li><code>--min_coverage</code>: establece el número mínimo de lecturas que deben alinearse a un tramo para que se considere parte del transcripción. Un valor demasiado bajo puede incluir ruido; demasiado alto puede excluir transcritos reales.</li>
+        <li><code>--merge</code>: permite fusionar ensamblajes de múltiples muestras. Es útil para mejorar la cobertura, pero requiere cuidado para evitar la creación de chimeras artificiales.</li>
+      </ul>
+      <p>Es recomendable ajustar estos parámetros según el tipo de muestra (por ejemplo, tejido normal vs. tumor) y el contexto biológico (especialmente si hay alta variabilidad de isoformas).</p>
+    </section>
+
+    <section>
+      <h2>Validación de ensamblaje con RSEM</h2>
+      <p>Una vez generado el ensamblaje con StringTie (en formato GTF), RSEM puede utilizarse para cuantificar la expresión y, al mismo tiempo, evaluar la calidad del modelo. RSEM calcula la probabilidad de que una lectura provenga de un transcripción específica, y también ofrece estadísticas de ajuste.</p>
+      <p>El proceso típico incluye:</p>
+      <ol>
+        <li>Generar el índice de referencia con <code>rsem-prepare-reference</code> a partir del genoma y el GTF de StringTie.</li>
+        <li>Usar <code>rsem-calculate-poisson</code> o <code>rsem-calculate-quantities</code> para obtener estimaciones de expresión y métricas de ajuste.</li>
+      </ol>
+      <p>La salida incluye archivos con información sobre la calidad del ajuste, como el número de lecturas asignadas y la distribución de las lecturas entre transcritos.</p>
+    </section>
+
+    <section>
+      <h2>Análisis de métricas de calidad</h2>
+      <p>Algunas métricas clave para evaluar la calidad del ensamblaje son:</p>
+      <ul>
+        <li><strong>Porcentaje de lecturas asignadas</strong>: debe ser alto (generalmente >70-80%) para una buena calidad. Valores bajos indican problemas de alineamiento, ensamblaje incorrecto o contaminación.</li>
+        <li><strong>Coherencia del modelo de transcripción</strong>: RSEM reporta una puntuación de ajuste (likelihood) para cada transcripción. Transcritos con puntuaciones muy bajas pueden ser falsos positivos.</li>
+        <li><strong>Recubrimiento de transcritos</strong>: se puede evaluar con herramientas como <em>gffcompare</em> (parte de Cufflinks) para comparar el ensamblaje con una referencia de transcritos (por ejemplo, RefSeq o GENCODE), calculando sensibilidad, especificidad y tasa de falsos positivos.</li>
+      </ul>
+      <p>Además, visualización mediante herramientas como <em>IGV</em> o <em>Artemis</em> permite verificar manualmente si el ensamblaje coincide con los datos de alineamiento.</p>
+    </section>
+
+    <section>
+      <h2>Código real: flujo completo</h2>
+      <pre><code>#!/bin/bash
+# Paso 1: Ensamblaje con StringTie (usando alineamientos de STAR)
+stringtie -p 8 -G ref.gtf -o stringtie.gtf aligned_reads.bam
+
+# Paso 2: Preparar índice para RSEM
+rsem-prepare-reference --gtf stringtie.gtf genome.fa rsem_index
+
+# Paso 3: Cuantificación con RSEM
+rsem-calculate-quantities --bam --num-threads 8 rsem_index aligned_reads.bam
+
+# Paso 4: Obtener estadísticas de calidad
+rsem-plot-models rsem_index</code></pre>
+      <p>Este flujo genera un archivo de cuantificación y un gráfico que muestra el ajuste del modelo de transcripción, permitiendo una evaluación visual rápida.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <h3>Errores frecuentes</h3>
+      <ul>
+        <li><strong>Uso de parámetros demasiado permisivos</strong>: valores muy bajos para <code>--min_coverage</code> pueden introducir ruido y transcritos artificiales.</li>
+        <li><strong>Falta de validación cruzada</strong>: no comparar el ensamblaje con una base de datos de transcritos conocidos (como GENCODE) puede dejar transcritos falsos sin detectar.</li>
+        <li><strong>Ignorar el número de lecturas asignadas</strong>: valores bajos pueden ser indicativos de problemas serios que requieren revisión del pipeline.</li>
+      </ul>
+
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li>Usar <em>gffcompare</em> para validar el ensamblaje frente a una referencia.</li>
+        <li>Revisar manualmente casos de baja asignación o anomalías con IGV.</li>
+        <li>Siempre documentar los parámetros usados y las métricas obtenidas.</li>
+        <li>Considerar el uso de <em>StringTie2</em>, que ofrece mejoras en la detección de isoformas y gestión de datos de baja cobertura.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Conclusión</h2>
+      <p>Evaluar la calidad del ensamblaje de transcritos con StringTie y RSEM no es un paso opcional, sino una parte esencial del flujo de análisis de RNA-seq. Una evaluación rigurosa ayuda a detectar errores, minimizar falsos positivos y asegurar que los resultados de expresión génica y análisis diferencial sean biológicamente relevantes. Al combinar métricas automáticas con visualización y validación con base de datos, se puede lograr un ensamblaje de alta confianza, fundamento sólido para cualquier investigación posterior.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HISAT2</title>
+  <meta name="categoria" content="Alineamiento">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>HISAT2</h1>
+    <p class="meta">
+      <a href="https://github.com/DaehwanKimLab/hisat2">Repositorio en GitHub</a> · 
+      540 estrellas · C++
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      HISAT2 es una herramienta de alineamiento de secuencias de RNA de última generación
+      que utiliza un índice jerárquico basado en grafos (Graph-based alignment, Hierarchical Graph FM index)
+      para alinear lecturas de secuenciación de nueva generación (NGS) a un genoma de referencia
+      con alta precisión y eficiencia. Está diseñado específicamente para alineamientos de RNA-Seq,
+      incluyendo el manejo de intrones y exones, y es altamente eficaz en el alineamiento de lecturas
+      largas y complejas.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      HISAT2 está disponible como binario precompilado para múltiples sistemas operativos.
+      Puedes instalarlo usando <code>conda</code> o descargar el binario directamente.
+    </p>
+    <pre><code>conda install -c bioconda hisat2</code></pre>
+
+    <p>
+      Alternativamente, puedes descargar el binario desde el repositorio oficial:
+    </p>
+    <pre><code>curl -L -O https://github.com/DaehwanKimLab/hisat2/releases/latest/download/hisat2-2.2.1-Linux-x86_64.zip
+unzip hisat2-2.2.1-Linux-x86_64.zip
+sudo mv hisat2-2.2.1/hisat2 /usr/local/bin/</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Un ejemplo típico de uso de HISAT2 para alinear lecturas de RNA-Seq:
+    </p>
+    <pre><code>hisat2 -x hisat2_index -1 reads_1.fq -2 reads_2.fq -S aligned.sam</code></pre>
+    <p>
+      Donde:
+      <ul>
+        <li><code>-x</code>: ruta al índice de referencia (generado con <code>hisat2-build</code>).</li>
+        <li><code>-1</code> y <code>-2</code>: archivos de lecturas pareadas (fwd y rev).</li>
+        <li><code>-S</code>: salida en formato SAM.</li>
+      </ul>
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo típico para analizar datos de RNA-Seq con HISAT2 incluye:
+    </p>
+    <ol>
+      <li>Construir el índice de referencia con <code>hisat2-build</code>.</li>
+      <li>Alinear las lecturas a ese índice usando <code>hisat2</code>.</li>
+      <li>Convertir el archivo SAM a BAM (si es necesario) con <code>samtools view</code>.</li>
+      <li>Ordenar y indexar el BAM con <code>samtools sort</code> y <code>samtools index</code>.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Genoma de referencia -->
+        <rect x="50" y="20" width="500" height="40" fill="#f0f0f0" stroke="#333" rx="5" />
+        <text x="300" y="45" font-size="14" text-anchor="middle" fill="#333">Genoma de referencia</text>
+        
+        <!-- Lecturas de RNA-Seq -->
+        <rect x="50" y="80" width="80" height="20" fill="#d4e6f1" stroke="#333" rx="3" />
+        <text x="90" y="95" font-size="12" text-anchor="middle" fill="#333">Lectura 1</text>
+        
+        <rect x="140" y="80" width="80" height="20" fill="#d4e6f1" stroke="#333" rx="3" />
+        <text x="180" y="95" font-size="12" text-anchor="middle" fill="#333">Lectura 2</text>
+        
+        <rect x="230" y="80" width="80" height="20" fill="#d4e6f1" stroke="#333" rx="3" />
+        <text x="270" y="95" font-size="12" text-anchor="middle" fill="#333">Lectura 3</text>
+        
+        <!-- Flechas de alineamiento -->
+        <path d="M 100 100 L 130 120 L 140 120 L 170 100" stroke="#333" stroke-width="1.5" fill="none" />
+        <path d="M 190 100 L 220 120 L 230 120 L 260 100" stroke="#333" stroke-width="1.5" fill="none" />
+        
+        <!-- Índice de referencia -->
+        <rect x="50" y="140" width="500" height="40" fill="#e6f3ff" stroke="#333" rx="5" />
+        <text x="300" y="165" font-size="14" text-anchor="middle" fill="#333">Índice (HISAT2)</text>
+      </svg>
+      <figcaption>
+        Diagrama del flujo de trabajo típico: lecturas de RNA-Seq se alinean a un genoma de referencia
+        mediante un índice jerárquico basado en grafos. Las flechas indican el proceso de alineamiento.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <p>
+      <strong>Errores comunes:</strong>
+      <ul>
+        <li>Usar un índice de referencia incorrecto o incompleto (asegúrate de haber ejecutado <code>hisat2-build</code> correctamente).</li>
+        <li>Olvidar especificar <code>-1</code> y <code>-2</code> para lecturas pareadas.</li>
+        <li>Probar con archivos de entrada en formato incorrecto (por ejemplo, FASTA en lugar de FASTQ).</li>
+      </ul>
+    </p>
+    <p>
+      <strong>Buenas prácticas:</strong>
+      <ul>
+        <li>Siempre usa <code>hisat2-build</code> para generar el índice desde el genoma de referencia (FASTA).</li>
+        <li>Considera usar el parámetro <code>-p</code> para paralelizar el alineamiento en múltiples núcleos.</li>
+        <li>Para datos de RNA-Seq, asegúrate de que el genoma incluya información de splicing (por ejemplo, mediante archivos GTF).</li>
+        <li>Usa <code>samtools sort</code> y <code>samtools index</code> para preparar el archivo BAM final.</li>
+      </ul>
+    </p>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">1 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42305663.html">Comparative transcriptomic and metabolomic profiling of forest tea and terrace tea in Sandu, Guizhou, China.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1016/j.fochms.2026.100429" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

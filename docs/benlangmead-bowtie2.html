@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bowtie2</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>Bowtie2</h1>
+    <p class="meta">
+      <a href="https://github.com/BenLangmead/bowtie2">Repositorio en GitHub</a> · <span class="authors">801 estrellas · C++</span>
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>Bowtie2 es un alineador de lecturas de secuenciación de nueva generación (NGS) rápido y sensible, diseñado para alinear lecturas de ADN o ARN a un genoma de referencia, incluso cuando existen inserciones o deleciones (alineamiento con huecos). Es particularmente útil en estudios de secuenciación de whole genome, whole exome o transcriptómica, donde se requiere alta sensibilidad para detectar variantses y estructuras complejas.</p>
+
+    <h2>Instalación</h2>
+    <p>Bowtie2 no está disponible en PyPI o CRAN, ya que está escrito en C++. Se distribuye como binario precompilado o se puede compilar desde el código fuente.</p>
+    <pre><code># Descargar el binario desde GitHub (recomendado para usuarios que no compilan)
+wget https://github.com/BenLangmead/bowtie2/releases/latest/download/bowtie2-2.5.4-linux-x86_64.zip
+unzip bowtie2-2.5.4-linux-x86_64.zip
+
+# Mover el binario al directorio de ejecutables
+sudo mv bowtie2-2.5.4/bowtie2* /usr/local/bin/
+
+# Verificar la instalación
+bowtie2 --version</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>El uso más común es alinear lecturas de un archivo FASTQ a un índice de referencia previamente construido. A continuación se muestra un ejemplo ilustrativo de un flujo típico:</p>
+    <pre><code># Paso 1: Construir el índice de referencia (solo una vez)
+bowtie2-build reference.fasta reference_index
+
+# Paso 2: Alinear lecturas
+bowtie2 -x reference_index -1 reads_1.fastq -2 reads_2.fastq -S alignment.sam</code></pre>
+    <p><em>Nota: La sintaxis exacta puede variar según la versión. Verifica en la documentación oficial.</em></p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo típico de análisis con Bowtie2 sigue estos pasos:</p>
+    <ol>
+      <li>Preparar el genoma de referencia (FASTA).</li>
+      <li>Construir el índice con <code>bowtie2-build</code>.</li>
+      <li>Alinear lecturas (pares o simples) con <code>bowtie2</code>.</li>
+      <li>Convertir el resultado SAM a BAM, ordenarlo y posicionar (usando herramientas como Samtools).</li>
+      <li>Realizar análisis adicionales (llamado de variantes, expresión, etc.).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="180" xmlns="http://www.w3.org/2000/svg">
+        <!-- Genoma de referencia -->
+        <rect x="20" y="20" width="100" height="30" fill="lightblue" stroke="black" />
+        <text x="70" y="40" font-size="12" text-anchor="middle">Genoma</text>
+
+        <!-- Lecturas de entrada -->
+        <rect x="20" y="80" width="100" height="30" fill="lightgreen" stroke="black" />
+        <text x="70" y="100" font-size="12" text-anchor="middle">Lecturas</text>
+
+        <!-- Flecha desde lecturas a Bowtie2 -->
+        <line x1="70" y1="110" x2="70" y2="130" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Bowtie2 -->
+        <rect x="50" y="130" width="140" height="30" fill="lightcoral" stroke="black" />
+        <text x="120" y="150" font-size="12" text-anchor="middle">Bowtie2</text>
+
+        <!-- Flecha desde Bowtie2 a salida -->
+        <line x1="120" y1="160" x2="120" y2="180" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Salida alineada -->
+        <rect x="100" y="180" width="140" height="30" fill="lightyellow" stroke="black" />
+        <text x="170" y="200" font-size="12" text-anchor="middle">SAM/BAM</text>
+
+        <!-- Flecha de retorno -->
+        <line x1="170" y1="210" x2="170" y2="230" stroke="black" marker-end="url(#arrow)" />
+
+        <!-- Etiqueta del paso -->
+        <text x="170" y="250" font-size="10" text-anchor="middle">Alineamiento</text>
+
+        <!-- Flecha de definición -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de alineamiento con Bowtie2: lecturas de entrada → alineador → salida SAM/BAM.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Índice no construido:</strong> Asegúrate de ejecutar <code>bowtie2-build</code> antes de alinear. El índice se crea una vez y se reutiliza.</li>
+      <li><strong>Formato incorrecto de entrada:</strong> Verifica que las lecturas estén en formato FASTQ o FASTA, y que los archivos estén correctamente nombrados.</li>
+      <li><strong>Memoria insuficiente:</strong> Bowtie2 puede consumir mucha RAM si el genoma es grande. Usa índices reducidos o ajusta los parámetros de memoria.</li>
+      <li><strong>Parámetros de alineamiento:</strong> Ajusta <code>--very-sensitive</code>, <code>--very-fast</code>, o <code>--no-mixed</code> según el balance entre sensibilidad y velocidad que necesites.</li>
+      <li><strong>Salida en formato SAM:</strong> Usa <code>-S</code> para salida SAM. Para BAM, usa <code>-S -</code> y redirige a Samtools para convertir.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">1 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42286866.html">Muribaculum as a microbial contributor of rifaximin-induced mucosal protection during chemotherapy.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1080/19490976.2026.2685994" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

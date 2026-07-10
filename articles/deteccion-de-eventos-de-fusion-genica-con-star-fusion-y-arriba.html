@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detección de eventos de fusión génica con STAR-Fusion y Arriba</title>
+  <meta name="categoria" content="Variantes" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Detección de eventos de fusión génica con STAR-Fusion y Arriba</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué son los eventos de fusión génica?</h2>
+      <p>
+        Las fusiones génicas son alteraciones genómicas en las que dos genes distintos se unen
+        en un solo locus, generando un nuevo transcripto híbrido. Estos eventos pueden resultar
+        en la producción de proteínas quiméricas con funciones onco-activas, lo que los convierte
+        en biomarcadores clave en tumores sólidos como el cáncer de pulmón, sarcomas, y leucemias.
+        Detectar estas fusiones es fundamental para el diagnóstico, pronóstico y selección de
+        terapias dirigidas.
+      </p>
+    </section>
+
+    <section>
+      <h2>Enfoques bioinformáticos para la detección de fusiones</h2>
+      <p>
+        Dos herramientas de alto rendimiento han emergido como estándares en la detección de
+        fusiones génicas a partir de datos de secuenciación de RNA (RNA-seq): <strong>STAR-Fusion</strong>
+        y <strong>Arriba</strong>. Ambas se basan en alineación de lecturas de RNA a un genoma de referencia
+        (generalmente con <code>STAR</code>), pero difieren en su enfoque de detección.
+      </p>
+      <ul>
+        <li><strong>STAR-Fusion</strong>: utiliza un análisis de alineación de lecturas cruzadas (chimeric reads)
+          para identificar fusiones directamente durante el proceso de alineación. Es altamente
+          sensible y se integra bien con el pipeline de alineación STAR.</li>
+        <li><strong>Arriba</strong>: se ejecuta sobre alineamientos pre-procesados (archivos SAM/BAM)
+          y combina múltiples evidencias, como lecturas cruzadas, desplazamientos en el
+          alineamiento, y expresión diferencial de genes fusionados.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo con STAR-Fusion</h2>
+      <p>
+        El uso de STAR-Fusion implica una secuencia de pasos bien definida. A continuación se
+        muestra un flujo típico, con comandos reales:
+      </p>
+      <pre><code>STAR \
+  --runThreadN 8 \
+  --genomeDir /path/to/hg38/star_index \
+  --readFilesIn sample_R1.fastq sample_R2.fastq \
+  --outFileNamePrefix fusion/alignment/ \
+  --outSAMtype BAM SortedByCoordinate
+</code></pre>
+      <p>Después de obtener el archivo BAM alineado, se ejecuta STAR-Fusion:</p>
+      <pre><code>STAR-Fusion \
+  --left_fq fusion/alignmentAligned.toTranscriptome.out.bam \
+  --right_fq fusion/alignmentAligned.toTranscriptome.out.bam \
+  --genome_lib_dir /path/to/hg38/star_fusion_lib \
+  --output_dir fusion/star_fusion_results \
+  --examine_coding_effect \
+  --run_mode local
+</code></pre>
+      <p>La salida incluye un archivo <code>StarFusion.fusion_candidates</code> con candidatos de fusión, 
+        junto con información sobre la estructura, soporte de lecturas y efecto funcional.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo con Arriba</h2>
+      <p>
+        Arriba se ejecuta sobre archivos BAM alineados. El enfoque es más exhaustivo, combinando
+        evidencias estructurales y expresionales. El flujo típico es el siguiente:
+      </p>
+      <pre><code>arriba --bam fusion/alignmentAligned.toTranscriptome.out.bam \
+      --fasta /path/to/hg38/ucsc_hg38.fa \
+      --gtf /path/to/hg38/gencode.v44.annotation.gtf \
+      --out_dir fusion/arriba_results \
+      --threads 8 \
+      --min_fusion_reads 2 \
+      --min_gene_expression 10
+</code></pre>
+      <p>Arriba genera un informe detallado en formato JSON y TSV, incluyendo scores de confianza, 
+        soporte de lecturas cruzadas, expresión de genes fusionados, y predicciones de impacto funcional.</p>
+    </section>
+
+    <section>
+      <h2>Interpretación de resultados</h2>
+      <p>
+        Es fundamental no confiar únicamente en los candidatos de fusión generados por el software.
+        Se recomienda verificar las fusiones con herramientas de validación como <code>igv</code>, 
+        <code>bedtools</code>, o <code>Samtools</code>, y cruzar con bases de datos como <em>DoCancer</em>, <em>GeneFusion</em>, 
+        o <em>COSMIC</em>. Además, se debe considerar la expresión del transcripto híbrido y la
+        presencia de lecturas cruzadas en ambos sentidos.
+      </p>
+      <p>Un ejemplo de filtrado en R puede ser:</p>
+      <pre><code>library(dplyr)
+
+# Cargar resultados
+fusion_candidates &lt;- read.table("fusion/star_fusion_results/StarFusion.fusion_candidates", header = TRUE, stringsAsFactors = FALSE)
+
+# Filtrar por soporte mínimo y expresión
+filtered_fusions &lt;- fusion_candidates %&gt;%
+  filter(
+    num_reads &gt;= 3,
+    fusion_gene_1_expr &gt; 10 |
+    fusion_gene_2_expr &gt; 10
+  )
+
+# Exportar
+write.table(filtered_fusions, "filtered_fusions.tsv", sep = "\t", row.names = FALSE)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        STAR-Fusion y Arriba son herramientas complementarias para la detección de fusiones génicas.
+        STAR-Fusion es ideal para análisis rápidos y directos desde el alineamiento, mientras
+        que Arriba ofrece una evaluación más robusta y multifactorial. El uso combinado de ambas
+        aumenta la sensibilidad y especificidad del descubrimiento de fusiones relevantes.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar el filtrado de lecturas cruzadas</strong>: siempre verifique que el soporte de
+          lecturas cruzadas sea coherente y no sea producto de artefactos de alineación.</li>
+        <li><strong>Usar índices incompatibles</strong>: asegúrese de que los índices de genoma y las GTFs
+          sean de la misma versión (por ejemplo, hg38 y gencode.v44).</li>
+        <li><strong>Desconocer la expresión de genes fusionados</strong>: una fusión con baja expresión
+          puede no ser biológicamente relevante.</li>
+        <li><strong>Confundir resultados con bases de datos</strong>: no asuma que una fusión encontrada
+          en un tumor es necesariamente oncológica; confírmela con literatura o bases de datos
+          especializadas.</li>
+        <li><strong>Usar solo una herramienta</strong>: combinar resultados de STAR-Fusion y Arriba reduce
+          falsos positivos y aumenta la confianza en los candidatos.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
