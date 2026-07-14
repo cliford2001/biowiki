@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="categoria" content="Variantes">
+  <title>Análisis de variantes de fusión en tumores con FusionCatcher y Arriba</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de variantes de fusión en tumores con FusionCatcher y Arriba</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>Las fusiones génicas son eventos genómicos que se producen cuando dos genes distintos se unen de forma anómala, generando un nuevo transcripto quimérico. En el contexto del cáncer, estas fusiones pueden actuar como oncogenes, promoviendo la proliferación celular, la resistencia a la apoptosis y la invasión tumoral. La identificación precisa de variantes de fusión en muestras de tumores es esencial para el diagnóstico, el pronóstico y la selección de terapias dirigidas.</p>
+      <p>Dos herramientas de software ampliamente utilizadas para el análisis de fusiones son <strong>FusionCatcher</strong> y <strong>Arriba</strong>. Aunque ambas comparten el objetivo de detectar fusiones en datos de secuenciación de RNA (RNA-seq), utilizan diferentes enfoques algorítmicos, lo que puede llevar a resultados distintos. Este artículo explora el flujo de trabajo completo para analizar variantes de fusión en tumores, comparando los dos enfoques y presentando buenas prácticas.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo de análisis de fusiones</h2>
+      <p>El análisis de fusiones comienza con datos de RNA-seq previamente alineados. Los archivos de alineamiento (por ejemplo, en formato BAM) son la entrada principal para ambos pipelines. A continuación, se describe el flujo típico:</p>
+
+      <h3>1. Preprocesamiento de datos</h3>
+      <p>Antes de la detección, es fundamental realizar un control de calidad del alineamiento. Se recomienda usar <code>samtools</code> para validar el alineamiento y verificar la calidad del mapeo:</p>
+      <pre><code>#!/bin/bash
+# Verificar calidad de alineamiento
+samtools flagstat aligned_reads.bam
+samtools stats aligned_reads.bam | grep "mapping quality"
+</code></pre>
+
+      <h3>2. Detección de fusiones con FusionCatcher</h3>
+      <p>FusionCatcher es una herramienta robusta que utiliza un enfoque basado en el análisis de mapas de alineamiento de lecturas discordantes y de lecturas de apalancamiento (spanning reads). Requiere un archivo de referencia genómica y un archivo de genes (GTF) para el análisis.</p>
+      <pre><code>#!/bin/bash
+# Ejecutar FusionCatcher
+FusionCatcher.pl \
+  --bams aligned_reads.bam \
+  --genome hg38 \
+  --gtf genes.gtf \
+  --output fusioncatcher_output \
+  --threads 8
+</code></pre>
+
+      <p>El resultado es un conjunto de archivos de salida que incluyen un reporte detallado de posibles fusiones, con información sobre el tipo de fusión, el nivel de expresión, y el soporte de lecturas.</p>
+
+      <h3>3. Detección de fusiones con Arriba</h3>
+      <p>Arriba es una herramienta más reciente que utiliza un enfoque basado en el análisis de desviaciones en el patrón de alineamiento. Se especializa en detectar fusiones con alta sensibilidad en datos de RNA-seq de baja profundidad.</p>
+      <pre><code>#!/bin/bash
+# Ejecutar Arriba
+arriba call \
+  --input aligned_reads.bam \
+  --reference hg38 \
+  --gtf genes.gtf \
+  --output arriba_results.json \
+  --threads 8
+</code></pre>
+
+      <p>Arriba genera un archivo JSON con los resultados, que puede ser procesado con herramientas de post-procesamiento.</p>
+    </section>
+
+    <section>
+      <h2>Comparación de resultados y validación</h2>
+      <p>Una de las principales diferencias entre FusionCatcher y Arriba es su sensibilidad y especificidad. FusionCatcher tiende a ser más conservador, con menos falsos positivos pero también menos detecciones, mientras que Arriba puede detectar fusiones de bajo soporte que otros métodos pasan por alto.</p>
+      <p>Es crucial realizar una validación cruzada. Se recomienda usar herramientas como <code>bedtools</code> para superponer los resultados de ambos pipelines y identificar fusiones comunes:</p>
+      <pre><code>#!/bin/bash
+# Superponer resultados de FusionCatcher y Arriba
+bedtools intersect -a fusioncatcher_results.bed -b arriba_results.bed -wa -wb > common_fusions.bed
+</code></pre>
+
+      <p>Las fusiones que aparecen en ambos resultados tienen mayor confianza. Además, se puede usar <code>igv</code> para visualizar los alineamientos en regiones sospechosas, lo que permite una verificación visual directa.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variantes de fusión en tumores es un paso crítico en la caracterización molecular del cáncer. FusionCatcher y Arriba son dos herramientas poderosas, cada una con sus fortalezas y limitaciones. FusionCatcher ofrece una detección más conservadora y robusta, mientras que Arriba se destaca en la sensibilidad. La combinación de ambas herramientas, junto con una validación cruzada y visual, proporciona un enfoque más completo y confiable.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / Buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar referencia genómica incorrecta:</strong> Asegúrese de que el genoma de referencia (hg38, hg19) coincida con el usado en el alineamiento.</li>
+        <li><strong>No validar el alineamiento:</strong> Siempre verifique el flagstat y los stats de <code>samtools</code> antes de analizar fusiones.</li>
+        <li><strong>Ignorar el soporte de lecturas:</strong> Evalúe el número de lecturas que soportan cada fusión. Las fusiones con solo 1-2 lecturas deben considerarse con precaución.</li>
+        <li><strong>No usar GTF actualizado:</strong> Use una versión reciente y bien curada del archivo de genes (por ejemplo, Ensembl).</li>
+        <li><strong>Procesar resultados sin validación:</strong> Nunca tome los resultados sin revisarlos visualmente o con herramientas de filtro.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

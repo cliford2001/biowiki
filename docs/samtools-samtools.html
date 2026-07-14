@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>samtools/samtools</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>samtools/samtools</h1>
+    <p class="meta">
+      <a href="https://github.com/samtools/samtools" target="_blank">https://github.com/samtools/samtools</a>
+      · 1924 estrellas · C
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>samtools/samtools es una colección de herramientas escritas en C utilizando la biblioteca htslib, diseñadas para manipular datos de secuenciación de nueva generación (NGS). Permite la lectura, escritura, análisis y transformación de archivos en formato SAM, BAM y CRAM, que son estándares ampliamente utilizados en bioinformática para almacenar datos de alineamiento de lecturas de ADN/RNA.</p>
+
+    <h2>Instalación</h2>
+    <p>Samtools se puede instalar fácilmente desde el sistema operativo mediante gestores de paquetes. Aquí tienes los comandos reales para las principales distribuciones:</p>
+
+    <pre><code>sudo apt-get update
+sudo apt-get install samtools</code></pre>
+
+    <p>Alternativamente, si se desea la última versión desde el código fuente:</p>
+
+    <pre><code>git clone https://github.com/samtools/samtools.git
+cd samtools
+make
+sudo make install</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Un uso común es convertir un archivo BAM a su formato texto SAM para inspección, o realizar un resumen del archivo. Aquí tienes un ejemplo realista:</p>
+
+    <pre><code>samtools view -h sample.bam | head -10
+samtools stats sample.bam | grep "^SN"</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>En un flujo típico de análisis de NGS, samtools se utiliza para:</p>
+    <ol>
+      <li>Convertir archivos de alineamiento de formato SAM a BAM (compacto y indexado).</li>
+      <li>Indexar archivos BAM para acceso rápido.</li>
+      <li>Extraer regiones específicas del genoma.</li>
+      <li>Contar cobertura de lecturas.</li>
+      <li>Generar estadísticas de calidad.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="180" xmlns="http://www.w3.org/2000/svg">
+        <!-- Boxes -->
+        <rect x="10" y="20" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="70" y="45" font-size="12" text-anchor="middle" fill="#0277bd">Lecturas NGS</text>
+
+        <rect x="150" y="20" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="210" y="45" font-size="12" text-anchor="middle" fill="#0277bd">Alineamiento</text>
+
+        <rect x="290" y="20" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="350" y="45" font-size="12" text-anchor="middle" fill="#0277bd">SAM</text>
+
+        <rect x="430" y="20" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="490" y="45" font-size="12" text-anchor="middle" fill="#0277bd">BAM</text>
+
+        <rect x="150" y="80" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="210" y="105" font-size="12" text-anchor="middle" fill="#0277bd">Indexar</text>
+
+        <rect x="290" y="80" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="350" y="105" font-size="12" text-anchor="middle" fill="#0277bd">Stats</text>
+
+        <rect x="430" y="80" width="120" height="40" fill="#e0f7fa" stroke="#0277bd" />
+        <text x="490" y="105" font-size="12" text-anchor="middle" fill="#0277bd">Extraer</text>
+
+        <!-- Arrows -->
+        <line x1="130" y1="40" x2="150" y2="40" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="270" y1="40" x2="290" y2="40" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="410" y1="40" x2="430" y2="40" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="150" y1="60" x2="150" y2="80" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="290" y1="60" x2="290" y2="80" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="430" y1="60" x2="430" y2="80" stroke="#0277bd" stroke-width="2" marker-end="url(#arrow)" />
+      </svg>
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#0277bd" />
+        </marker>
+      </defs>
+      <figcaption>Flujo típico de uso de samtools: desde lecturas alineadas hasta análisis estadístico y extracción de regiones.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Olvidar indexar el archivo BAM</strong>: muchas operaciones (como <code>samtools view</code> en regiones específicas) requieren un archivo .bai indexado. Siempre ejecuta <code>samtools index sample.bam</code> después de crear el archivo BAM.</li>
+      <li><strong>Uso de formato incorrecto</strong>: asegúrate de usar <code>-h</code> con <code>samtools view</code> para mantener los encabezados si necesitas visualizar el archivo SAM completo.</li>
+      <li><strong>Comandos ineficientes</strong>: para grandes archivos, considera usar <code>samtools view -b</code> para mantener el formato binario (BAM) en lugar de convertir a texto.</li>
+      <li><strong>Verificar la sintaxis</strong>: aunque los comandos mostrados aquí son estándar, siempre consulta la documentación oficial si necesitas flags avanzados.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">2 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42324717.html">Deep mutational scanning reveals the antibody escape and infectivity landscape of SARS-CoV-2 Omicron JN.1 and XEC receptor-binding domains.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2686472" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42304944.html">The development of biologically contained Sudan virus as an alternative and safe tool for fundamental filovirus research.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2678654" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

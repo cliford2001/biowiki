@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración de datos de secuenciación de doble cadena con Kallisto y Salmon</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Integración">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Integración de datos de secuenciación de doble cadena con Kallisto y Salmon</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Por qué integrar datos de secuenciación de doble cadena?</h2>
+            <p>La secuenciación de ARN de doble cadena (dRNA-seq) ofrece una visión detallada de la transcripción, incluyendo tanto el ARN mensajero (mRNA) como el ARN no codificante (ncRNA), así como el inicio y final de transcripciones. Sin embargo, la integración de datos de dRNA-seq con otros tipos de datos transcriptómicos (como RNA-seq convencional, scRNA-seq o datos de proteómica) requiere una estrategia de cuantificación precisa y coherente. Esta es donde herramientas como <strong>Kallisto</strong> y <strong>Salmon</strong> se vuelven fundamentales.</p>
+            <p>En este artículo, exploraremos cómo Kallisto y Salmon, dos herramientas de cuantificación de transcripciones de última generación, pueden ser utilizadas de forma consistente y eficiente para integrar datos de secuenciación de doble cadena, garantizando la comparabilidad entre muestras y condiciones experimentales, y preparando el terreno para análisis integrados de expresión génica a gran escala.</p>
+        </section>
+
+        <section>
+            <h2>Principios de cuantificación con Kallisto y Salmon</h2>
+            <p>Algunas de las principales diferencias entre Kallisto y Salmon radican en su enfoque alineador y su algoritmo de cuantificación:</p>
+            <ul>
+                <li><strong>Kallisto</strong>: utiliza un algoritmo basado en <em>pseudoalineación</em> y <em>indexación de k-mers</em>. No requiere alineamiento real de reads, lo que lo hace extremadamente rápido. Genera un archivo de cuantificación en formato <code>abundance.h5</code> o <code>abundance.tsv</code>.</li>
+                <li><strong>Salmon</strong>: también emplea pseudoalineación, pero con un modelo de probabilidad más sofisticado y un enfoque más flexible. Permite el uso de <em>quasi-mapping</em> y ofrece un mayor control sobre el ajuste del modelo de expresión. Sus resultados se guardan en <code>quant.sf</code> o <code>quant.genes.sf</code>.</li>
+            </ul>
+            <p>Ambas herramientas pueden procesar datos de secuenciación de doble cadena directamente, siempre que se proporcionen los archivos de entrada adecuados (como <code>reads_1.fastq</code> y <code>reads_2.fastq</code>) y se establezcan los parámetros correctos.</p>
+        </section>
+
+        <section>
+            <h2>Preparación de datos para la integración</h2>
+            <p>Antes de la cuantificación, es crucial asegurarse de que los datos de secuenciación de doble cadena estén correctamente preprocesados. Esto incluye:</p>
+            <ul>
+                <li>Control de calidad con <code>fastqc</code> y <code>multiqc</code>.</li>
+                <li>Eliminación de adaptadores con <code>cutadapt</code> o <code>Trimmomatic</code>.</li>
+                <li>Verificación de la longitud y la distribución de los reads.</li>
+            </ul>
+            <p>Una vez limpios, los archivos FASTQ deben ser indexados con Kallisto o Salmon usando la transcripción de referencia (por ejemplo, <code>transcripts.fasta</code>).</p>
+
+            <h3>Ejemplo: Indexación con Kallisto</h3>
+            <pre><code>kallisto index -i transcripts.idx transcripts.fasta</code></pre>
+
+            <h3>Ejemplo: Indexación con Salmon</h3>
+            <pre><code>salmon index -i transcripts_index -t transcripts.fasta --gencode</code></pre>
+        </section>
+
+        <section>
+            <h2>Cuantificación de datos de secuenciación de doble cadena</h2>
+            <p>La cuantificación debe realizarse de forma consistente para todas las muestras del estudio. Ambas herramientas aceptan datos de secuenciación de doble cadena mediante el uso de pares de archivos FASTQ.</p>
+
+            <h3>Cuantificación con Kallisto</h3>
+            <pre><code>kallisto quant -i transcripts.idx -o sample1_kallisto \ 
+    --threads 8 reads_1.fastq.gz reads_2.fastq.gz</code></pre>
+
+            <h3>Cuantificación con Salmon</h3>
+            <pre><code>salmon quant -i transcripts_index -o sample1_salmon \ 
+    -p 8 --validateMappings --seqBias \ 
+    -1 reads_1.fastq.gz -2 reads_2.fastq.gz</code></pre>
+
+            <p>Nota: El parámetro <code>--seqBias</code> es recomendado en datos de secuenciación de doble cadena para corregir sesgos en la secuenciación. El uso de <code>--validateMappings</code> permite una estimación más precisa de la expresión.</p>
+        </section>
+
+        <section>
+            <h2>Integración de resultados de cuantificación</h2>
+            <p>Una vez obtenidos los archivos de cuantificación (como <code>abundance.tsv</code> de Kallisto o <code>quant.sf</code> de Salmon), el siguiente paso es integrarlos en un único objeto de expresión para análisis posterior. Esto se puede hacer con herramientas como <strong>R</strong> o <strong>Python</strong>.</p>
+
+            <h3>Ejemplo en R usando <code>tximport</code></h3>
+            <pre><code>library(tximport)
+library(dplyr)
+
+# Ruta a los directorios de cuantificación
+files &lt;- list.files("./quant", pattern = "quant.sf", full.names = TRUE)
+
+# Importar datos
+txi &lt;- tximport(files, type = "salmon", txOut = TRUE)
+
+# Ver resultados
+head(txi$counts)</code></pre>
+
+            <h3>Ejemplo en Python usando <code>pandas</code></h3>
+            <pre><code>import pandas as pd
+
+# Cargar datos desde archivos Salmon
+files = ["sample1_salmon/quant.sf", "sample2_salmon/quant.sf"]
+
+# Leer y unir datos
+dfs = []
+for f in files:
+    df = pd.read_csv(f, sep='\t')
+    df = df["Name"]  # gene_id
+    df["count"] = df["NumReads"]  # total read counts
+    dfs.append(df)
+
+# Unir todos los datos
+combined = pd.concat(dfs, axis=1)
+combined.columns = ["gene_id", "sample1", "sample2"]
+</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Kallisto y Salmon ofrecen soluciones rápidas, precisas y altamente escalables para la cuantificación de transcripciones en datos de secuenciación de doble cadena. Su capacidad para manejar pares de reads de forma eficiente permite la integración robusta de datos entre múltiples muestras. Al seguir buenas prácticas en el preprocesamiento, indexación y cuantificación, y al utilizar herramientas como <code>tximport</code> o <code>pandas</code> para la integración, los investigadores pueden construir matrices de expresión de alta calidad que son esenciales para análisis posteriores de expresión diferencial, integración de datos y descubrimiento de patrones biológicos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / Buenas prácticas</h2>
+            <ul>
+                <li>❌ No usar <code>--seqBias</code> en Salmon con datos de secuenciación de doble cadena: puede introducir sesgos sistemáticos.</li>
+                <li>✅ Asegurarse de que el índice (Kallisto/Salmon) esté generado con el mismo archivo de transcripción que se usará en todos los análisis.</li>
+                <li>❌ No validar el formato de los archivos de cuantificación antes de integrarlos.</li>
+                <li>✅ Usar <code>tximport</code> en R o scripts de Python para asegurar que todos los genes estén alineados correctamente.</li>
+                <li>✅ Documentar todos los parámetros usados en cuantificación para reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

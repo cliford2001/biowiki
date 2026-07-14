@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="categoria" content="Anotación funcional">
+  <title>Anotación funcional de variantes con CADD y REVEL</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Anotación funcional de variantes con CADD y REVEL</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Por qué anotar variantes funcionales?</h2>
+      <p>En bioinformática, la identificación de variantes genéticas asociadas a enfermedades o trastornos es un paso fundamental en la genómica médica. Sin embargo, la mayoría de las variantes identificadas en secuenciación de exoma o genoma completo son de significado funcional incierto. La <strong>anotación funcional</strong> permite predecir el impacto potencial de una variante en la función del gen o proteína, lo que ayuda a priorizar candidatos para estudios clínicos o funcionales.</p>
+      <p>Dos herramientas altamente utilizadas en este contexto son <strong>CADD</strong> (Combined Annotation Dependent Depletion) y <strong>REVEL</strong> (Rare Exome Variant Ensemble Learner). Ambas aprovechan datos genómicos, conservación evolutiva, y modelos de aprendizaje automático para asignar una puntuación de daño a variantes, facilitando la evaluación de su relevancia biológica.</p>
+    </section>
+
+    <section>
+      <h2>CADD: Puntuación de daño basada en datos genómicos</h2>
+      <p><strong>CADD</strong> es una herramienta que combina múltiples fuentes de anotación funcional en un único score que mide el daño potencial de una variante. El modelo se entrena usando variantes conocidas y no conocidas en el genoma humano, evaluando su posición, tipo de mutación, conservación evolutiva (como por ejemplo con PhyloP o SiPhy), y otras características funcionales.</p>
+      <p>La puntuación CADD está escalada de forma que valores más altos indican un mayor daño. Por ejemplo, una puntuación de <code>20</code> representa un nivel de daño que es más raro que el 99.9% de las variantes en el genoma humano. Aunque CADD no predice directamente el fenotipo, es una herramienta poderosa para filtrar variantes de interés.</p>
+      <pre><code class="language-bash"># Descargar archivos de CADD (por ejemplo, para exoma humano)
+wget https://krishna.stanford.edu/~cadd/v1.6/GRCh38/Exome/Exome_CADD_scores.tar.gz
+</code></pre>
+      <pre><code class="language-python"># Ejemplo de uso en Python con un archivo VCF
+import pandas as pd
+
+# Cargar puntuaciones CADD
+cadd_scores = pd.read_csv("cadd_scores.tsv", sep='\t')
+
+# Filtrar variantes con CADD > 20
+high_impact = cadd_scores[cadd_scores['CADD'] &gt; 20]
+print(f"Variantes con CADD &gt; 20: {len(high_impact)}")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>REVEL: Predicción de patogenicidad mediante ensamblaje</h2>
+      <p><strong>REVEL</strong> es un modelo de ensamblaje que combina puntuaciones de múltiples herramientas predictivas de patogenicidad, incluyendo SIFT, PolyPhen-2, CADD, y otras, para mejorar la precisión en la predicción de variantes patogénicas, especialmente en exomas de pacientes con enfermedades raras.</p>
+      <p>REVEL utiliza un enfoque de aprendizaje automático supervisado entrenado con variantes de alto y bajo impacto, y es particularmente útil para variantes raras que no están bien representadas en bases de datos como dbSNP o gnomAD. Su resultado es una puntuación entre <code>0</code> (no patogénica) y <code>1</code> (altamente patogénica).</p>
+      <p>Una puntuación de REVEL mayor a <code>0.7</code> se considera fuertemente patogénica en muchos estudios clínicos.</p>
+      <pre><code class="language-bash"># Descargar modelo y puntuaciones REVEL
+wget https://github.com/REVEL/REVEL/releases/download/v1.3/REVEL_1.3.zip
+unzip REVEL_1.3.zip
+</code></pre>
+      <pre><code class="language-r"># Ejemplo en R con el paquete 'REVEL'
+library(REVEL)
+
+# Cargar datos de variantes
+variants &lt;- read.table("variantes.vcf", header=TRUE, sep="\t")
+
+# Calcular puntuación REVEL
+revel_scores &lt;- predictREVEL(variants, model="1.3")
+
+# Filtrar variantes con REVEL &gt; 0.7
+high_revel &lt;- variants[revel_scores &gt; 0.7, ]
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Integración de CADD y REVEL en el flujo de análisis</h2>
+      <p>La combinación de CADD y REVEL permite un análisis más robusto. Por ejemplo, se puede priorizar variantes con:</p>
+      <ul>
+        <li>CADD > 20 <strong>y</strong> REVEL > 0.7</li>
+        <li>CADD > 15 <strong>o</strong> REVEL > 0.6 (para filtros más flexibles)</li>
+      </ul>
+      <p>Este enfoque permite equilibrar sensibilidad y especificidad, y es especialmente útil en estudios de enfermedades mendelianas, trastornos neurológicos, o cáncer hereditario.</p>
+      <pre><code class="language-python"># Combinar CADD y REVEL en Python
+merged_data = pd.merge(cadd_scores, revel_scores, on=["CHROM", "POS", "REF", "ALT"])
+
+# Filtro combinado
+combined_filter = merged_data[(merged_data["CADD"] &gt; 20) & (merged_data["REVEL"] &gt; 0.7)]
+print(f"Variantes con CADD &gt; 20 y REVEL &gt; 0.7: {len(combined_filter)}")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La anotación funcional de variantes con CADD y REVEL es una práctica esencial en el análisis de datos genómicos. CADD proporciona un score de daño basado en datos genómicos y conservación, mientras que REVEL utiliza un modelo de ensamblaje para predecir patogenicidad con alta precisión. Juntas, estas herramientas permiten priorizar variantes con mayor impacto biológico, acelerando la identificación de causas genéticas de enfermedades.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No confundir puntuaciones con resultados clínicos:</strong> CADD y REVEL son predictivos, no diagnósticos. Siempre validar con estudios funcionales o datos clínicos.</li>
+        <li><strong>Usar el modelo correcto:</strong> CADD tiene versiones para exoma y genoma; asegurarse de usar la adecuada (por ejemplo, <code>Exome_CADD_scores.tar.gz</code> para exomas).</li>
+        <li><strong>Evitar filtros excesivos:</strong> Un umbral demasiado alto (por ejemplo, CADD > 30) puede eliminar variantes reales de interés.</li>
+        <li><strong>Combinar con otras fuentes:</strong> Integrar con datos de frecuencia en gnomAD, consenso de expertos (ClinVar), o herramientas como VEP (Variant Effect Predictor) para un análisis más completo.</li>
+        <li><strong>Documentar el proceso:</strong> Registrar qué herramientas, versiones y umbrales se usaron, para reproducibilidad.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

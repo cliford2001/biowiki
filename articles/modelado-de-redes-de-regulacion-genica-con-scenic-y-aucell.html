@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de redes de regulación génica con SCENIC y AUCell</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Regulación génica">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de redes de regulación génica con SCENIC y AUCell</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Comprendiendo la regulación génica a gran escala</h2>
+      <p>El modelado de redes de regulación génica representa una de las fronteras más avanzadas en bioinformática funcional, especialmente en el análisis de datos de expresión génica de alta resolución como los generados por secuenciación de ARN single-cell (scRNA-seq). Estas redes permiten ir más allá de los simples listados de genes diferencialmente expresados para revelar los circuitos reguladores subyacentes: qué factores de transcripción (TFs) están activos, qué genes regulan y cómo se organizan estas interacciones en módulos funcionales.</p>
+      <p>En este contexto, <strong>SCENIC</strong> (Single-Cell rEgulatory Network Inference and Clustering) y <strong>AUCell</strong> se han consolidado como herramientas de referencia para el análisis de regulación génica a escala celular. Mientras que SCENIC construye las redes de regulación a partir de datos de expresión y conocimiento previo de motivos de factores de transcripción, AUCell permite evaluar la actividad de estas redes en cada célula individual, transformando la predicción en una medida cuantificable de regulación biológica.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo: Cómo SCENIC y AUCell transforman los datos en conocimiento</h2>
+
+      <h3>1. El pipeline de SCENIC: De datos a redes de regulación</h3>
+      <p>SCENIC opera en tres fases principales:</p>
+      <ul>
+        <li><strong>Construcción de regulon</strong>: SCENIC utiliza una base de datos de motivos de factores de transcripción (como JASPAR o HOCOMOCO) para identificar los genes blanco de cada TF. A partir de los datos de expresión génica (por ejemplo, de una matriz de expresión de scRNA-seq), calcula el grado de coexpresión entre los genes de un regulon (un TF y sus genes blanco). Un regulon se define como un conjunto de genes cuya expresión es altamente coherente y correlacionada con la actividad del TF.</li>
+        <li><strong>Infraestructura de regulación</strong>: SCENIC genera un modelo de regulación que incluye el TF, los genes regulados, y el score de regulación (como un valor de correlación o un score de coexpresión) para cada regulon.</li>
+        <li><strong>Clustering y asociación de células</strong>: Las células se agrupan según la activación de sus regulones, permitiendo identificar tipos celulares o estados funcionales basados en patrones de regulación, no solo en expresión génica.</li>
+      </ul>
+
+      <h3>2. AUCell: Evaluación de la actividad de las redes reguladoras</h3>
+      <p>Una vez que se ha definido el conjunto de regulones mediante SCENIC, <strong>AUCell</strong> permite calcular la <em>actividad de regulón</em> en cada célula individual. El método se basa en el concepto de <em>Area Under the Curve</em> (AUC), adaptado para redes reguladoras:</p>
+      <ul>
+        <li>Para cada regulón, se ordenan los genes por su expresión en una célula.</li>
+        <li>Se calcula el AUC como el área bajo la curva de la función de acumulación de expresión, considerando solo los genes del regulón.</li>
+        <li>El valor AUC oscila entre 0 y 1, donde 0 indica ausencia de actividad del regulón, y 1 indica máxima activación.</li>
+      </ul>
+      <p>Este enfoque es robusto ante ruido y permite comparar la actividad de regulones entre diferentes condiciones o estados celulares, incluso en presencia de baja expresión de los factores de transcripción.</p>
+
+      <h3>3. Aplicación práctica: Ejemplo en R</h3>
+      <p>La integración de SCENIC y AUCell se realiza comúnmente mediante paquetes R como <code>SCENIC</code> y <code>AUCell</code>. A continuación, se muestra un fragmento de código que ilustra la secuencia típica:</p>
+      <pre><code>library(SCENIC)
+library(AUCell)
+
+# Supongamos que ya tienes una matriz de expresión (exp_matrix) y una lista de factores de transcripción (tf_list)
+
+# Paso 1: Construcción de regulones
+scenic_result &lt;- create_scenic_object(exp_matrix, tf_list)
+
+# Paso 2: Cálculo del score de regulón
+regulon_scores &lt;- get_regulon_scores(scenic_result)
+
+# Paso 3: Evaluación de actividad de regulón con AUCell
+auc_scores &lt;- aucell(regulon_scores, method = "aucell")
+
+# Paso 4: Análisis de resultados
+head(auc_scores)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El modelado de redes de regulación génica con SCENIC y AUCell representa un avance fundamental para la comprensión de los circuitos moleculares que gobiernan el desarrollo celular, la diferenciación y las respuestas a estímulos. SCENIC permite construir redes de regulación basadas en datos reales de expresión, mientras que AUCell ofrece una medida cuantitativa y robusta de la activación de estos circuitos en cada célula. Juntos, permiten descubrir nuevas relaciones reguladoras, identificar factores clave en procesos patológicos, y proporcionar una base para la interpretación biológica de los datos de scRNA-seq más allá de los genes diferencialmente expresados.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar bases de datos de motivos inadecuadas</strong>: Asegúrate de utilizar bases de datos actualizadas y relevantes para tu organismo de estudio (por ejemplo, JASPAR para humanos o murinos).</li>
+        <li><strong>Ignorar la calidad de los datos de entrada</strong>: Los resultados de SCENIC son altamente sensibles a ruido. Preprocesa adecuadamente los datos (normalización, corrección de batch, selección de genes variables).</li>
+        <li><strong>Interpretar AUC sin contexto biológico</strong>: Un valor AUC alto no implica necesariamente que el TF sea funcionalmente activo; debe combinarse con la expresión del TF, la coexpresión y la literatura biológica.</li>
+        <li><strong>Evitar la validación cruzada</strong>: Compara los regulones identificados con conocimiento previo de vías biológicas (por ejemplo, usando GSEA o Enrichr).</li>
+      </ul>
+      <p>En resumen, SCENIC y AUCell son herramientas potentes, pero su éxito depende de una preparación cuidadosa de los datos y una interpretación crítica de los resultados.</p>
+    </section>
+  </article>
+</body>
+</html>

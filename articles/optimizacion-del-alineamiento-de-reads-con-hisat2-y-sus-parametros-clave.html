@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización del alineamiento de reads con HISAT2 y sus parámetros clave</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización del alineamiento de reads con HISAT2 y sus parámetros clave</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué el alineamiento eficiente es crucial</h2>
+            <p>El alineamiento de reads de secuenciación de nueva generación (NGS) es una de las etapas más fundamentales en el análisis de datos genómicos. Su objetivo es mapear las secuencias cortas de ADN o ARN (reads) generadas por los secuenciadores a un genoma de referencia. Un alineamiento ineficiente puede llevar a la pérdida de información biológica, al aumento de falsos positivos o negativos, y al consumo excesivo de recursos computacionales.</p>
+            <p><strong>HISAT2</strong> (Hierarchical Indexing for Spliced Alignment of Transcripts) es una herramienta de alineamiento de última generación diseñada para alinear reads de RNA-Seq a un genoma de referencia, especialmente eficiente en el manejo de <em>splicing</em> (unión de exones). Aunque su rendimiento es excelente por defecto, su verdadero potencial se desbloquea mediante una optimización cuidadosa de sus parámetros. Este artículo explora los parámetros clave de HISAT2, sus efectos en el alineamiento y las mejores prácticas para lograr un resultado óptimo.</p>
+        </section>
+
+        <section>
+            <h2>Parámetros clave y su impacto</h2>
+            <h3>1. Índice de referencia: La base del rendimiento</h3>
+            <p>El primer paso es crear un índice del genoma de referencia. HISAT2 utiliza un índice jerárquico que permite un alineamiento rápido. Se recomienda generar el índice con el comando:</p>
+            <pre><code>hisat2-build -p 8 genome.fa genome_index</code></pre>
+            <p>El parámetro <code>-p</code> especifica el número de hilos para la construcción del índice. Usar todos los núcleos disponibles acelera este paso crítico, que puede tardar horas si se hace con un solo hilo.</p>
+
+            <h3>2. Parámetro de longitud de los reads: --min-intronlen y --max-intronlen</h3>
+            <p>Estos parámetros definen los límites inferiores y superiores para los intrones detectados. Por defecto, HISAT2 asume un intrón mínimo de 20 nucleótidos y máximo de 500,000. Sin embargo, en organismos como humanos, intrones de hasta 100,000 nt son comunes. Es recomendable ajustarlos a valores más realistas para tu especie, por ejemplo:</p>
+            <pre><code>hisat2 -p 8 --min-intronlen 20 --max-intronlen 100000 -x genome_index -1 reads_1.fastq -2 reads_2.fastq -S aln.sam</code></pre>
+            <p>Un ajuste adecuado reduce el número de alineamientos incorrectos y mejora la sensibilidad.</p>
+
+            <h3>3. Parámetro de calidad: --score-min</h3>
+            <p>Este es uno de los parámetros más influyentes. Controla el mínimo puntaje de alineamiento requerido. El valor por defecto es <code>SP:0,1,-0.2,0</code>, que significa:</p>
+            <ul>
+                <li><code>SP:0</code>: Puntaje para el inicio de un intrón (splice penalty)</li>
+                <li><code>1</code>: Puntaje para un match</li>
+                <li><code>-0.2</code>: Puntaje para un mismatch</li>
+                <li><code>0</code>: Puntaje para un gap</li>
+            </ul>
+            <p>Para aumentar la sensibilidad, especialmente con datos de baja calidad, puedes suavizarlo:</p>
+            <pre><code>hisat2 -p 8 --score-min "L,1,0.3" -x genome_index -1 reads_1.fastq -2 reads_2.fastq -S aln.sam</code></pre>
+            <p>Este ajuste permite alineamientos con menor puntaje, pero requiere más memoria y tiempo. Para datos de alta calidad, puede usarse un valor más estricto.</p>
+
+            <h3>4. Parámetro de alineamientos múltiples: --max-intronlen y --max-intronlen</h3>
+            <p>El parámetro <code>--max-intronlen</code> también controla la longitud máxima de los intrones permitidos. Ajustarlo a valores más altos (por ejemplo, 100000) es crucial para organismos con grandes intrones.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Optimizar el alineamiento con HISAT2 no es solo un problema de velocidad, sino de precisión y sensibilidad. El uso de un índice bien construido, junto con la configuración adecuada de parámetros como <code>--min-intronlen</code>, <code>--max-intronlen</code> y <code>--score-min</code>, permite un mapeo más fiel de los reads a la referencia genómica. Esta etapa optimizada es el cimiento para análisis posteriores, como la cuantificación de expresión, detección de variantes o análisis de splicing alternativo.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar el índice por defecto sin personalizar:</strong> El índice predeterminado puede no ser óptimo para todos los organismos. Siempre genera un índice específico para tu genoma de referencia.</li>
+                <li><strong>Ignorar los parámetros de intrón:</strong> No ajustar <code>--min-intronlen</code> y <code>--max-intronlen</code> puede resultar en la pérdida de alineamientos reales, especialmente en organismos con grandes intrones.</li>
+                <li><strong>Aplicar --score-min sin entender su impacto:</strong> Un valor demasiado estricto reduce la sensibilidad. Un valor demasiado flojo aumenta el tiempo y la memoria. Prueba con valores intermedios y evalúa el resultado.</li>
+                <li><strong>Olvidar el uso de múltiples hilos:</strong> Siempre usa el parámetro <code>-p</code> para aprovechar todos los núcleos disponibles. Esto acelera significativamente el proceso.</li>
+                <li><strong>Usar datos sin calidad:</strong> Asegúrate de que tus reads estén previamente filtrados y cualificados con herramientas como <code>fastqc</code> y <code>trimmomatic</code> antes de alinearlos.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

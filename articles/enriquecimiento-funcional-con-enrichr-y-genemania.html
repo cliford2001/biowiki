@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enriquecimiento funcional con Enrichr y GeneMANIA</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Enriquecimiento funcional con Enrichr y GeneMANIA</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El enriquecimiento funcional es una técnica fundamental en bioinformática que permite interpretar conjuntos de genes diferencialmente expresados en términos biológicos. Tras identificar genes relevantes mediante análisis de expresión diferencial, es crucial responder: ¿qué procesos biológicos, caminos metabólicos o funciones moleculares están subyacentes a estos cambios? Herramientas como <strong>Enrichr</strong> y <strong>GeneMANIA</strong> abordan esta pregunta con enfoques complementarios, combinando bases de datos de rutas, interacciones proteína-proteína, y anotaciones funcionales en una única plataforma integrada.</p>
+        </section>
+
+        <section>
+            <h2>Enrichr: Análisis de enriquecimiento funcional en línea</h2>
+            <p><strong>Enrichr</strong> (https://maayanlab.cloud/Enrichr/) es una herramienta web de acceso libre que realiza análisis de enriquecimiento funcional utilizando una amplia gama de bases de datos integradas, incluyendo KEGG, Reactome, GO (Biological Process, Molecular Function, Cellular Component), WikiPathways, y muchas más. Su principal ventaja radica en la simplicidad: se requiere únicamente una lista de genes (en formato de una columna, un solo ID por línea), y Enrichr devuelve resultados en cuestión de segundos.</p>
+
+            <h3>Uso básico con R</h3>
+            <p>El paquete <code>enrichR</code> en R permite automatizar el acceso a Enrichr desde scripts. A continuación se muestra un ejemplo de uso:</p>
+            <pre><code class="language-r">
+# Instalar el paquete si no está disponible
+# if (!require("enrichR")) install.packages("enrichR")
+
+library(enrichR)
+
+# Lista de genes diferencialmente expresados
+genes <- c("TP53", "BRCA1", "CDKN1A", "BAX", "BCL2")
+
+# Ejecutar enriquecimiento funcional
+results <- enrichr(genes, databases = c("KEGG_2021_Human", "GO_Biological_Process_2021"))
+
+# Ver los resultados
+head(results$KEGG_2021_Human)
+
+# Visualizar top 10 rutas
+plotEnrichment(results$KEGG_2021_Human, top = 10)
+            </code></pre>
+        </section>
+
+        <section>
+            <h2>GeneMANIA: Redes funcionales y enriquecimiento integrado</h2>
+            <p><strong>GeneMANIA</strong> (https://genemania.org/) es una plataforma que va más allá del simple enriquecimiento funcional: combina múltiples tipos de evidencia (interacciones proteína-proteína, coexpresión, localización celular, funciones anotadas, etc.) para construir redes funcionales que ayudan a inferir la relación entre genes. Además, proporciona un análisis de enriquecimiento funcional integrado, ideal para explorar conexiones entre genes en un contexto biológico más amplio.</p>
+
+            <h3>Uso con Python</h3>
+            <p>Aunque GeneMANIA no ofrece un paquete oficial, se puede interactuar mediante su API REST. Aquí un ejemplo en Python usando <code>requests</code>:</p>
+            <pre><code class="language-python">
+import requests
+import json
+
+# Lista de genes
+genes = ["TP53", "BRCA1", "CDKN1A", "BAX", "BCL2"]
+
+# URL de la API
+url = "https://genemania.org/api/v2/interaction"  # Enlace base para análisis
+
+# Parámetros de consulta
+params = {
+    "geneList": ",".join(genes),
+    "organism": "Homo sapiens",
+    "useCache": True
+}
+
+try:
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Procesar resultados (ej. top interacciones)
+    if 'interactions' in data:
+        top_interactions = data['interactions'][:10]
+        print("Top 10 interacciones:")
+        for interaction in top_interactions:
+            print(f"{interaction['geneA']} ↔ {interaction['geneB']} (puntuación: {interaction['score']:.4f})")
+    else:
+        print("No se encontraron interacciones.")
+except requests.exceptions.RequestException as e:
+    print(f"Error en la solicitud: {e}")
+            </code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El enriquecimiento funcional con Enrichr y GeneMANIA representa dos caras de una misma moneda: Enrichr ofrece una evaluación rápida y detallada de rutas y funciones anotadas, ideal para la validación inicial de genes. GeneMANIA, por otro lado, profundiza en las relaciones funcionales entre genes mediante redes integradas, lo que permite descubrir patrones de co-regulación y funciones compartidas. Juntos, estos herramientas son esenciales para transformar listas de genes en conocimiento biológico significativo.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / Buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar genes no homologados:</strong> Asegúrate de que los identificadores de genes sean correctos y homologados al organismo de estudio (ej. H. sapiens, M. musculus).</li>
+                <li><strong>Ignorar múltiples pruebas:</strong> Los resultados de enriquecimiento deben interpretarse con cautela. Un solo p-valor bajo no garantiza biología real. Usa ajuste de FDR y evalúa el tamaño del conjunto.</li>
+                <li><strong>Confundir enriquecimiento con causalidad:</strong> El enriquecimiento indica asociaciones, no relaciones causales. Evita afirmaciones como "este gen causa X" basadas únicamente en resultados de enriquecimiento.</li>
+                <li><strong>Exceso de datos:</strong> Una lista de genes muy larga puede producir resultados saturados. Considera filtrar por valor de p o log2FC antes del análisis.</li>
+                <li><strong>Utilizar datos actualizados:</strong> Asegúrate de que las bases de datos usadas (como KEGG o GO) estén actualizadas. Enrichr actualiza sus bases automáticamente.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

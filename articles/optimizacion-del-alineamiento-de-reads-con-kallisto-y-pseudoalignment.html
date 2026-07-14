@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización del alineamiento de reads con Kallisto y pseudoalignment</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización del alineamiento de reads con Kallisto y pseudoalignment</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: el desafío del alineamiento de reads en secuenciación de RNA</h2>
+            <p>El alineamiento de reads de secuenciación de ARN (RNA-seq) es un paso fundamental en el análisis de expresión génica. Tradicionalmente, se ha basado en alineadores como <strong>STAR</strong>, <strong>Hisat2</strong>, o <strong>bowtie2</strong>, que comparan cada read contra el genoma de referencia para encontrar la ubicación más probable. Sin embargo, este enfoque es computacionalmente costoso, especialmente con grandes conjuntos de datos. La necesidad de velocidad y eficiencia ha impulsado el desarrollo de métodos alternativos, entre los que destaca <strong>Kallisto</strong>, un alineador que utiliza el paradigma del <em>pseudoalignment</em> para acelerar el proceso sin sacrificar la precisión.</p>
+            <p>En este artículo, exploraremos cómo Kallisto aprovecha el <em>pseudoalignment</em> para optimizar el alineamiento de reads, sus beneficios comparativos, y cómo configurar correctamente su uso para obtener resultados óptimos en análisis de expresión diferencial.</p>
+        </section>
+
+        <section>
+            <h2>¿Qué es el pseudoalignment y cómo funciona Kallisto?</h2>
+            <p>El <em>pseudoalignment</em> no busca encontrar el alineamiento exacto de cada read al genoma, sino determinar <strong>qué transcritos</strong> podrían haber generado cada read. En lugar de comparar reads contra secuencias genómicas completas, Kallisto utiliza un índice de <strong>transcritos</strong> (basado en la secuencia de los ARN mensajeros) y aplica un algoritmo de <em>quantification by pseudoalignment</em> que identifica rápidamente los transcritos compatibles.</p>
+            <p>El proceso se basa en los siguientes pasos:</p>
+            <ol>
+                <li>Construcción de un índice de transcritos a partir de los archivos <code>FASTA</code> y <code>GENCODE</code> (o <code>RefSeq</code>) usando <code>kallisto index</code>.</li>
+                <li>Uso de <code>kallisto pseudoalignment</code> para determinar los transcritos posibles para cada read.</li>
+                <li>Estimación de abundancias de transcritos mediante el algoritmo <em>bootstrap</em> y <em>expectation-maximization</em>.</li>
+            </ol>
+            <p>Este enfoque elimina el paso de alineamiento físico y reduce el tiempo de cálculo en un orden de magnitud, especialmente útil para análisis exploratorios o grandes cohortes.</p>
+        </section>
+
+        <section>
+            <h2>Comparación con alineadores tradicionales: ventajas y limitaciones</h2>
+            <p>Compared to traditional aligners, Kallisto ofrece ventajas clave:</p>
+            <ul>
+                <li><strong>Velocidad</strong>: Puede analizar millones de reads en minutos, frente a horas con STAR.</li>
+                <li><strong>Uso de memoria</strong>: Requiere mucho menos RAM, lo que permite su uso en máquinas con recursos limitados.</li>
+                <li><strong>Consistencia</strong>: Las estimaciones de expresión son altamente reproducibles y se han validado contra métodos basados en alineamiento real.</li>
+            </ul>
+            <p>Sin embargo, tiene limitaciones:</p>
+            <ul>
+                <li>No genera archivos <code>BAM</code> o <code>SAM</code> con alineamientos detallados, lo que limita su uso en análisis de variantes o fusiones.</li>
+                <li>Dependencia del índice de transcritos; si el genoma o los transcritos cambian, el índice debe reconstruirse.</li>
+                <li>Menor capacidad para detectar isoformas complejas si el índice no incluye todos los transcritos alternativos.</li>
+            </ul>
+            <p>Por tanto, Kallisto es ideal para cuantificación de expresión, pero no reemplaza a alineadores como <strong>STAR</strong> o <strong>Hisat2</strong> en análisis de variantes o estructura de ARN.</p>
+        </section>
+
+        <section>
+            <h2>Configuración óptima de Kallisto para análisis de expresión</h2>
+            <p>Para obtener resultados precisos y reproducibles con Kallisto, es crucial configurar correctamente el flujo de trabajo. A continuación, se detallan los pasos recomendados:</p>
+            <h3>1. Construcción del índice de transcritos</h3>
+            <p>Usa un conjunto de transcritos actualizado (por ejemplo, desde <a href="https://www.gencodegenes.org">GENCODE</a> o <a href="https://www.ncbi.nlm.nih.gov/refseq">RefSeq</a>):</p>
+            <pre><code>kallisto index -i transcriptome.idx transcriptome.fa</code></pre>
+            <h3>2. Pseudoalignment y cuantificación</h3>
+            <p>Para pares de lecturas (R1, R2), ejecuta:</p>
+            <pre><code>kallisto quant -i transcriptome.idx -o output -b 100 reads_1.fastq reads_2.fastq</code></pre>
+            <p>Donde:</p>
+            <ul>
+                <li><code>-i</code>: índice de transcritos.</li>
+                <li><code>-o</code>: directorio de salida.</li>
+                <li><code>-b 100</code>: número de bootstrap para estimar errores.</li>
+                <li>Los archivos de entrada deben estar en formato <code>FASTQ</code>.</li>
+            </ul>
+            <p>El resultado incluye <code>abundance.tsv</code> con estimaciones de expresión por gen/transcripción.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Kallisto representa un avance significativo en el análisis de datos de RNA-seq al utilizar el <em>pseudoalignment</em> para acelerar la cuantificación de expresión génica. Al eliminar la necesidad de alinear cada read al genoma, reduce el tiempo y el uso de memoria sin sacrificar precisión, lo que lo convierte en una herramienta esencial para análisis rápidos y escalables. Aunque no reemplaza a los alineadores tradicionales en todos los escenarios, su integración en los flujos de trabajo modernos es fundamental para el análisis de expresión diferencial eficiente.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar un índice obsoleto</strong>: Siempre verifica que el índice de transcritos esté actualizado respecto al genoma de referencia.</li>
+                <li><strong>No especificar el número de bootstrap</strong>: Usa al menos <code>-b 100</code> para obtener estimaciones de error confiables.</li>
+                <li><strong>Ignorar la calidad de los datos</strong>: Aunque Kallisto es robusto, datos de baja calidad pueden afectar las estimaciones. Filtra reads con baja calidad antes del análisis.</li>
+                <li><strong>Confundir pseudoalignment con alineamiento</strong>: Recuerda que Kallisto no genera archivos <code>BAM</code> ni permite visualización de alineamientos. Usa <strong>STAR</strong> o <strong>Hisat2</strong> si necesitas eso.</li>
+                <li><strong>No validar con métodos alternativos</strong>: Para estudios críticos, compara resultados con herramientas como <strong>Salmon</strong> o <strong>DESeq2</strong> para verificar consistencia.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

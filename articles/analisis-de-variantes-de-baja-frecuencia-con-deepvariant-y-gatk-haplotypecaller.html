@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes de baja frecuencia con DeepVariant y GATK HaplotypeCaller</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de variantes de baja frecuencia con DeepVariant y GATK HaplotypeCaller</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Por qué analizar variantes de baja frecuencia?</h2>
+            <p>Las variantes de baja frecuencia (Low-Frequency Variants, LCVs), definidas generalmente como variantes con frecuencias alélicas entre 1% y 5%, son un campo clave en genómica humana y biología evolutiva. Aunque individuales, estas variantes pueden tener efectos fenotípicos significativos en trastornos complejos, cáncer, y respuesta a medicamentos. Su detección requiere métodos de secuenciación de alta profundidad (≥30x) y algoritmos especializados que equilibren sensibilidad y especificidad.</p>
+            <p>En este artículo, exploramos dos herramientas de referencia en el análisis de variantes: <strong>DeepVariant</strong>, un modelo de aprendizaje profundo desarrollado por Google, y <strong>GATK HaplotypeCaller</strong>, el método tradicional basado en modelos de probabilidad de genotipos. Compararemos sus enfoques, ventajas y limitaciones en el contexto de variantes de baja frecuencia.</p>
+        </section>
+
+        <section>
+            <h2>Enfoque de DeepVariant: Aprendizaje profundo sobre imágenes de alineamiento</h2>
+            <p>DeepVariant transforma el problema de llamado de variantes en un problema de clasificación de imágenes. El alineamiento de lecturas (BAM) se convierte en una imagen tridimensional ("image") donde cada "pixel" representa una posición de base en el genoma, con canales para las bases, calidad y otros atributos. Esta imagen se alimenta a una red neuronal convolucional (CNN) entrenada con millones de alineamientos etiquetados.</p>
+            <p>Las ventajas clave de DeepVariant incluyen:</p>
+            <ul>
+                <li>Alta precisión en variantes de alta y baja frecuencia gracias al entrenamiento en datos reales.</li>
+                <li>Reducción significativa de falsos positivos en regiones complejas (repeticiones, homólogos).</li>
+                <li>Menor dependencia de parámetros manuales en comparación con métodos clásicos.</li>
+            </ul>
+            <p>Para variantes de baja frecuencia, DeepVariant puede detectar cambios alélicos sutiles gracias a su capacidad para aprender patrones contextuales que los métodos basados en modelos de probabilidad no capturan fácilmente.</p>
+
+            <h3>Ejemplo de uso con DeepVariant</h3>
+            <pre><code>docker run -v $(pwd):/data \
+  google/deepvariant:latest \
+  /opt/deepvariant/bin/run_deepvariant \
+  --ref=/data/hg38.fasta \
+  --reads=/data/aligned.bam \
+  --output_vcf=/data/variants.vcf \
+  --num_shards=16</code></pre>
+        </section>
+
+        <section>
+            <h2>Enfoque de GATK HaplotypeCaller: Modelado de haplotipos con llamado probabilístico</h2>
+            <p>GATK HaplotypeCaller sigue un enfoque basado en modelos de probabilidad. Su algoritmo consiste en:</p>
+            <ol>
+                <li>Identificar regiones de posible variación (Active Regions).</li>
+                <li>Reconstruir haplotipos posibles dentro de cada región.</li>
+                <li>Calcular la probabilidad de cada genotipo dado las lecturas alineadas.</li>
+                <li>Seleccionar el genotipo más probable.</li>
+            </ol>
+            <p>Este método es particularmente robusto en regiones con alta variabilidad y es ampliamente utilizado en proyectos genómicos de gran escala, como el 1000 Genomes Project.</p>
+            <p>Para mejorar la detección de variantes de baja frecuencia, GATK ofrece opciones clave:</p>
+            <ul>
+                <li><code>--min-base-quality-score</code> para filtrar bases de baja calidad.</li>
+                <li><code>--min-detection-allele-frequency</code> para ajustar el umbral de detección.</li>
+                <li>Uso de <code>GenotypeGVCFs</code> para consolidar llamados de múltiples muestras.</li>
+            </ul>
+
+            <h3>Ejemplo de uso con GATK HaplotypeCaller</h3>
+            <pre><code>gatk HaplotypeCaller \
+  -R hg38.fasta \
+  -I aligned.bam \
+  -O variants.g.vcf \
+  -stand-call-conf 10 \
+  -min-base-quality-score 20 \
+  -min-detection-allele-frequency 0.01</code></pre>
+        </section>
+
+        <section>
+            <h2>Comparación y recomendaciones prácticas</h2>
+            <p>En comparación directa, ambos métodos son altamente efectivos, pero con diferencias clave:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th>DeepVariant</th>
+                        <th>GATK HaplotypeCaller</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sensibilidad en LCVs</strong></td>
+                        <td>Alta (mejor en regiones complejas)</td>
+                        <td>Alta, pero sensible a parámetros</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Especificidad</strong></td>
+                        <td>Altísima (menos falsos positivos)</td>
+                        <td>Alta con configuración adecuada</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Uso de recursos</strong></td>
+                        <td>Alto (requiere GPU recomendado)</td>
+                        <td>Medio (CPU, escala bien)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Configuración</strong></td>
+                        <td>Mínima (modelo preentrenado)</td>
+                        <td>Alta (requiere ajuste fino)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Recomendaciones:</p>
+            <ul>
+                <li>Para proyectos con presupuesto técnico y acceso a GPU: <strong>DeepVariant</strong> es la opción más robusta.</li>
+                <li>Para entornos clásicos de bioinformática (sin GPU, equipos limitados): <strong>GATK HaplotypeCaller</strong> sigue siendo la herramienta más estable y configurable.</li>
+                <li>Para alta confianza en LCVs, considerar <strong>análisis combinado</strong> con ambos métodos y consenso.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de variantes de baja frecuencia es un pilar del estudio de variabilidad genética humana. DeepVariant y GATK HaplotypeCaller representan dos paradigmas poderosos: el aprendizaje profundo y el modelo probabilístico, respectivamente. DeepVariant ofrece mayor precisión y menor dependencia de parámetros, ideal para entornos con recursos. GATK HaplotypeCaller, por su parte, sigue siendo la herramienta de referencia por su flexibilidad y madurez. La elección depende del contexto, pero en ambos casos, la calidad del alineamiento y la profundidad de secuenciación son determinantes clave para el éxito.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <h3>Errores comunes</h3>
+            <ul>
+                <li>Usar profundidades insuficientes (<20x) para detectar variantes de baja frecuencia.</li>
+                <li>No filtrar bases de baja calidad antes del llamado.</li>
+                <li>Aplicar umbrales de frecuencia sin validar con datos de control.</li>
+                <li>Ignorar la variabilidad de fondo en regiones genómicas.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Usar alineamiento de alta calidad (por ejemplo, con BWA-MEM o NGMLR).</li>
+                <li>Verificar variantes con herramientas como <code>bcftools</code> o <code>vt</code> para filtrado posterior.</li>
+                <li>Validar variantes de baja frecuencia con datos de múltiples muestras o técnicas de confirmación (Sanger).</li>
+                <li>Documentar todos los parámetros y versiones de herramientas utilizadas.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de variantes de baja frecuencia con DeepVariant y variant calling pipelines</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Detección de variantes de baja frecuencia con DeepVariant y variant calling pipelines</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La detección de variantes de baja frecuencia (VAF, por sus siglas en inglés) es un reto clave en bioinformática, especialmente en estudios de cáncer, enfermedades genéticas raras y microbiología. Estas variantes, que pueden estar presentes en menos del 5% de las lecturas alineadas, son críticas para entender la heterogeneidad tumoral, la resistencia a fármacos o la composición de microbiomas. En este artículo, exploramos cómo herramientas como <strong>DeepVariant</strong> y pipelines convencionales (como GATK) permiten la identificación precisa de estos cambios, abordando sus fortalezas, limitaciones y mejores prácticas.</p>
+        </section>
+
+        <section>
+            <h2>Principios de la detección de variantes de baja frecuencia</h2>
+            <p>Las variantes de baja frecuencia se definen como alteraciones genéticas presentes en una fracción baja del material genético de una muestra. Su detección requiere un enfoque altamente sensible, ya que los errores de secuenciación o de alineamiento pueden enmascarar señales reales. La clave está en el balance entre <em>sensibilidad</em> (detectar variantes reales) y <em>especificidad</em> (evitar falsos positivos).</p>
+            
+            <h3>Desafíos técnicos</h3>
+            <ul>
+                <li><strong>Errores de secuenciación:</strong> los errores aleatorios en las lecturas pueden simular variantes reales.</li>
+                <li><strong>Complejidad de la región:</strong> zonas repetitivas o con homología alta dificultan el alineamiento preciso.</li>
+                <li><strong>Profundidad de cobertura:</strong> muestras con baja profundidad de secuenciación (por ejemplo, < 20x) aumentan el riesgo de pérdida de variantes.</li>
+                <li><strong>Pruebas múltiples:</strong> el uso de múltiples algoritmos puede generar inconsistencias si no se validan.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>DeepVariant: aprendizaje automático para variantes</h2>
+            <p><strong>DeepVariant</strong>, desarrollado por Google, utiliza redes neuronales convolucionales (CNN) para identificar variantes. En lugar de depender exclusivamente de reglas heurísticas, DeepVariant convierte cada sitio de secuenciación en una imagen de características ("image"), donde cada pixel representa un alineamiento en un contexto de 100 nucleótidos. Esta abordaje permite modelar patrones complejos de cobertura, errores y variación.</p>
+            
+            <h3>Fortalezas para variantes de baja frecuencia</h3>
+            <ul>
+                <li>Alta especificidad: reduce falsos positivos gracias al aprendizaje profundo.</li>
+                <li>Robustez ante errores: capaz de distinguir entre variaciones reales y artefactos.</li>
+                <li>Escalabilidad: puede procesar múltiples muestras con mínima configuración.</li>
+            </ul>
+            
+            <h3>Uso con datos de baja frecuencia</h3>
+            <p>Para detectar variantes de baja frecuencia, es recomendable usar <strong>DeepVariant con datos de alta profundidad</strong> (>100x). El modelo se entrena en datos de alta calidad, por lo que su desempeño mejora significativamente con más cobertura. Además, es crucial preprocesar los datos con herramientas como <code>gatk PreprocessIntervals</code> o <code>picard MarkDuplicates</code> para minimizar artefactos.</p>
+
+            <pre><code>docker run -v $PWD:/data -w /data \
+  google/deepvariant:latest \
+  /opt/deepvariant/bin/run_deepvariant \
+  --model_type=SNP_INDEL \
+  --ref=GRCh38.fa \
+  --reads=aligned_sorted.bam \
+  --output_vcf=variants.vcf.gz \
+  --num_shards=8</code></pre>
+        </section>
+
+        <section>
+            <h2>Pipelines convencionales: GATK y variant calling clásico</h2>
+            <p>Los pipelines tradicionales, como los basados en <strong>GATK (Genome Analysis Toolkit)</strong>, siguen un enfoque de dos pasos: <em>recalibración de calidad</em> (Base Quality Score Recalibration, BQSR) y <em>llamado de variantes</em> (HaplotypeCaller).</p>
+            
+            <h3>Proceso típico con GATK</h3>
+            <ol>
+                <li><code>gatk SamToFastq</code> para convertir BAM a FASTQ (si es necesario).</li>
+                <li><code>gatk RealignerTargetCreator</code> y <code>gatk IndelRealigner</code> para corregir alineamientos en regiones con inserciones/deleciones.</li>
+                <li><code>gatk BaseQualityScoreRecalibrator</code> para ajustar puntuaciones de calidad.</li>
+                <li><code>gatk HaplotypeCaller</code> para detectar variantes (en modo GVCF).</li>
+                <li><code>gatk CombineGVCFs</code> y <code>gatk GenotypeGVCFs</code> para obtener el VCF final.</li>
+            </ol>
+
+            <pre><code>gatk HaplotypeCaller \
+  -R GRCh38.fa \
+  -I aligned_sorted.bam \
+  -O variants.g.vcf.gz \
+  --emit-ref-confidence GVCF \
+  -stand-call-conf 10</code></pre>
+            
+            <p>El parámetro <code>--stand-call-conf 10</code> permite llamar variantes incluso con baja confianza, útil para variantes de baja frecuencia, aunque aumenta el riesgo de falsos positivos.</p>
+        </section>
+
+        <section>
+            <h2>Validación y filtrado de variantes</h2>
+            <p>Una vez obtenido el VCF, es esencial filtrar variantes potenciales. Las herramientas <strong>bcftools</strong> y <strong>vcftools</strong> permiten aplicar filtros basados en profundidad, frecuencia de alelos, calidad y otros criterios.</p>
+
+            <pre><code>bcftools view -i "AF &gt; 0.01" variants.vcf.gz | \
+  bcftools filter -e "INFO/DP &lt; 20" -Oz -o filtered.vcf.gz</code></pre>
+            
+            <p>Este comando filtra variantes con frecuencia alélica mayor a 1% y profundidad de cobertura mínima de 20x.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La detección de variantes de baja frecuencia requiere un pipeline cuidadosamente diseñado. <strong>DeepVariant</strong> ofrece una solución altamente sensible basada en aprendizaje automático, ideal para datos de alta profundidad. Por otro lado, <strong>GATK</strong> sigue siendo una herramienta robusta y ampliamente validada, especialmente cuando se combinan con filtros rigurosos. La elección entre ambos depende del contexto: DeepVariant para alta sensibilidad y GATK para integración en pipelines existentes.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>NO usar DeepVariant con datos de baja profundidad:</strong> sus modelos están entrenados en datos de alta cobertura. Resultados pobres si se usan en secuencias < 30x.</li>
+                <li><strong>Evitar el uso de parámetros de llamado sin filtrado:</strong> <code>stand-call-conf 0</code> puede generar miles de falsos positivos.</li>
+                <li><strong>Validar con herramientas externas:</strong> comparar resultados entre DeepVariant y GATK (o FreeBayes) mejora la confianza.</li>
+                <li><strong>Usar vcf2fasta o VEP para anotación funcional:</strong> no asumir que una variante es relevante sin anotarla.</li>
+                <li><strong>Documentar el pipeline completo:</strong> incluir versiones de herramientas, comandos y parámetros para reproducibilidad.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>
