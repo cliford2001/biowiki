@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes de inserción y deleción con GATK IndelRealigner</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de variantes de inserción y deleción con GATK IndelRealigner</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: La importancia del correcto alineamiento de indels</h2>
+            <p>Las variantes de inserción y deleción (indels) son eventos genéticos que alteran el número de nucleótidos en una secuencia de ADN o ARN. Aunque son menos frecuentes que las variantes de un solo nucleótido (SNVs), su impacto puede ser significativo, ya que pueden provocar desplazamientos en el marco de lectura, alterar dominios funcionales de proteínas o afectar sitios reguladores. En estudios de genómica, la detección precisa de indels es crucial para el diagnóstico de enfermedades hereditarias, la identificación de marcadores de respuesta a tratamientos y la comprensión de la evolución molecular.</p>
+            <p>Uno de los principales desafíos en el análisis de indels es el alineamiento incorrecto de secuencias de lectura (reads) en regiones de repetición o homopolimeros. Un alineador de primera generación (como BWA-MEM) puede colocar reads de manera subóptima, generando un sesgo en el llamado de variantes. Para corregir esta limitación, el paquete de herramientas <strong>Genome Analysis Toolkit (GATK)</strong> ofrece el módulo <code>IndelRealigner</code>, diseñado específicamente para reajustar las lecturas en las proximidades de indels, mejorando así la calidad de los datos y la precisión del llamado de variantes.</p>
+        </section>
+
+        <section>
+            <h2>¿Qué es GATK IndelRealigner?</h2>
+            <p><code>IndelRealigner</code> es una herramienta del paquete GATK que realiza un <em>reajuste local del alineamiento</em> (local realignment) de lecturas en regiones candidatas a contener indels. Su objetivo es mejorar la alineación de reads que se alinean de forma incorrecta debido a la presencia de indels, especialmente en regiones con homopolimeros largos o secuencias repetitivas. Al reajustar el alineamiento, se reduce el número de falsos positivos y se aumenta la sensibilidad para detectar verdaderos indels.</p>
+            <p>Este proceso se basa en un enfoque basado en <em>grafo de caminos</em> (read alignment graph), donde se generan múltiples posibles alineamientos de los reads en una región de interés y se elige el más probable basado en la calidad de los alineamientos y en la consistencia entre lecturas.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo con IndelRealigner</h2>
+            <p>El uso de <code>IndelRealigner</code> forma parte de un flujo de trabajo clásico de GATK para la llamada de variantes. A continuación, se describe el proceso paso a paso:</p>
+
+            <h3>1. Alineamiento de lecturas</h3>
+            <p>El primer paso es alinear las lecturas de secuenciación a un genoma de referencia usando un alineador como BWA-MEM:</p>
+            <pre><code>bwamem -t 8 reference.fasta reads.fastq.gz &gt; aligned_reads.sam</code></pre>
+
+            <h3>2. Conversión a formato BAM y ordenamiento</h3>
+            <p>Convertir el archivo SAM a BAM, ordenar por coordenadas y crear un índice:</p>
+            <pre><code>samtools view -Sb aligned_reads.sam &gt; aligned_reads.bam
+samtools sort aligned_reads.bam -o sorted_reads.bam
+samtools index sorted_reads.bam</code></pre>
+
+            <h3>3. Identificación de regiones candidatas a indels</h3>
+            <p>Utilizar <code>GATK RealignerTargetCreator</code> para encontrar regiones donde es probable que haya indels:</p>
+            <pre><code>gatk RealignerTargetCreator \
+    -R reference.fasta \
+    -I sorted_reads.bam \
+    -o indel_targets.list</code></pre>
+
+            <h3>4. Reajuste del alineamiento con IndelRealigner</h3>
+            <p>Aplicar el reajuste realineando las lecturas en las regiones identificadas:</p>
+            <pre><code>gatk IndelRealigner \
+    -R reference.fasta \
+    -I sorted_reads.bam \
+    -targetIntervals indel_targets.list \
+    -o realigned_reads.bam</code></pre>
+
+            <h3>5. Continuar con el flujo de llamado de variantes</h3>
+            <p>Una vez realineado, el archivo <code>realigned_reads.bam</code> se utiliza como entrada en las etapas siguientes: <code>BaseRecalibrator</code>, <code>ApplyBQSR</code>, y finalmente <code>HaplotypeCaller</code> para la llamada de variantes.</p>
+        </section>
+
+        <section>
+            <h2>Resumen y errores comunes / buenas prácticas</h2>
+            <p>El módulo <code>IndelRealigner</code> es una herramienta poderosa para mejorar la precisión del alineamiento en regiones complejas, especialmente cuando se trabaja con datos de secuenciación de alto rendimiento. Su uso es particularmente recomendado en estudios de mutación genética, diagnóstico clínico y análisis de variantes raras.</p>
+
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>Uso sin priorizar el flujo GATK:</strong> No usar <code>RealignerTargetCreator</code> antes de <code>IndelRealigner</code> puede generar resultados inesperados.</li>
+                <li><strong>Exceso de recursos:</strong> <code>IndelRealigner</code> es computacionalmente costoso. Evitar su uso en grandes conjuntos de datos sin necesidad real.</li>
+                <li><strong>Ignorar la validación del alineamiento:</strong> Siempre verificar los resultados con herramientas como <code>samtools tview</code> o <code>IGV</code> antes de continuar.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Usar <code>IndelRealigner</code> solo si se detectan indels en regiones de interés o se sospecha de sesgos en el alineamiento.</li>
+                <li>Combinar con <code>BaseRecalibrator</code> y <code>ApplyBQSR</code> para un flujo completo de calidad de datos.</li>
+                <li>Documentar cada paso del flujo, especialmente las regiones de indels detectadas.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

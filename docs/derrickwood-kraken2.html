@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DerrickWood/kraken2</title>
+  <meta name="categoria" content="Control de calidad">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>DerrickWood/kraken2</h1>
+    <p class="meta">
+      <a href="https://github.com/DerrickWood/kraken2">Repositorio</a> · 923 estrellas · C++
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      Kraken2 es un sistema de clasificación taxonómica de secuencias de nucleótidos, diseñado para identificar rápidamente el origen taxonómico de secuencias genómicas.
+      Es especialmente útil en análisis de metagenómica, donde se debe determinar la composición de microorganismos en una muestra sin cultivo previo.
+      El sistema utiliza un índice de k-mers para clasificar cada secuencia en un nivel taxonómico (especie, género, etc.) con alta velocidad y precisión.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      Kraken2 está escrito en C++ y se distribuye como binario compilado. No requiere compilación local si se usa el instalador oficial.
+      Se recomienda instalar mediante el script de instalación proporcionado por el repositorio.
+    </p>
+    <pre><code>git clone https://github.com/DerrickWood/kraken2.git
+cd kraken2
+./install.sh</code></pre>
+    <p>
+      El script de instalación descarga e instala automáticamente las bases de datos de referencia necesarias.
+      Para instalar bases de datos personalizadas, se puede usar el comando <code>kraken2-build</code>.
+    </p>
+
+    <h2>Uso básico</h2>
+    <p>
+      El uso más común de Kraken2 consiste en clasificar un conjunto de secuencias de entrada (FASTA o FASTQ) con respecto a una base de datos de referencia.
+      El siguiente ejemplo muestra cómo clasificar un archivo FASTQ.
+    </p>
+    <pre><code>kraken2 --db /path/to/kraken2/database --fastq-input --output results.txt reads.fastq</code></pre>
+    <p>
+      <strong>Nota:</strong> La sintaxis exacta del comando puede variar según la versión y el tipo de base de datos. Asegúrate de verificar los parámetros disponibles con <code>kraken2 --help</code>.
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      Un flujo típico de análisis con Kraken2 sigue estos pasos:
+    </p>
+    <ol>
+      <li>Preprocesamiento de secuencias (eliminación de contaminantes, calidad, filtros).</li>
+      <li>Construcción de una base de datos de referencia (opcional, si se usa una personalizada).</li>
+      <li>Clasificación de las secuencias con Kraken2.</li>
+      <li>Análisis de resultados (filtrado de taxones, visualización de composición).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="10" y="20" width="100" height="40" fill="#f0f0f0" stroke="black" rx="5"/>
+        <rect x="140" y="20" width="140" height="40" fill="#f0f0f0" stroke="black" rx="5"/>
+        <rect x="300" y="20" width="100" height="40" fill="#f0f0f0" stroke="black" rx="5"/>
+        <rect x="420" y="20" width="120" height="40" fill="#f0f0f0" stroke="black" rx="5"/>
+
+        <!-- Etiquetas -->
+        <text x="60" y="45" text-anchor="middle" font-size="12" fill="black">Preprocesamiento</text>
+        <text x="210" y="45" text-anchor="middle" font-size="12" fill="black">Base de datos</text>
+        <text x="350" y="45" text-anchor="middle" font-size="12" fill="black">Kraken2</text>
+        <text x="480" y="45" text-anchor="middle" font-size="12" fill="black">Resultados</text>
+
+        <!-- Flechas -->
+        <line x1="110" y1="40" x2="140" y2="40" stroke="black" marker-end="url(#arrowhead)"/>
+        <line x1="280" y1="40" x2="300" y2="40" stroke="black" marker-end="url(#arrowhead)"/>
+        <line x1="400" y1="40" x2="420" y2="40" stroke="black" marker-end="url(#arrowhead)"/>
+
+        <!-- Flecha de retorno -->
+        <line x1="420" y1="100" x2="480" y2="100" stroke="black" marker-end="url(#arrowhead)"/>
+        <text x="450" y="90" text-anchor="middle" font-size="10" fill="black">Visualización</text>
+
+        <!-- Flecha de retorno al inicio -->
+        <line x1="10" y1="100" x2="40" y2="100" stroke="black" marker-end="url(#arrowhead)"/>
+        <text x="25" y="90" text-anchor="middle" font-size="10" fill="black">Input</text>
+
+        <!-- Definición de flecha -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black"/>
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Diagrama de flujo típico de análisis con Kraken2: entrada de datos, preprocesamiento, clasificación, y visualización de resultados.
+      </figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Base de datos no encontrada:</strong> Asegúrate de que la ruta especificada con <code>--db</code> sea correcta y que el índice esté correctamente construido.</li>
+      <li><strong>Memoria insuficiente:</strong> Kraken2 puede requerir mucha memoria para bases de datos grandes. Considera usar <code>--threads</code> y gestionar adecuadamente los recursos.</li>
+      <li><strong>Archivos de entrada mal formados:</strong> Verifica que los archivos FASTA/FASTQ estén correctamente formateados y sin errores de codificación.</li>
+      <li><strong>Usar bases de datos actualizadas:</strong> Las bases de datos de referencia (como UniVec o NCBI) deben mantenerse actualizadas para obtener resultados precisos.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">2 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42041114.html">Characterization of the intrahepatic microbiome in patients with HBV-related end-stage liver disease.</a> <span class="date">2026-07-15</span> · <a href="https://doi.org/10.1080/21505594.2026.2665492" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41975274.html">Compositional and functional differences of gut microbiome and metabolome inform pathogenesis of cholestatic liver disease.</a> <span class="date">2026-07-15</span> · <a href="https://doi.org/10.1080/19490976.2026.2655793" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes de alta penetrancia con PVS1 y ACMG guidelines</title>
+    <meta name="categoria" content="Variantes">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de variantes de alta penetrancia con PVS1 y ACMG guidelines</h1>
+    </header>
+    
+    <article>
+        <section>
+            <h2>¿Qué son las variantes de alta penetrancia y por qué son críticas?</h2>
+            <p>Las variantes genéticas de alta penetrancia son cambios en el ADN que tienen una alta probabilidad de causar una enfermedad clínica en los portadores. A diferencia de las variantes de baja penetrancia, cuyo efecto está más ligado a factores ambientales o poligénicos, las de alta penetrancia se asocian con un riesgo significativo de desarrollar una enfermedad, a menudo con un patrón hereditario claro (autosómico dominante, recesivo o ligado al cromosoma X).</p>
+            <p>En la práctica clínica, identificar estas variantes es fundamental para la prevención, el diagnóstico temprano y la toma de decisiones en salud. Herramientas como <strong>GATK</strong>, <strong>samtools</strong> y <strong>bcftools</strong> se usan para la llamada de variantes (VCF) a partir de secuenciación de exomas o genomas completos. Sin embargo, la interpretación de su impacto clínico requiere un marco sistemático: las <strong>guías ACMG</strong> (American College of Medical Genetics and Genomics) proporcionan un esquema estandarizado para clasificar variantes en cinco categorías: benigna, probablemente benigna, de significado incierto (VUS), probablemente patogénica y patogénica.</p>
+        </section>
+        
+        <section>
+            <h2>El criterio PVS1: una pista clave para variantes patogénicas</h2>
+            <p>Uno de los criterios más poderosos en las guías ACMG es <strong>PVS1</strong>: "<em>Null variant (nonsense, frameshift, canonical splice site, initiation codon, or large deletion) in a gene where loss-of-function is a known mechanism of disease</em>".</p>
+            <p>Este criterio se aplica cuando se detecta una variante que induce una pérdida de función en un gen, y se sabe que dicha pérdida causa enfermedad. Ejemplos incluyen:</p>
+            <ul>
+                <li>Variantes de tipo <strong>nonsense</strong> que introducen un codón de parada prematuro.</li>
+                <li>Variantes de <strong>frameshift</strong> causadas por inserciones o deleciones no múltiplos de tres nucleótidos.</li>
+                <li>Variantes en sitios de splicing <strong>canónicos</strong> (donor o acceptor).</li>
+                <li>Deleciones grandes que afectan la estructura del gen.</li>
+            </ul>
+            <p>La aplicación de PVS1 puede convertir una variante de significado incierto (VUS) en una variante probablemente patogénica o patogénica, especialmente si el gen está bien caracterizado en bases de datos como <strong>OMIM</strong> o <strong>Genes and Disease</strong>.</p>
+        </section>
+        
+        <section>
+            <h2>Aplicación práctica: desde VCF hasta clasificación ACMG</h2>
+            <p>El análisis comienza con la generación de un archivo VCF después del alineamiento (con <strong>STAR</strong> o <strong>BWA</strong>) y la llamada de variantes (con <strong>GATK HaplotypeCaller</strong>). A continuación, se filtran las variantes de interés usando herramientas como <strong>bcftools</strong> o <strong>vcfanno</strong> para anotar con información de frecuencia poblacional (gnomAD), conservación evolutiva (CADD, REVEL) y efectos funcionales.</p>
+            
+            <pre><code>bcftools view -v snps,indels -i 'INFO/AF &lt; 0.01' input.vcf.gz | \
+    vcfanno -p 4 config.json -o annotated.vcf</code></pre>
+            
+            <p>Para evaluar PVS1, se requiere identificar variantes que induzcan pérdida de función. Esto se puede hacer con <strong>VEP</strong> (Variant Effect Predictor) o <strong>snpeff</strong>:</p>
+            
+            <pre><code>vep -i input.vcf -o output.vep --format vcf --vcf --force_overwrite --canonical --no_stats</code></pre>
+            
+            <p>Una vez anotadas, se pueden filtrar variantes con efectos de <code>stop_gained</code>, <code>frameshift_variant</code>, <code>splice_acceptor_variant</code>, <code>splice_donor_variant</code> o <code>start_lost</code>. Estas son candidatas a cumplir el criterio PVS1, pero aún se requiere evidencia adicional sobre el mecanismo de enfermedad del gen.</p>
+        </section>
+        
+        <section>
+            <h2>Resumen y buenas prácticas</h2>
+            <p>El análisis de variantes de alta penetrancia requiere una combinación de precisión técnica, conocimiento biológico y aplicación rigurosa de las guías ACMG. El criterio PVS1 es un pilar clave, pero debe usarse con cautela: no basta con que una variante sea de pérdida de función; debe demostrarse que dicha pérdida causa enfermedad en el gen en cuestión.</p>
+            
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>Aplicar PVS1 sin verificar el mecanismo de enfermedad</strong>: no todos los genes tienen pérdida de función como mecanismo patogénico (por ejemplo, en genes de dominancia negativa o con efectos gain-of-function).</li>
+                <li><strong>Ignorar la frecuencia poblacional</strong>: variantes comunes (AF > 1%) rara vez son patogénicas de alta penetrancia, salvo en casos muy específicos.</li>
+                <li><strong>Depender exclusivamente de anotaciones automáticas</strong>: herramientas como VEP son útiles, pero requieren interpretación humana para validar criterios.</li>
+            </ul>
+            
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Verificar el mecanismo de enfermedad en bases de datos como OMIM o ClinVar.</li>
+                <li>Usar múltiples herramientas de anotación y comparar resultados (VEP, SnpEff, CADD).</li>
+                <li>Documentar todos los criterios aplicados y la justificación, especialmente para casos clínicos o de investigación.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

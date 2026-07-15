@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de expresión de genes en tejidos con single-cell spatial transcriptomics</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de expresión de genes en tejidos con single-cell spatial transcriptomics</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es el single-cell spatial transcriptomics?</h2>
+      <p>El <strong>single-cell spatial transcriptomics</strong> (scST) es una tecnología emergente que permite medir la expresión génica a nivel de célula individual, al mismo tiempo que preserva la información espacial sobre la ubicación de cada célula dentro del tejido. A diferencia de las técnicas tradicionales como scRNA-seq, que destruyen la organización tisular durante la disociación celular, scST mantiene el contexto morfológico y arquitectónico del tejido, ofreciendo una visión sin precedentes de cómo las células interactúan en su entorno natural.</p>
+      <p>Esto es especialmente valioso en campos como la biología del cáncer, el desarrollo embrionario, la inmunología y la neurociencia, donde la localización celular es clave para entender procesos biológicos. Herramientas como <strong>10x Genomics Visium</strong>, <strong>Slide-seq</strong>, <strong>Seq-Scope</strong> y <strong>ST (spatial transcriptomics)</strong> de Arraystar permiten la captura de transcritos en puntos espaciales del tejido, generando matrices de expresión que combinan coordenadas espaciales con perfiles génicos.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de análisis: de los datos brutos al perfil funcional</h2>
+      <p>El análisis de datos scST sigue un flujo estructurado que combina métodos de alineamiento, cuantificación, normalización, reducción de dimensionalidad y análisis espacial. A continuación se detalla cada etapa:</p>
+
+      <h3>1. Alineamiento de lecturas</h3>
+      <p>Los datos de secuenciación se alinean al genoma de referencia utilizando herramientas como <strong>STAR</strong> o <strong>Salmon</strong>. Para scST, es crucial usar un alineador que maneje correctamente los <em>barcodes</em> espaciales, que identifican el punto de captura en el tejido. STAR puede usarse con el parámetro <code>--outSAMtype BAM SortedByCoordinate</code> para generar archivos BAM ordenados, necesarios para la posterior cuantificación.</p>
+
+      <pre><code>STAR \
+  --genomeDir /path/to/genome \
+  --readFilesIn R1.fastq.gz R2.fastq.gz \
+  --outFileNamePrefix scst_ \
+  --outSAMtype BAM SortedByCoordinate \
+  --outSAMattributes All</code></pre>
+
+      <h3>2. Cuantificación espacial</h3>
+      <p>Una vez alineadas las lecturas, se cuenta el número de transcritos por punto espacial. Herramientas como <strong>CellRanger</strong> (10x Genomics) o <strong>Seurat</strong> en R permiten este paso. CellRanger utiliza un algoritmo de asignación de reads basado en los barcodes de captura y los <em>spatial barcodes</em>. En R, se puede usar el paquete <strong>Seurat</strong> con la función <code>Read10X()</code> para importar datos de Visium.</p>
+
+      <pre><code>library(Seurat)
+
+# Importar datos de Visium
+visium_data &lt;- Read10X(
+  data.dir = "./filtered_feature_bc_matrix/",
+  gene.column = 1
+)
+
+# Crear objeto Seurat
+sobj &lt;- CreateSeuratObject(counts = visium_data, project = "scST_analysis")</code></pre>
+
+      <h3>3. Preprocesamiento y normalización</h3>
+      <p>El objeto Seurat se preprocesa con <code>NormalizeData()</code> y <code>FindVariableFeatures()</code>. La normalización típica incluye la escala de los datos por el número de genes detectados por célula (<em>total count per cell</em>), y la reducción de efectos de confusión por profundidad de secuenciación.</p>
+
+      <pre><code>sobj &lt;- NormalizeData(sobj)
+sobj &lt;- FindVariableFeatures(sobj, selection.method = "vst", nfeatures = 2000)</code></pre>
+
+      <h3>4. Reducción de dimensionalidad y clustering</h3>
+      <p>Se aplica <strong>PCA</strong> con <code>RunPCA()</code>, seguido de <strong>UMAP</strong> o <strong>TSNE</strong> para visualizar la estructura de las células. El clustering se realiza con <code>FindNeighbors()</code> y <code>FindClusters()</code>.</p>
+
+      <pre><code>sobj &lt;- RunPCA(sobj, features = VariableFeatures(sobj))
+sobj &lt;- FindNeighbors(sobj, dims = 1:30)
+sobj &lt;- FindClusters(sobj, resolution = 0.5)
+sobj &lt;- RunUMAP(sobj, reduction = "pca", dims = 1:30)</code></pre>
+
+      <h3>5. Análisis espacial</h3>
+      <p>La característica distintiva de scST es el análisis espacial. Se pueden usar funciones de <strong>Seurat</strong> como <code>SpatialFeaturePlot()</code> para visualizar la expresión de genes clave en el tejido, o <code>FindSpatialModules()</code> para identificar patrones de coexpresión espacial. Además, herramientas como <strong>Scanpy</strong> en Python permiten análisis avanzados con <code>spatial.py</code> para modelos de vecindad espacial.</p>
+
+      <pre><code>library(Seurat)
+
+# Visualizar expresión del gen "ACTB" en el tejido
+SpatialFeaturePlot(sobj, features = "ACTB")</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de expresión génica en tejidos mediante single-cell spatial transcriptomics representa un avance fundamental en la biología de sistemas. Al combinar la resolución celular con la información espacial, permite descubrir nuevos tipos celulares, entender la arquitectura tisular, identificar zonas de inflamación o invasión tumoral, y revelar interacciones celulares en su contexto natural. Aunque el flujo de análisis es complejo, herramientas como <strong>Seurat</strong>, <strong>Scanpy</strong>, <strong>CellRanger</strong> y <strong>STAR</strong> ofrecen un ecosistema robusto y bien documentado para llevarlo a cabo. La precisión en el preprocesamiento, la elección adecuada de parámetros de clustering y la interpretación cuidadosa de los patrones espaciales son clave para obtener conclusiones biológicamente significativas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar datos sin preprocesamiento</strong>: Nunca analizar datos sin normalización ni eliminación de células de baja calidad. Filtra células con <em>low gene count</em> o <em>high mitochondrial content</em>.</li>
+        <li><strong>Ignorar la calidad espacial</strong>: Asegúrate de que los <em>spatial barcodes</em> estén correctamente asociados a coordenadas. Revisa la matriz de captura original.</li>
+        <li><strong>Seleccionar parámetros de clustering sin validación</strong>: Prueba diferentes valores de <em>resolution</em> en <code>FindClusters()</code> y evalúa los resultados con visualización espacial.</li>
+        <li><strong>No validar con marcadores conocidos</strong>: Usa genes de marcadores celulares bien caracterizados (por ejemplo, <em>CD3E</em> para linfocitos, <em>FOXP3</em> para Treg) para confirmar la identidad celular.</li>
+        <li><strong>Evitar sesgos por profundidad de secuenciación</strong>: Usa métodos como <em>log-normalization</em> o <em>scran</em> si hay variación técnica entre puntos.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

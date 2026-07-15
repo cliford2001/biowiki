@@ -1,0 +1,42 @@
+ con repeticiones reemplazadas por 'N' (para análisis de variantes).</li>
+            </ul>
+            <p>Además, RepeatMasker permite identificar variabilidad dentro de las repeticiones mediante análisis de profundidad y variación de secuencia. Por ejemplo, se puede comparar el genoma de diferentes individuos y usar <code>bedtools</code> o <code>vcftools</code> para detectar variaciones en regiones anotadas como repetitivas. Las inserciones de nuevos elementos transponibles pueden ser identificadas como regiones con alta densidad de lecturas y ausencia de alineamiento en el genoma de referencia.</p>
+
+            <h3>Flujos integrados: desde ensamblaje hasta detección de variantes</h3>
+            <p>Un flujo recomendado para análisis de variabilidad en regiones repetitivas es:</p>
+            <ol>
+                <li>Construir el modelo de repeticiones con <code>RepeatModeler</code>.</li>
+                <li>Realizar la anotación del genoma con <code>RepeatMasker</code>.</li>
+                <li>Realizar el ensamblaje de lecturas (si no está disponible) en el genoma enmascarado para evitar el colapso de repeticiones.</li>
+                <li>Aliniar lecturas con <code>BWA mem</code> o <code>minimap2</code> en el genoma enmascarado.</li>
+                <li>Realizar la llamada de variantes con <code>freebayes</code>, <code>gatk HaplotypeCaller</code> o <code>samtools mpileup</code>, teniendo en cuenta que se deben filtrar las variantes en regiones anotadas como repetitivas, a menos que se busquen inserciones de TEs específicas.</li>
+                <li>Validar variantes sospechosas con <code>bedtools intersect</code> y análisis de profundidad.</li>
+            </ol>
+            <p>Este enfoque permite identificar variantes reales mientras se minimiza el ruido generado por alineaciones ambiguas.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La detección de variabilidad en regiones repetitivas es un desafío clave en genómica moderna. <strong>RepeatMasker</strong> y <strong>RepeatModeler</strong> proporcionan una solución robusta y altamente configurable para anotar, caracterizar y analizar estas regiones. Al generar un modelo de repeticiones personalizado y enmascarar el genoma, estos herramientas permiten mejorar la precisión del ensamblaje, la alineación y la detección de variantes. Su integración en flujos bioinformáticos bien definidos es esencial para estudios de variabilidad genética que incluyan elementos transponibles y repeticiones dinámicas.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No construir un modelo personalizado</strong>: usar el modelo de repetitivas general (por ejemplo, de RepBase o Dfam) puede ser inadecuado para especies con repeticiones únicas. Siempre usar <code>RepeatModeler</code> para obtener un modelo específico del genoma.</li>
+                <li><strong>Ignorar las regiones enmascaradas</strong>: al analizar variantes, considerar que las regiones enmascaradas pueden contener variantes reales (como inserciones de TEs). No descartarlas automáticamente.</li>
+                <li><strong>Usar repetitivas sin validación</strong>: siempre verificar el resultado de <code>RepeatMasker</code> con herramientas como <code>bedtools</code> o visualizadores como IGV para confirmar la anotación.</li>
+                <li><strong>Aplicar el enmascaramiento en etapas incorrectas</strong>: realizar el enmascaramiento antes del ensamblaje puede alterar la estructura del genoma. Hacerlo después del ensamblaje, si es necesario.</li>
+                <li><strong>Usar solo el genoma enmascarado para alineamiento</strong>: aunque útil, puede perder información de variabilidad. Alternar entre genoma enmascarado y original según el objetivo del análisis.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

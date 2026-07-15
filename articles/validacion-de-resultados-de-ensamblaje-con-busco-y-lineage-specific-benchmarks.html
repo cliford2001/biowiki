@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validación de resultados de ensamblaje con BUSCO y lineage-specific benchmarks</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Validación de resultados de ensamblaje con BUSCO y lineage-specific benchmarks</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Por qué validar un ensamblaje?</h2>
+      <p>El ensamblaje de genomas o transcriptomas es un paso crítico en bioinformática, que transforma lecturas de secuenciación en secuencias contiguas (contigs) o genes. Sin embargo, no todos los ensamblajes son igual de fiables. Un ensamblaje erróneo puede llevar a conclusiones erróneas en estudios de expresión, variantes o anotación. Por ello, la validación es esencial. Una de las herramientas más robustas para este fin es <strong>BUSCO</strong> (Benchmarking Universal Single-Copy Orthologs), que evalúa la calidad de un ensamblaje mediante la búsqueda de genes únicos y conservados en el linaje objetivo.</p>
+      <p>Además de BUSCO, el uso de <strong>benchmarks específicos de linaje</strong> permite una evaluación más precisa, al tener en cuenta las características evolutivas y genómicas propias de cada organismo. En este artículo, exploramos cómo combinar BUSCO con benchmarks de linaje para obtener una validación rigurosa del ensamblaje.</p>
+    </section>
+
+    <section>
+      <h2>¿Qué es BUSCO y cómo funciona?</h2>
+      <p>BUSCO utiliza conjuntos de genes únicos y ortólogos conservados en un linaje específico (por ejemplo, <em>Metazoa</em>, <em>Viridiplantae</em>, <em>Alveolata</em>) para evaluar la calidad de un ensamblaje. El proceso se divide en tres categorías:</p>
+      <ul>
+        <li><strong>Completo</strong>: genes encontrados como una única copia o en el número esperado (sin duplicados ni faltantes).</li>
+        <li><strong>Parcial</strong>: genes encontrados, pero de forma incompleta (falta parte del gen).</li>
+        <li><strong>Faltante</strong>: genes que no se encontraron en el ensamblaje.</li>
+      </ul>
+      <p>Un buen ensamblaje debe tener una alta proporción de genes <strong>completos</strong> (generalmente >90%). Los valores de <strong>parcial</strong> y <strong>faltante</strong> son indicadores directos de problemas de cobertura, fragmentación o errores de ensamblaje.</p>
+    </section>
+
+    <section>
+      <h2>Aplicación práctica: Validación con BUSCO</h2>
+      <p>Para ejecutar BUSCO en un ensamblaje, se utiliza el comando <code>busco</code> con el linaje objetivo. A continuación se muestra un ejemplo para un genoma de mamífero:</p>
+      <pre><code class="language-bash">busco -i genome.fasta -o busco_result -m genome -l metazoa_odb10 -c 8 --run_mode full</code></pre>
+      <p>Este comando:</p>
+      <ul>
+        <li><code>-i genome.fasta</code>: archivo de ensamblaje.</li>
+        <li><code>-o busco_result</code>: prefijo del directorio de salida.</li>
+        <li><code>-m genome</code>: modo genoma (en lugar de transcriptoma).</li>
+        <li><code>-l metazoa_odb10</code>: linaje objetivo (basado en la base de datos odb10).</li>
+        <li><code>-c 8</code>: número de hilos.</li>
+        <li><code>--run_mode full</code>: ejecuta todos los pasos (detección, alineamiento, evaluación).</li>
+      </ul>
+      <p>El resultado se encuentra en <code>busco_result/</code>, con un archivo <code>busco_results.tsv</code> que contiene los recuentos por categoría. También se genera un resumen en <code>busco_results/short_summary_*.txt</code>.</p>
+    </section>
+
+    <section>
+      <h2>Importancia de los benchmarks específicos de linaje</h2>
+      <p>Los benchmarks basados en linaje, como los proporcionados por BUSCO (con el parámetro <code>-l</code>), son superiores a los genéricos porque:</p>
+      <ul>
+        <li>Consideran la evolución y la diversidad genética propia del organismo.</li>
+        <li>Evitan falsos positivos al usar genes que realmente deberían estar presentes.</li>
+        <li>Permiten comparar ensamblajes entre especies o grupos evolutivos de forma más equitativa.</li>
+      </ul>
+      <p>Por ejemplo, un ensamblaje de <em>Arabidopsis thaliana</em> debe ser validado con el linaje <code>viridiplantae_odb10</code>, no con <em>metazoa</em>. Usar un linaje inapropiado dará resultados engañosos.</p>
+      <p>Además, herramientas como <strong>QUAST</strong> (para genomas) y <strong>TransRate</strong> (para transcriptomas) complementan la validación con métricas como N50, cobertura y calidad de alineamiento, pero BUSCO aporta una dimensión funcional y evolutiva única.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>Validar un ensamblaje no es opcional: es una obligación científica. BUSCO proporciona una evaluación robusta y estandarizada mediante la búsqueda de genes únicos y ortólogos conservados. Al usar benchmarks específicos de linaje (como <code>metazoa_odb10</code>, <code>viridiplantae_odb10</code>, etc.), se asegura que la validación sea biológicamente relevante. Un ensamblaje con alta proporción de genes <strong>completos</strong> y baja de <strong>faltantes</strong> es un indicador fuerte de calidad.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar un linaje incorrecto:</strong> siempre verifica el linaje objetivo (por ejemplo, <em>fungi</em>, <em>protists</em>, <em>insects</em>) antes de ejecutar BUSCO.</li>
+        <li><strong>Ignorar la proporción parcial:</strong> un alto porcentaje de genes parciales puede indicar fragmentación o baja cobertura. Investigar con <code>quast</code> o <code>snakemake</code> para ajustar parámetros de ensamblaje.</li>
+        <li><strong>No repetir el análisis:</strong> si el ensamblaje se mejora (por ejemplo, con <em>flye</em> o <em>racon</em>), ejecuta BUSCO de nuevo para verificar la mejora.</li>
+        <li><strong>Combinar con otras herramientas:</strong> usa BUSCO junto con <code>QUAST</code>, <code>TransRate</code>, <code>samtools</code> y <code>bedtools</code> para una validación multi-dimensional.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

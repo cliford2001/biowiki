@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de la calidad de datos de secuenciación con FastQC y MultiQC</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Evaluación de la calidad de datos de secuenciación con FastQC y MultiQC</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>En el análisis de secuenciación de nueva generación (NGS), la calidad de los datos originales es el cimiento sobre el que se construye cualquier resultado biológico. Sin una evaluación rigurosa de la calidad de los reads, los análisis posteriores —como el alineamiento, la cuantificación o la detección de variantes— pueden verse seriamente comprometidos por artefactos técnicos, contaminación o errores de secuenciación. <strong>FastQC</strong> y <strong>MultiQC</strong> son dos herramientas esenciales en este proceso, proporcionando análisis automáticos, visualizaciones intuitivas y reportes estructurados que permiten identificar problemas tempranos y asegurar la confiabilidad de los datos.</p>
+        </section>
+
+        <section>
+            <h2>FastQC: Evaluación individual de archivos de secuenciación</h2>
+            <p><strong>FastQC</strong> es una herramienta de análisis de calidad de datos de secuenciación de alto rendimiento, diseñada para procesar archivos FASTQ (de un solo o doble hilo) de forma rápida y sin necesidad de configuración. No requiere un alineamiento previo y es ideal para la evaluación inicial de cada archivo de secuenciación.</p>
+
+            <h3>Funcionalidades principales</h3>
+            <ul>
+                <li><strong>Perfiles de calidad por posición:</strong> Visualiza la calidad de los nucleótidos a lo largo de cada read. Una caída abrupta en la calidad en la cola de los reads puede indicar errores de secuenciación o problemas con el cebador.</li>
+                <li><strong>Contenido de bases:</strong> Detecta desequilibrios en la frecuencia de A, T, C y G, lo cual puede señalar contaminación o problemas de amplificación.</li>
+                <li><strong>Adaptadores y secuencias de sobra:</strong> Identifica si hay fragmentos de adaptadores o secuencias de biblioteca que no fueron eliminadas durante el preprocesamiento.</li>
+                <li><strong>Longitud de los reads:</strong> Verifica si los reads tienen longitudes consistentes. Variaciones inesperadas pueden deberse a fragmentación o problemas de procesamiento.</li>
+                <li><strong>Repeticiones de secuencias:</strong> Detecta si hay secuencias repetidas que podrían indicar artefactos de PCR.</li>
+                <li><strong>Contaminación:</strong> Compara los reads con bases de datos de contaminantes (como E. coli o humanos) para identificar contaminación cruzada.</li>
+            </ul>
+
+            <h3>Ejecución y salida</h3>
+            <p>El uso de FastQC es directo mediante la línea de comandos:</p>
+            <pre><code>fastqc -o resultados/ datos/reads_1.fastq.gz datos/reads_2.fastq.gz</code></pre>
+            <p>Este comando genera un informe HTML individual por archivo, que incluye gráficos interactivos y una evaluación de calidad (PASS/FAIL/WARN) para cada métrica.</p>
+        </section>
+
+        <section>
+            <h2>MultiQC: Consolidación y análisis de múltiples FastQC</h2>
+            <p>Si bien FastQC es excelente para análisis individual, en experimentos con múltiples muestras (como estudios de expresión diferencial o secuenciación de exomas), es necesario comparar los resultados de varias muestras. <strong>MultiQC</strong> es la herramienta ideal para este propósito. Agrega y visualiza los datos de múltiples FastQC, y otros programas de bioinformática, en un único informe interactivo.</p>
+
+            <h3>Funcionalidades clave</h3>
+            <ul>
+                <li><strong>Consolidación de reportes:</strong> Combina todos los informes FastQC en un solo archivo HTML, con visualizaciones comparativas.</li>
+                <li><strong>Tablas de resumen:</strong> Ofrece una tabla con el estado (PASS/FAIL) de cada métrica para todas las muestras.</li>
+                <li><strong>Gráficos comparativos:</strong> Permite visualizar tendencias entre muestras, como variación en la calidad de los reads o presencia de adaptadores en algunas muestras pero no en otras.</li>
+                <li><strong>Exportación flexible:</strong> Soporta exportación a PDF, PNG o HTML para compartir.</li>
+            </ul>
+
+            <h3>Ejecución</h3>
+            <p>MultiQC se ejecuta en el directorio que contiene los resultados de FastQC:</p>
+            <pre><code>multiqc -o multiqc_report/ resultados/</code></pre>
+            <p>El resultado es un informe HTML completo que incluye un índice, gráficos interactivos y una sección de recomendaciones basadas en las métricas de calidad.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La evaluación de la calidad de datos de secuenciación es un paso crítico que no debe omitirse. <strong>FastQC</strong> proporciona una evaluación detallada y rápida de cada archivo FASTQ, mientras que <strong>MultiQC</strong> permite la comparación sistemática entre múltiples muestras. Juntos, forman una pila de herramientas esencial en cualquier flujo de trabajo bioinformático. Identificar y corregir problemas de calidad —como contaminación, adaptadores no eliminados o baja calidad en la cola de los reads— antes de los análisis posteriores garantiza que los resultados sean biológicamente significativos y reproducibles.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No analizar los datos previamente:</strong> Saltar FastQC/MultiQC puede llevar a resultados sesgados. Siempre ejecuta estos pasos primero.</li>
+                <li><strong>Ignorar los resultados de FAIL/WARN:</strong> Una métrica con estado FAIL debe ser investigada. No asumas que un pequeño porcentaje de reads con baja calidad no afecta.</li>
+                <li><strong>Usar los datos sin preprocesamiento:</strong> Si FastQC detecta adaptadores o baja calidad, usa herramientas como <strong>Trimmomatic</strong>, <strong>cutadapt</strong> o <strong>Fastp</strong> para filtrar y ajustar los datos antes de continuar.</li>
+                <li><strong>Comparar muestras sin MultiQC:</strong> No es práctico analizar 50 informes FastQC uno por uno. Usa MultiQC para detectar patrones globales.</li>
+                <li><strong>Guardar los informes:</strong> Archiva los informes de FastQC y MultiQC junto con los datos. Son parte del registro científico y necesarios para la reproducibilidad.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

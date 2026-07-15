@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corrección de sesgos técnicos en datos de RNA-seq con RUVSeq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Control de calidad" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Corrección de sesgos técnicos en datos de RNA-seq con RUVSeq</h1>
+  </header>
+  <article>
+    <section>
+      <h2>Introducción: El desafío de los sesgos técnicos</h2>
+      <p>
+        En el análisis de datos de secuenciación de ARN (RNA-seq), los sesgos técnicos son una fuente común de variabilidad que no refleja biología real, sino artefactos procedentes del proceso experimental. Estos sesgos pueden incluir diferencias en el rendimiento de la librería, variación en el corte de ARN, eficiencia de la retrotranscripción, o incluso diferencias entre los días de ejecución de los protocolos.
+      </p>
+      <p>
+        Si no se corrigen, estos sesgos pueden distorsionar los resultados de análisis como la expresión diferencial, el clustering o la reducción de dimensionalidad, llevando a conclusiones erróneas. Técnicas como <code>ComBat</code> y <code>Surrogate Variable Analysis (SVA)</code> abordan este problema, pero el paquete <code>RUVSeq</code> ofrece un enfoque más específico y robusto para RNA-seq, aprovechando datos de genes de control o características internas del experimento.
+      </p>
+    </section>
+
+    <section>
+      <h2>¿Qué es RUVSeq y cómo funciona?</h2>
+      <p>
+        <code>RUVSeq</code> (Remove Unwanted Variation in RNA-seq) es un paquete de Bioconductor diseñado para eliminar variación técnica no deseada en datos de RNA-seq mediante la identificación y corrección de factores de variación ocultos. A diferencia de métodos que asumen que todos los genes son biológicamente diferencialmente expresados, RUVSeq se basa en la suposición de que ciertos genes (como aquellos de control o genes housekeeping) no deberían variar entre muestras por razones biológicas.
+      </p>
+      <p>
+        El algoritmo funciona en dos pasos:
+      </p>
+      <ol>
+        <li><strong>Identificación de factores técnicos:</strong> RUVSeq utiliza genes de control o genes que se espera no sean biológicamente variables para estimar la variación técnica. Estos genes se utilizan como "referencia interna".</li>
+        <li><strong>Corrección del modelo:</strong> El modelo de expresión se ajusta para eliminar la variación capturada por estos factores, dejando solo la variación biológica de interés.</li>
+      </ol>
+      <p>
+        RUVSeq permite tres estrategias principales:
+      </p>
+      <ul>
+        <li><code>"RUVg"</code>: Usa genes de control conocidos (por ejemplo, genes de housekeeping).</li>
+        <li><code>"RUVr"</code>: Aprovecha genes con baja variabilidad en el conjunto de datos (por ejemplo, genes con bajo coeficiente de variación).</li>
+        <li><code>"RUVs"</code>: Se basa en la estructura del conjunto de datos y busca factores que no se correlacionan con el diseño biológico.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Código práctico: Aplicando RUVSeq a un dataset</h2>
+      <p>
+        A continuación se muestra un ejemplo de uso de <code>RUVSeq</code> en R. Supongamos que se tiene una matriz de conteos de expresión <code>counts</code> y un diseño experimental <code>design</code> que define el grupo de tratamiento.
+      </p>
+      <pre><code class="language-r">
+# Cargar paquetes
+library(RUVSeq)
+library(edgeR)
+
+# Crear objeto DGEList
+dge &lt;- DGEList(counts = counts, group = design$condition)
+
+# Aplicar RUVSeq con genes de control
+# Suponiendo que tenemos una lista de genes de control llamada `control_genes`
+
+# 1. Obtener genes con baja variabilidad (RUVr)
+var_genes &lt;- rowMeans(dge$counts)
+high_var &lt;- var_genes &lt; quantile(var_genes, 0.25) # 25% más bajos
+control_genes &lt;- names(high_var[high_var])
+
+# 2. Aplicar RUVSeq (modo RUVr)
+ruv_result &lt;- RUVSeq(dge, control = control_genes, k = 2)
+
+# Obtener expresión corregida
+corrected_counts &lt;- rlog(ruv_result, blind = FALSE)
+
+# Ver resultados
+head(corrected_counts$counts)
+      </code></pre>
+      <p>
+        En este ejemplo, se identifican los genes con menor variabilidad (por debajo del cuartil 25 del promedio de expresión) como genes de control, y se utiliza el modo <code>RUVr</code> para corregir el sesgo técnico. El número de factores técnicos (<code>k</code>) se elige basado en la estructura de los datos o mediante validación cruzada.
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        <code>RUVSeq</code> es una herramienta poderosa para la corrección de sesgos técnicos en datos de RNA-seq, particularmente útil cuando se dispone de genes de control o se puede identificar una subpoblación de genes estables. Su enfoque basado en genes de control permite una corrección más específica y menos propensa a remover variación biológica real, a diferencia de métodos más generales.
+      </p>
+      <p>
+        La implementación requiere una elección cuidadosa de los genes de control y del número de factores técnicos. Es recomendable validar los resultados mediante análisis de calidad (por ejemplo, PCA) antes y después de la corrección.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar genes de control falsos:</strong> Asegúrate de que los genes considerados como de control son realmente estables en tu experimento. No confíes en genes de casa sin validar su estabilidad.</li>
+        <li><strong>Seleccionar demasiados factores técnicos:</strong> Un número excesivo (<code>k</code> alto) puede eliminar variación biológica. Usa métodos como el análisis de la varianza explicada o el criterio de AIC para elegir <code>k</code>.</li>
+        <li><strong>Aplicar RUVSeq antes del análisis diferencial:</strong> Es mejor aplicarlo al conjunto de datos completo antes de usar <code>edgeR</code> o <code>DESeq2</code>, ya que estos paquetes asumen datos no corregidos.</li>
+        <li><strong>Validar siempre:</strong> Realiza un PCA o un dendrograma antes y después de la corrección para confirmar que el sesgo técnico ha sido reducido sin alterar la estructura biológica del dataset.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

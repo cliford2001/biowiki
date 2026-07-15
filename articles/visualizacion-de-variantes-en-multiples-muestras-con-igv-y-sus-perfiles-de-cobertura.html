@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualización de variantes en múltiples muestras con IGV y sus perfiles de cobertura</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Visualización de variantes en múltiples muestras con IGV y sus perfiles de cobertura</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>La identificación y validación de variantes genéticas en múltiples muestras es un paso crítico en estudios de genética humana, cáncer y enfermedades hereditarias. Aunque herramientas bioinformáticas como GATK, FreeBayes o VarScan permiten la llamada de variantes de forma automatizada, la verificación visual de las llamadas es esencial para garantizar su fiabilidad. En este contexto, el <strong>Integrative Genomics Viewer (IGV)</strong> se ha consolidado como una herramienta indispensable para la exploración interactiva de datos de secuenciación de alto rendimiento (NGS).</p>
+      <p>En este artículo, exploraremos cómo utilizar IGV para visualizar variantes en múltiples muestras simultáneamente, prestando especial atención a los perfiles de cobertura, que ofrecen información crucial sobre la calidad de la llamada de variantes, la homocigosis, heterocigosis, y posibles artefactos técnicos. Aprenderemos a configurar sesiones múltiples, cargar archivos de variación (VCF) y archivos de cobertura (BAM), y a interpretar visualmente los datos para detectar errores comunes y aplicar buenas prácticas.</p>
+    </section>
+
+    <section>
+      <h2>Preparación de datos y carga en IGV</h2>
+      <p>Antes de abrir IGV, es necesario asegurarse de que los archivos de entrada estén correctamente formateados y indexados. Para visualizar variantes en múltiples muestras, necesitamos:</p>
+      <ul>
+        <li>Archivos <strong>BAM</strong> o <strong>CRAM</strong> de cada muestra, indexados con <code>samtools index</code> o <code>picard BuildBamIndex</code>.</li>
+        <li>Un archivo <strong>VCF</strong> que contenga las variantes llamadas, preferiblemente en formato comprimido (.vcf.gz) y indexado (.tbi).</li>
+      </ul>
+      <p>Una vez preparados, abrimos IGV (versión 2.10 o superior). Para cargar múltiples muestras, seleccionamos <em>File &gt; Load from File</em> y elegimos los archivos BAM. Alternativamente, podemos usar el menú <em>File &gt; Load from URL</em> si los archivos están accesibles públicamente. Después de cargar todos los archivos de muestra, añadimos el archivo VCF mediante <em>File &gt; Load from File</em> o <em>Load from URL</em>.</p>
+    </section>
+
+    <section>
+      <h2>Visualización de variantes y perfiles de cobertura</h2>
+      <p>Una vez cargados los archivos, IGV muestra automáticamente los perfiles de cobertura para cada muestra en la región de interés. Estos perfiles se representan como gráficos de barras que indican el número de lecturas alineadas en cada posición del genoma. El alto nivel de cobertura en una región puede indicar una duplicación o un artefacto de enriquecimiento, mientras que una baja cobertura puede comprometer la fiabilidad de las llamadas de variantes.</p>
+
+      <h3>Interpretación de variantes en múltiples muestras</h3>
+      <p>Los puntos de variación en el archivo VCF aparecen como marcadores en el navegador. Para visualizar si una variante está presente en múltiples muestras, IGV muestra una fila para cada muestra en la ventana de cobertura. Las variantes homocigotas se muestran con lecturas de un solo tipo (por ejemplo, todos A o todos T), mientras que las heterocigotas muestran lecturas de ambos alelos.</p>
+
+      <h3>Uso de la vista de múltiples muestras</h3>
+      <p>Para facilitar la comparación, IGV permite crear <strong>sesiones múltiples</strong> mediante la herramienta <em>Session &gt; Save Session</em>. Esto permite guardar el estado actual (regiones visibles, archivos cargados, marcadores de variación) y compartirlo con otros investigadores. También es útil para comparar variantes entre condiciones (por ejemplo, tumor vs. normal) o entre poblaciones.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <p>La visualización de variantes en IGV, aunque poderosa, no está exenta de errores. A continuación, se describen algunos escenarios comunes y recomendaciones para evitarlos:</p>
+
+      <h3>Errores comunes</h3>
+      <ul>
+        <li><strong>Cobertura inconsistente entre muestras:</strong> Una muestra con cobertura muy baja (<10x) puede llevar a falsos negativos en la llamada de variantes. Se recomienda verificar la cobertura media por muestra.</li>
+        <li><strong>Artifacts de enriquecimiento:</strong> Si una región muestra cobertura anormalmente alta (más de 1000x), puede ser un artefacto de secuenciación o enriquecimiento. Revisar la calidad de las bibliotecas es clave.</li>
+        <li><strong>Variantes que no se alinean correctamente:</strong> Algunas variantes, especialmente en regiones repetitivas, pueden mostrar alineaciones erráticas. Usar herramientas como <code>gatk MarkDuplicates</code> y <code>gatk BaseRecalibrator</code> antes de la llamada ayuda a reducir esto.</li>
+      </ul>
+
+      <h3>Buenas prácticas</h3>
+      <ul>
+        <li><strong>Validar variantes en múltiples muestras:</strong> Si una variante está presente en todas las muestras, considerar si podría ser un error de alineación o contaminación.</li>
+        <li><strong>Usar filtros de calidad:</strong> Añadir filtros VCF (como <code>QUAL</code>, <code>DP</code>, <code>AF</code>) antes de cargar en IGV para reducir el ruido.</li>
+        <li><strong>Comparar con bases de datos:</strong> Usar herramientas como <em>dbSNP</em> o <em>gnomAD</em> para verificar si una variante es común o rara.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La visualización de variantes en múltiples muestras con IGV es una práctica fundamental para la validación de resultados bioinformáticos. Al combinar la información de llamadas de variantes (VCF) con los perfiles de cobertura (BAM), los investigadores pueden detectar errores técnicos, confirmar la presencia de variantes biológicamente relevantes y tomar decisiones informadas sobre sus análisis. Las buenas prácticas, como la verificación de cobertura, el uso de filtros y la comparación entre muestras, son esenciales para garantizar la integridad de los resultados. IGV sigue siendo una herramienta esencial en el arsenal de cualquier bioinformático, especialmente en estudios de variantes en múltiples muestras.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de variantes con GATK VariantFiltration y recalibración de calidad</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Validación de variantes con GATK VariantFiltration y recalibración de calidad</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué validar variantes es clave en bioinformática</h2>
+            <p>La detección de variantes genómicas (SNVs, indels, etc.) es un pilar fundamental en estudios de genómica médica, evolución y enfermedades hereditarias. Sin embargo, no todas las variantes llamadas por los algoritmos de llamado (como GATK HaplotypeCaller) son biológicamente reales. Las llamadas falsas positivas pueden surgir debido a errores de secuenciación, artefactos de alineamiento, baja cobertura o variabilidad técnica. Por ello, es crucial aplicar filtros de calidad y métodos de recalibración para asegurar que los datos de variación sean fiables antes de su interpretación.</p>
+            <p>En este artículo, exploramos dos técnicas esenciales dentro del <strong>Genome Analysis Toolkit (GATK)</strong>: <code>VariantFiltration</code> para aplicar reglas de filtro basadas en métricas de calidad, y <code>VariantRecalibrator</code> para generar modelos de calidad de variantes basados en datos reales del estudio. Juntas, estas herramientas permiten una validación robusta y automatizada de variantes.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: Técnicas clave para validación de variantes</h2>
+
+            <h3>1. Filtro de variantes con GATK VariantFiltration</h3>
+            <p><code>VariantFiltration</code> es una herramienta de GATK que permite marcar variantes como <em>"filtered"</em> basándose en criterios definidos por el usuario. Se aplica sobre un archivo VCF ya generado (por ejemplo, con <code>HaplotypeCaller</code>) y añade información de filtro en el campo <code>FILTER</code> del archivo.</p>
+            <p>Esta herramienta no elimina variantes; solo las etiqueta. El filtro real se realiza posteriormente con <code>RemoveFilteredVariants</code> si es necesario.</p>
+
+            <h4>Ejemplo de uso de VariantFiltration:</h4>
+            <pre><code>gatk VariantFiltration \
+  -V raw_variants.vcf.gz \
+  -O filtered_variants.vcf.gz \
+  --filter-expression "QD &lt; 2.0" --filter-name "LowQD" \
+  --filter-expression "FS &gt; 60.0" --filter-name "HighFS" \
+  --filter-expression "MQ &lt; 40.0" --filter-name "LowMQ" \
+  --filter-expression "MQRankSum &lt; -12.5" --filter-name "LowMQRankSum" \
+  --filter-expression "ReadPosRankSum &lt; -8.0" --filter-name "LowReadPosRankSum"</code></pre>
+            <p>En este ejemplo, se aplican filtros para variantes con baja calidad de profundidad (QD), alto sesgo de flujo (FS), baja calidad de alineamiento (MQ), y desviaciones en la distribución de posiciones de lecturas (MQRankSum, ReadPosRankSum). Estos valores son comunes en estudios de exoma y genoma completo.</p>
+
+            <h3>2. Recalibración de calidad de variantes con VariantRecalibrator</h3>
+            <p>Mientras que <code>VariantFiltration</code> aplica reglas fijas, <code>VariantRecalibrator</code> genera un modelo estadístico que asigna una <em>calidad de llamado</em> (como un valor de <em>Phred score</em>) a cada variante, basado en sus características observadas en datos reales.</p>
+            <p>El proceso se realiza en dos pasos:</p>
+            <ol>
+                <li>Se construye un modelo usando un conjunto de variantes de alta confianza (por ejemplo, de dbSNP).</li>
+                <li>Se recalibran las variantes del estudio, obteniendo un VCF con puntuaciones de calidad ajustadas.</li>
+            </ol>
+
+            <h4>Paso 1: Generar el modelo de recalibración</h4>
+            <pre><code>gatk VariantRecalibrator \
+  -V raw_variants.vcf.gz \
+  -O recalibration_report.csv \
+  --resource:snps,known=true,training=true,truth=true,prior=12.0 dbSNP.vcf.gz \
+  --resource:indels,known=true,training=true,truth=true,prior=10.0 dbSNP.vcf.gz \
+  -mode SNPs \
+  -tranches 100.0,99.9,99.0,90.0</code></pre>
+            <p>Este comando usa el archivo <code>dbSNP.vcf.gz</code> como fuente de variantes verdaderas para entrenar el modelo. El parámetro <code>-mode</code> especifica que se está recalibrando para SNVs. Las tranches (100, 99.9, etc.) definen los umbrales de confianza para la posterior filtración.</p>
+
+            <h4>Paso 2: Aplicar el modelo a las variantes</h4>
+            <pre><code>gatk ApplyVQSR \
+  -V raw_variants.vcf.gz \
+  -O recalibrated_variants.vcf.gz \
+  --recal-file recalibration_report.csv \
+  --tranches-file recalibration_tranches.txt \
+  -mode SNPs</code></pre>
+            <p>Este paso genera un VCF con variantes recalibradas, donde cada variante tiene una puntuación de calidad ajustada. Las variantes con puntuación baja pueden ser filtradas en un paso posterior.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La validación de variantes es un paso crítico en el análisis genómico. <code>VariantFiltration</code> permite aplicar reglas basadas en métricas de calidad (como QD, FS, MQ) para etiquetar variantes sospechosas. Por otro lado, <code>VariantRecalibrator</code> y <code>ApplyVQSR</code> ofrecen un enfoque más sofisticado mediante modelos estadísticos que ajustan la calidad de las llamadas basándose en datos de referencia de alta confianza. Juntos, estos métodos garantizan que solo las variantes más fiables sean consideradas en análisis posteriores, mejorando la precisión y reproducibilidad de los resultados.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar valores de corte arbitrarios</strong>: Evita usar valores de filtro como <code>FS &gt; 60</code> sin validarlos en tu tipo de datos. Los umbrales pueden variar según el estudio (exoma vs. genoma completo).</li>
+                <li><strong>No usar datos de referencia</strong>: Es esencial proporcionar un conjunto de variantes verdaderas (como dbSNP) para entrenar el modelo de recalibración. Sin datos de verdad, el modelo no es fiable.</li>
+                <li><strong>Ignorar los archivos de tranches</strong>: El archivo <code>recalibration_tranches.txt</code> es clave para filtrar variantes por nivel de confianza. Usa <code>ApplyVQSR</code> con el parámetro <code>--tranches-file</code> para aplicar filtros basados en estos niveles.</li>
+                <li><strong>Aplicar filtrado antes de recalibrar</strong>: No filtres variantes antes de usar <code>VariantRecalibrator</code>. El modelo necesita todos los datos (incluso los de baja calidad) para aprender correctamente.</li>
+                <li><strong>Verificar el resultado con VCFtools</strong>: Usa <code>vcftools --filter-stats</code> para analizar el impacto del filtro y la distribución de métricas después del procesamiento.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

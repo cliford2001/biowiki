@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de variantes en regiones genómicas no codificantes con Ensembl Regulatory Build</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de variantes en regiones genómicas no codificantes con Ensembl Regulatory Build</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué son las regiones genómicas no codificantes y por qué importan?</h2>
+      <p>Las regiones genómicas no codificantes (non-coding regions) constituyen más del 98% del genoma humano. Aunque no codifican proteínas, muchas de estas regiones están involucradas en la regulación de la expresión génica, como promotores, enhancers, silencers y elementos de respuesta a señales. La identificación de variantes en estas áreas puede tener un impacto significativo en fenotipos, enfermedades y trastornos complejos, incluso cuando no alteran la secuencia de proteínas.</p>
+      <p>El <strong>Ensembl Regulatory Build</strong> es un recurso clave que cataloga y anota estas regiones funcionales en el genoma humano (y otros organismos). Proporciona un mapa integrado de elementos reguladores, basado en datos experimentales como ChIP-seq, ATAC-seq y RNA-seq, y permite identificar variantes genéticas que podrían afectar la actividad reguladora.</p>
+    </section>
+
+    <section>
+      <h2>El flujo de análisis: desde variantes hasta impacto funcional</h2>
+      <p>El análisis de variantes en regiones no codificantes requiere un enfoque integrado. A continuación se describe un flujo típico usando herramientas estándar:</p>
+
+      <h3>1. Obtención y preprocesamiento de variantes</h3>
+      <p>Las variantes se suelen obtener de estudios de GWAS, secuenciación de exomas o genomas completos. Un paso crucial es la filtración y calidad de los datos. Por ejemplo, en un estudio de GWAS, se puede usar <code>plink</code> para filtrar SNPs por frecuencia alélica, calidad de llamado y enlace de ligamiento:</p>
+      <pre><code>plink --bfile datos --maf 0.01 --geno 0.05 --make-bed --out filtrado</code></pre>
+
+      <h3>2. Anotación funcional con Ensembl Regulatory Build</h3>
+      <p>Para anotar variantes en regiones reguladoras, se puede usar la API de Ensembl o herramientas como <code>ANNOVAR</code> con el plugin de Ensembl Regulatory Build. Alternativamente, <code>snpeff</code> permite anotaciones directas si se configura con el conjunto de datos correcto. Ejemplo de uso:</p>
+      <pre><code>snpeff -v -t human -o vcf -s /path/to/ensembl-regulatory-build data.vcf.gz</code></pre>
+      <p>La salida incluye información sobre si una variante está dentro de un enhancer, promotor o región de accesibilidad cromatina, y puede indicar su potencial impacto funcional.</p>
+
+      <h3>3. Evaluación del impacto en la regulación</h3>
+      <p>Si una variante cae dentro de un enhancer, se puede evaluar su posible efecto mediante análisis de variación en la expresión génica asociada. Esto se puede hacer usando datos de eQTL (expression Quantitative Trait Loci). Las herramientas como <code>GTEx Portal</code> permiten consultar si una variante en una región no codificante está asociada a cambios en la expresión de genes vecinos.</p>
+      <pre><code>curl "https://gtexportal.org/home/gene/ENSG00000141510" | grep -A10 "eQTL"</code></pre>
+      <p>Además, se pueden usar modelos predictivos como <code>DeepSEA</code> o <code>Basenji</code> para predecir el cambio en la actividad del enhancer tras una variante.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variantes en regiones genómicas no codificantes con el Ensembl Regulatory Build ofrece una ventana poderosa para comprender el impacto funcional de variantes que no alteran proteínas. Al integrar datos experimentales, anotaciones funcionales y asociaciones eQTL, se puede identificar con mayor precisión el mecanismo molecular subyacente a enfermedades complejas. Esta estrategia es fundamental en genómica funcional moderna y en el diseño de terapias dirigidas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar la calidad de los datos:</strong> No filtrar variantes de baja calidad puede generar falsos positivos. Siempre validar con métricas como QUAL, DP, y GQ.</li>
+        <li><strong>Confundir correlación con causalidad:</strong> Una variante asociada a una expresión génica no implica que sea causal. Usar herramientas como <code>SMR</code> o <code>Credible Set</code> para evaluar el nivel de confianza.</li>
+        <li><strong>Suponer que todos los elementos reguladores son relevantes:</strong> El Ensembl Regulatory Build incluye muchos elementos con baja actividad. Filtrar por actividad experimental (por ejemplo, si tiene pico de ATAC-seq o H3K27ac).</li>
+        <li><strong>No validar en modelos biológicos:</strong> Siempre complementar con experimentos in vitro/in vivo cuando sea posible.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

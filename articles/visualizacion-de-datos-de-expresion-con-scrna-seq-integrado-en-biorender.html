@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización de datos de expresión con scRNA-seq integrado en BioRender</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Visualización de datos de expresión con scRNA-seq integrado en BioRender</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué visualizar datos scRNA-seq es clave</h2>
+            <p>La secuenciación de RNA a escala única (scRNA-seq) ha revolucionado la biología celular al permitir el análisis de la expresión génica a nivel individual. Sin embargo, el verdadero poder de estos datos se manifiesta solo cuando se visualizan de forma efectiva. La visualización no solo ayuda a explorar patrones celulares, sino que también es esencial para comunicar hallazgos complejos a audiencias científicas, clínicas o incluso no especializadas.</p>
+            <p>En este artículo, nos enfocaremos en cómo integrar visualizaciones de datos scRNA-seq generadas con herramientas como <code>Scanpy</code> o <code>Seurat</code> (en R) dentro de <a href="https://www.biorender.com" target="_blank">BioRender</a>, una plataforma líder en la creación de ilustraciones científicas profesionales. Esta integración permite transformar gráficos estadísticos en figuras científicas pulidas, claras y de alto impacto, ideales para publicaciones, presentaciones o materiales educativos.</p>
+        </section>
+
+        <section>
+            <h2>Etapa 1: Preparación de datos para visualización</h2>
+            <p>Antes de integrar datos en BioRender, es crucial generar los gráficos base con las herramientas estándar de análisis de scRNA-seq:</p>
+            <ul>
+                <li>Establecer la calidad de los datos mediante <code>scanpy.pp.calculate_qc_metrics()</code> o <code>qc</code> en Seurat.</li>
+                <li>Realizar filtrado de células y genes basado en métricas como <em>total counts</em>, <em>number of genes detected</em>, y <em>percent mitochondrial reads</em>.</li>
+                <li>Normalizar los datos con <code>scanpy.pp.normalize_total()</code> y <code>log1p</code>, o con métodos como <em>LogNormalize</em> en Seurat.</li>
+                <li>Encontrar genes variables mediante <code>scanpy.pp.highly_variable_genes()</code> o <code>VariableFeatures</code> en Seurat.</li>
+                <li>Realizar reducción de dimensionalidad con <code>scanpy.tl.pca()</code>, <code>scanpy.tl.tsne()</code> o <code>scanpy.tl.umap()</code> (recomendado para visualización).</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Etapa 2: Generación de gráficos con Python (Scanpy) o R (Seurat)</h2>
+            <p>Las siguientes funciones generan los gráficos esenciales que luego se exportarán para su uso en BioRender:</p>
+            
+            <h3>En Python (Scanpy)</h3>
+            <pre><code>import scanpy as sc
+
+# Cargar el objeto AnnData
+adata = sc.read_h5ad("data/processed_data.h5ad")
+
+# Crear gráficos
+sc.pl.highest_expr_genes(adata, n_top=20, save="highest_expr_genes.png")
+sc.pl.violin(adata, keys=["n_genes_by_counts", "total_counts"], groupby="leiden", save="qc_violin.png")
+sc.pl.umap(adata, color=["leiden", "gene_of_interest"], legend_loc="on data", save="umap_colored.png")
+sc.pl.scatter(adata, x="PC1", y="PC2", color="cell_type", save="pc1_pc2.png")</code></pre>
+            
+            <h3>En R (Seurat)</h3>
+            <pre><code>library(Seurat)
+
+# Cargar el objeto Seurat
+seurat_obj &lt;- ReadH5AD("data/processed_data.h5ad")
+
+# Generar gráficos
+FeaturePlot(seurat_obj, features = c("gene1", "gene2"), slot = "data", pt.size = 0.5, cols = c("blue", "red"), save = "feature_plot.png")
+VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA"), group.by = "seurat_clusters", save = "vlnplot.png")
+DimPlot(seurat_obj, group.by = "seurat_clusters", label = TRUE, label.size = 3, save = "dimplot.png")</code></pre>
+            
+            <p>Estos comandos producen imágenes en formato PNG con alta resolución (recomendado: 300-600 DPI), que son ideales para importar a BioRender.</p>
+        </section>
+
+        <section>
+            <h2>Etapa 3: Integración en BioRender</h2>
+            <p>BioRender ofrece una biblioteca de elementos biológicos, células, orgánulos y diagramas que se pueden superponer sobre las imágenes de visualización scRNA-seq. Sigue estos pasos:</p>
+            <ol>
+                <li>Abre tu proyecto en <a href="https://www.biorender.com" target="_blank">BioRender</a>.</li>
+                <li>Importa el gráfico generado (por ejemplo, UMAP o t-SNE) como imagen de fondo.</li>
+                <li>Utiliza la herramienta <strong>"Draw"</strong> para agregar elementos biológicos: células, núcleos, genes, proteínas, etc.</li>
+                <li>Usa <strong>"Label"</strong> para agregar texto descriptivo: <em>"Cluster 3: Fibroblastos activos"</em>, <em>"Alta expresión de SOX2"</em>.</li>
+                <li>Aplica <strong>"Color"</strong> para destacar grupos o condiciones con paletas coherentes.</li>
+                <li>Exporta la figura final como PNG o SVG para alta calidad.</li>
+            </ol>
+            
+            <p>La ventaja de esta metodología es que combina la precisión cuantitativa del análisis con la claridad visual y la narrativa científica que solo puede ofrecer una ilustración profesional.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La visualización de datos scRNA-seq es fundamental para entender la heterogeneidad celular y comunicar resultados. Integrar gráficos generados con <code>Scanpy</code> o <code>Seurat</code> en <strong>BioRender</strong> permite transformar datos brutos en figuras científicas de alto impacto. Este enfoque combina el rigor estadístico con la claridad visual, facilitando la interpretación y el compartimiento de hallazgos.</p>
+            <p>El proceso consiste en preparar datos, generar gráficos con herramientas estandarizadas, y luego enriquecerlos en BioRender con elementos biológicos y etiquetas descriptivas.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Evita sobreposiciones excesivas</strong>: no sobrecargues el gráfico con demasiados elementos. Enfócate en los hallazgos clave.</li>
+                <li><strong>Usa paletas legibles</strong>: evita colores que no se diferencian para personas con daltonismo. Usa paletas como <em>Set1</em>, <em>Dark2</em>, o <em>Viridis</em>.</li>
+                <li><strong>Importa imágenes a alta resolución</strong>: asegúrate de que las imágenes de origen tengan al menos 300 DPI para evitar pixeles en BioRender.</li>
+                <li><strong>Etiqueta de forma clara</strong>: usa tipos de letra legibles y etiquetas que no se solapen con los datos.</li>
+                <li><strong>Conserva la fidelidad de los datos</strong>: no distorsiones geométricas en BioRender. Usa la imagen como fondo, no como base para re-crear el gráfico.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

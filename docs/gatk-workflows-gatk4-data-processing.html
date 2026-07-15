@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gatk-workflows/gatk4-data-processing</title>
+  <meta name="categoria" content="Variantes">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>gatk-workflows/gatk4-data-processing</h1>
+    <p class="meta">
+      <a href="https://github.com/gatk-workflows/gatk4-data-processing">Repositorio</a> · 
+      autores: 162 estrellas · wdl
+    </p>
+  </header>
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      Este repositorio contiene flujos de trabajo (workflows) escritos en WDL (Workflow Description Language) para el procesamiento de datos de secuenciación de alta capacidad con <strong>GATK4</strong> y herramientas relacionadas. Está diseñado principalmente para el descubrimiento de variantes genéticas, siguiendo un flujo estándar de análisis en bioinformática.
+      Los workflows incluyen pasos clave como la alineación de reads, corrección de calidad, marcado de duplicados, recalibración de calidad de base y llamado de variantes.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      Este es un repositorio de flujos de trabajo, no un paquete instalable como una librería. Para usar estos workflows, necesitas:
+    </p>
+    <ul>
+      <li>Un entorno de ejecución compatible con WDL (como <code>cromwell</code>).</li>
+      <li>La herramienta <code>gatk</code> instalada y disponible en el PATH.</li>
+      <li>El repositorio clonado localmente o descargado.</li>
+    </ul>
+    <p>
+      <strong>Instalación de Cromwell (ejemplo con Docker):</strong>
+    </p>
+    <pre><code>docker pull broadinstitute/cromwell:latest</code></pre>
+    <p>
+      <strong>Instalación de GATK4:</strong>
+    </p>
+    <pre><code>conda install -c bioconda gatk=4</code></pre>
+    <p>
+      <strong>Clonar el repositorio:</strong>
+    </p>
+    <pre><code>git clone https://github.com/gatk-workflows/gatk4-data-processing.git</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Para ejecutar un workflow, necesitas un archivo de entrada en formato JSON y ejecutar <code>cromwell</code> con el workflow WDL y el archivo de entrada.
+    </p>
+    <pre><code>docker run --rm -v $(pwd):/wd -w /wd broadinstitute/cromwell:latest java -jar cromwell.jar run gatk4-data-processing.wdl -i inputs.json</code></pre>
+    <p>
+      Ejemplo de <code>inputs.json</code> (ilustrativo; verifica los campos exactos en cada workflow):
+    </p>
+    <pre><code>{
+  "gatk4_data_processing.gatk4_input": "path/to/your/reads.fastq.gz",
+  "gatk4_data_processing.reference_genome": "path/to/hg38.fa",
+  "gatk4_data_processing.output_prefix": "output_prefix"
+}</code></pre>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo típico sigue estos pasos:
+    </p>
+    <ol>
+      <li>Alineamiento de reads con herramientas como <code>bowtie2</code> o <code>hisat2</code>.</li>
+      <li>Marcar duplicados con <code>GATK MarkDuplicates</code>.</li>
+      <li>Recalibrar calidad de base con <code>GATK BaseRecalibrator</code> y <code>ApplyBQSR</code>.</li>
+      <li>Validar el alineamiento con <code>GATK ValidateSamFile</code>.</li>
+      <li>Llamar variantes con <code>GATK HaplotypeCaller</code>.</li>
+      <li>Realce de variantes (si aplica).</li>
+    </ol>
+    <figure>
+      <svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Boxes -->
+        <rect x="10" y="10" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="85" y="35" font-size="14" text-anchor="middle" fill="#000">Datos de secuenciación</text>
+
+        <rect x="200" y="10" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="275" y="35" font-size="14" text-anchor="middle" fill="#000">Alineamiento</text>
+
+        <rect x="400" y="10" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="475" y="35" font-size="14" text-anchor="middle" fill="#000">Marcado de duplicados</text>
+
+        <rect x="600" y="10" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="675" y="35" font-size="14" text-anchor="middle" fill="#000">Recalibración</text>
+
+        <rect x="10" y="90" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="85" y="115" font-size="14" text-anchor="middle" fill="#000">Validación</text>
+
+        <rect x="200" y="90" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="275" y="115" font-size="14" text-anchor="middle" fill="#000">Llamado de variantes</text>
+
+        <rect x="400" y="90" width="150" height="40" fill="#f0f8ff" stroke="#000" rx="5" />
+        <text x="475" y="115" font-size="14" text-anchor="middle" fill="#000">Análisis de variantes</text>
+
+        <!-- Arrows -->
+        <line x1="160" y1="30" x2="200" y2="30" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="350" y1="30" x2="400" y2="30" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="550" y1="30" x2="600" y2="30" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="160" y1="110" x2="200" y2="110" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="350" y1="110" x2="400" y2="110" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Arrowhead definition -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Diagrama de flujo típico para el descubrimiento de variantes usando GATK4</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Errores de ruta:</strong> Asegúrate de que los archivos de entrada (reads, referencia) estén en rutas accesibles y que los permisos sean correctos.</li>
+      <li><strong>Problemas con el archivo de entrada:</strong> Verifica que el archivo <code>inputs.json</code> tenga los nombres de los parámetros exactos y los valores correctos. Usa el comando <code>cromwell</code> con la opción <code>--inputs</code> para validar.</li>
+      <li><strong>Memoria insuficiente:</strong> Los workflows pueden consumir mucha memoria. Asegúrate de asignar suficiente RAM al contenedor Docker o al entorno de ejecución.</li>
+      <li><strong>Buenas prácticas:</strong>
+        <ul>
+          <li>Usa referencias genómicas preprocesadas (índices) para mejorar el rendimiento.</li>
+          <li>Siempre valida el alineamiento y los archivos SAM/BAM con <code>GATK ValidateSamFile</code>.</li>
+          <li>Documenta tus flujos y versiones de herramientas para reproducibilidad.</li>
+        </ul>
+      </li>
+    </ul>
+  </article>
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">5 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42286866.html">Muribaculum as a microbial contributor of rifaximin-induced mucosal protection during chemotherapy.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1080/19490976.2026.2685994" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42305663.html">Comparative transcriptomic and metabolomic profiling of forest tea and terrace tea in Sandu, Guizhou, China.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1016/j.fochms.2026.100429" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42079009.html">Iterative evolution of &amp;lt;i&amp;gt;Saccharomyces cerevisiae&amp;lt;/i&amp;gt; enhances recombinant protease secretion.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1016/j.synbio.2026.04.006" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41933291.html">The functional and catalytic landscape of urease reveals a conserved target against Helicobacter pylori.</a> <span class="date">2026-07-10</span> · <a href="https://doi.org/10.1080/19490976.2026.2653575" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41851965.html">Immunogenicity of neoantigens from hepatocellular carcinoma patients treated with a combined radioimmunotherapy.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/2162402x.2026.2645280" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

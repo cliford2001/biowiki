@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización del alineamiento de reads con minimap2 para genómica estructural</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización del alineamiento de reads con minimap2 para genómica estructural</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>En el campo de la genómica estructural, el alineamiento de reads de secuenciación de nueva generación (NGS) es un paso fundamental para estudiar la organización tridimensional del genoma, detectar estructuras cromosómicas anómalas, identificar translocaciones, duplicaciones y otras variantes estructurales. <strong>minimap2</strong>, desarrollado por Heng Li, se ha consolidado como una herramienta de alineamiento de extremo a extremo altamente eficiente para datos de secuenciación larga, como aquellos generados por plataformas de secuenciación de tercera generación (Oxford Nanopore Technologies, Pacific Biosciences).</p>
+            <p>La precisión y el rendimiento del alineamiento no dependen únicamente del algoritmo subyacente, sino también de la correcta configuración de sus parámetros. Una optimización inadecuada puede llevar a alineamientos inexactos, pérdida de hits, o un uso excesivo de recursos computacionales. Este artículo explora los parámetros clave de minimap2 para el análisis de datos en genómica estructural, ofreciendo una guía práctica para lograr alineamientos de alta calidad con eficiencia óptima.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+            
+            <h3>Parámetros esenciales para genómica estructural</h3>
+            <p>minimap2 ofrece una amplia gama de opciones, pero para aplicaciones en genómica estructural, se recomienda enfocar los siguientes parámetros clave:</p>
+
+            <ul>
+                <li><strong><code>-x</code></strong>: Define el perfil de alineamiento. Para datos de larga lectura y genómica estructural, el perfil <code>map-pb</code> (para datos de PacBio) o <code>map-ont</code> (para datos de Nanopore) es el más adecuado. Estos perfiles optimizan el alineamiento para altas tasas de error y longitudes de lectura extensas.</li>
+                <li><strong><code>-k</code></strong>: Tamaño del k-mer para la indexación. El valor predeterminado (15) suele ser insuficiente para datos largos. Para genómica estructural, se recomienda un valor entre 18 y 22. Un k-mer más grande mejora la especificidad, reduciendo los alineamientos falsos positivos.</li>
+                <li><strong><code>--secondary=no</code></strong>: Desactiva la detección de alineamientos secundarios. En estudios de estructura, los alineamientos secundarios pueden crear ruido y falsear la interpretación de la localización de reads, especialmente en regiones repetitivas. Su desactivación mejora la claridad del mapa de alineamiento.</li>
+                <li><strong><code>--split-prefix</code></strong>: Es útil cuando se trabaja con datos que han sido divididos. Asegura que los alineamientos se gestionen correctamente en archivos fragmentados.</li>
+            </ul>
+
+            <h3>Comandos de ejemplo</h3>
+            <p>A continuación se muestran ejemplos de comandos reales de minimap2 para diferentes escenarios:</p>
+
+            <pre><code>minimap2 -x map-ont -k19 --secondary=no -t 8 genome.fa reads.fastq.gz | samtools sort -o alignments_sorted.bam -</code></pre>
+            <p>Este comando alinea reads de Nanopore a un genoma de referencia utilizando un k-mer de 19, desactiva alineamientos secundarios y utiliza 8 hilos. El resultado se ordena con <code>samtools sort</code>.</p>
+
+            <pre><code>minimap2 -x map-pb -k20 --secondary=no -t 16 genome.fa reads.fastq.gz -o alignments.sam</code></pre>
+            <p>Para datos de PacBio, se usa el perfil <code>map-pb</code>, un k-mer de 20 y 16 hilos. El resultado se guarda directamente en formato SAM.</p>
+
+            <h3>Post-procesamiento y validación</h3>
+            <p>Tras el alineamiento, es crucial validar los resultados. Se recomienda usar herramientas como <code>samtools idxstats</code> para verificar el número de reads alineados, y <code>mosdepth</code> para calcular la cobertura genómica. Además, visualizadores como <code>IGV</code> (Integrative Genomics Viewer) permiten inspeccionar manualmente regiones sospechosas o de alta variabilidad.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La optimización del alineamiento de reads con minimap2 para genómica estructural requiere una selección cuidadosa de parámetros que equilibre sensibilidad, especificidad y rendimiento. El uso de perfiles adecuados (<code>map-ont</code>, <code>map-pb</code>), un tamaño de k-mer adecuado (18-22), y la desactivación de alineamientos secundarios son factores críticos. La validación post-alineamiento mediante herramientas como <code>samtools</code> y visualización con <code>IGV</code> asegura la calidad de los datos antes de análisis posteriores.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar el perfil incorrecto</strong>: No usar <code>map-ont</code> o <code>map-pb</code> para datos de secuenciación larga puede resultar en alineamientos ineficientes o inexactos.</li>
+                <li><strong>Subestimar el tamaño de k-mer</strong>: Un k-mer demasiado pequeño (como el predeterminado 15) puede generar muchos alineamientos falsos en datos de larga lectura.</li>
+                <li><strong>Dejar alineamientos secundarios activos</strong>: Esto puede confundir los análisis estructurales, especialmente en regiones repetitivas.</li>
+                <li><strong>No validar los resultados</strong>: Siempre verificar el número de reads alineados y la cobertura con <code>samtools idxstats</code> y <code>mosdepth</code>.</li>
+                <li><strong>Ignorar la paralelización</strong>: Usar múltiples hilos (<code>-t N</code>) aprovecha al máximo el hardware disponible.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

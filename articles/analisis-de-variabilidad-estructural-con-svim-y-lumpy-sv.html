@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análisis de variabilidad estructural con SVIM y lumpy-sv</title>
+  <meta name="categoria" content="Variantes" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de variabilidad estructural con SVIM y lumpy-sv</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>
+        La variabilidad estructural (SV, por sus siglas en inglés) abarca alteraciones genómicas
+        de gran tamaño, como deleciones, inserciones, inversiones, translocaciones y duplicaciones.
+        Aunque menos frecuentes que los variantes de un solo nucleótido (SNVs) o las variaciones de
+        número de copias (CNVs), las SV tienen un impacto profundo en la función génica,
+        la regulación y la patogénesis de enfermedades como el cáncer, trastornos neurológicos y
+        enfermedades raras.
+      </p>
+      <p>
+        El análisis de SV requiere herramientas especializadas que puedan interpretar datos de
+        secuenciación de nueva generación (NGS) con alta resolución. Dos herramientas de código
+        abierto ampliamente utilizadas son <strong>SVIM</strong> y <strong>lumpy-sv</strong>, que complementan
+        sus fortalezas para ofrecer un análisis robusto, preciso y escalable.
+      </p>
+    </section>
+
+    <section>
+      <h2>Orígenes y principios de funcionamiento</h2>
+      <h3>lumpy-sv</h3>
+      <p>
+        <strong>lumpy-sv</strong> es una herramienta de detección de SV que se basa en el análisis de
+        marcos de lectura discordantes (discordant read pairs) y de lecturas de extremo único
+        (split reads). Utiliza un modelo probabilístico para identificar regiones genómicas
+        con un alto número de eventos de ruptura, lo que permite detectar SV con gran sensibilidad.
+        Es particularmente efectivo para detectar estructuras complejas, como translocaciones
+        y eventos de duplicación.
+      </p>
+      <h3>SVIM</h3>
+      <p>
+        <strong>SVIM</strong> (Structural Variant Identification and Mapping) es un pipeline que combina
+        múltiples fuentes de evidencia: información de alineación, variaciones en el número de
+        copias, y análisis de fragmentos de ADN libres (cfDNA). SVIM utiliza un modelo de
+        probabilidad bayesiana para integrar estas señales y reducir la tasa de falsos positivos.
+        Su enfoque integrador lo hace ideal para estudios de cohortes o análisis en muestras
+        clínicas donde la precisión es crítica.
+      </p>
+    </section>
+
+    <section>
+      <h2>Flujo de análisis</h2>
+      <p>
+        El flujo típico para el análisis de SV con estas herramientas incluye los siguientes pasos:
+      </p>
+      <ol>
+        <li>Preprocesamiento: alineamiento de lecturas con <code>STAR</code> o <code>BWA-MEM</code></li>
+        <li>Etiquetado de duplicados y corrección de calidad con <code>samtools</code></li>
+        <li>Generación de archivos de entrada para <code>lumpy-sv</code> y <code>SVIM</code></li>
+        <li>Ejecución de <code>lumpy-sv</code> con <code>lumpy</code> para detectar variantes</li>
+        <li>Integración de resultados con <code>SVIM</code> para refinamiento y filtrado</li>
+        <li>Validación y anotación con herramientas como <code>ANNOVAR</code> o <code>VEP</code></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Código de ejemplo</h2>
+      <p>
+        A continuación se muestra un ejemplo de cómo ejecutar <code>lumpy-sv</code> y procesar sus resultados
+        con <code>SVIM</code> en un entorno de Linux:
+      </p>
+
+      <h3>Generar archivo de entrada para lumpy-sv</h3>
+      <pre><code>lumpy-sv --bam-file-list alignments/merged.bam.list \ 
+  --sample-name tumor --output-lumpy-vcf tumor.lumpy.vcf \ 
+  --min-mapq 30 --min-allele-freq 0.05</code></pre>
+
+      <h3>Integrar con SVIM</h3>
+      <pre><code>svim -i tumor.lumpy.vcf -b alignments/tumor.bam \ 
+  -o tumor.svim.vcf --threads 8 --ref-genome hg38</code></pre>
+
+      <h3>Validación con VEP</h3>
+      <pre><code>vep -i tumor.svim.vcf -o tumor.vep.vcf --format vcf \ 
+  --species human --assembly hg38 --plugin CADD,1.4</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        El análisis de variabilidad estructural con <strong>SVIM</strong> y <strong>lumpy-sv</strong> representa un enfoque poderoso
+        y complementario para identificar alteraciones genómicas de gran tamaño. <code>lumpy-sv</code> ofrece
+        alta sensibilidad mediante el análisis de patrones de alineación, mientras que <code>SVIM</code>
+        mejora la especificidad mediante integración de múltiples evidencias. Juntos, permiten
+        descubrir variantes estructurales relevantes en estudios de cáncer, genética médica y
+        biología evolutiva.
+      </p>
+      <p>
+        Su uso requiere una buena planificación del pipeline, gestión de memoria y comprensión
+        de los límites de cada herramienta. La validación posterior y la anotación funcional son
+        etapas críticas que no pueden omitirse.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li>
+          <strong>Usar datos de alineamiento sin calidad</strong>: Asegúrate de que los archivos BAM
+          estén correctamente procesados con <code>samtools markdup</code> y <code>picard</code> antes de usarlos.
+        </li>
+        <li>
+          <strong>Ignorar el filtrado</strong>: Siempre aplica filtros de calidad (como <code>min-mapq</code>)
+          y considera el contexto biológico (por ejemplo, frecuencia en poblaciones control).
+        </li>
+        <li>
+          <strong>Mal uso de referencias genómicas</strong>: Asegúrate de que <code>SVIM</code> y <code>lumpy-sv</code>
+          estén configurados con la misma versión de referencia (e.g., hg38, GRCh38).
+        </li>
+        <li>
+          <strong>No validar resultados</strong>: Usa herramientas como <code>ANNOVAR</code>, <code>VEP</code> o <code>gatk ValidateVariants</code>
+          para verificar la consistencia de los VCFs.
+        </li>
+        <li>
+          <strong>Correr con pocos hilos</strong>: Ambas herramientas son intensivas en memoria y
+          pueden beneficiarse de múltiples núcleos. Usa <code>--threads</code> o <code>-t</code> según sea necesario.
+        </li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

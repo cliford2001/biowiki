@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de interacciones entre genes y reguladores con chromVAR y cisTarget</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de interacciones entre genes y reguladores con chromVAR y cisTarget</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Por qué entender las interacciones reguladoras?</h2>
+      <p>En biología del desarrollo y en enfermedades como el cáncer, el control de la expresión génica no reside únicamente en los genes codificadores, sino en un complejo sistema de regulación que involucra factores de transcripción (TFs), elementos promotores y elementos reguladores distantes. Comprender cómo los factores de transcripción interactúan con el ADN para modular la expresión génica es clave para desentrañar mecanismos celulares subyacentes. Las tecnologías de secuenciación de chromatinas abiertas, como ATAC-seq, proporcionan una ventana para explorar esta regulación. Sin embargo, el paso crítico de inferir qué TFs están activos y cuáles genes regulan requiere herramientas especializadas. En este artículo, exploramos el uso combinado de <strong>chromVAR</strong> y <strong>cisTarget</strong> para modelar interacciones entre genes y reguladores a partir de datos de ATAC-seq.</p>
+    </section>
+
+    <section>
+      <h2>Primer paso: Análisis de variabilidad en accesibilidad cromatínica con chromVAR</h2>
+      <p><strong>chromVAR</strong> es un paquete de R diseñado para detectar variabilidad en la accesibilidad del cromatina entre muestras, específicamente para identificar si un conjunto de regiones reguladoras (como promotores o enhancers) es más accesible en ciertos estados celulares. El enfoque principal de chromVAR se basa en el cálculo de la <em>variabilidad de la accesibilidad cromatínica</em> (chromVAR score), que mide la diferencia en la accesibilidad promedio entre regiones asociadas a un determinado factor de transcripción (TF) y el resto del genoma.</p>
+
+      <h3>Proceso clave:</h3>
+      <ul>
+        <li>Se define un <em>motivo de TF</em> (TFBS) como una secuencia de ADN que se espera que sea reconocida por un factor de transcripción específico.</li>
+        <li>Se construye una matriz de accesibilidad cromatínica desde datos de ATAC-seq (por ejemplo, usando <code>Signac</code> o <code>ArchR</code>).</li>
+        <li>Para cada TF, se asignan regiones del genoma que contienen su motivo a un conjunto de regiones <em>asociadas</em> a ese TF.</li>
+        <li>chromVAR calcula el <em>chromVAR score</em> como el promedio de accesibilidad de estas regiones, ajustado por el promedio general del genoma.</li>
+        <li>Una puntuación alta indica que las regiones asociadas a ese TF son más accesibles en esa muestra, lo que sugiere que el TF podría estar activo.</li>
+      </ul>
+
+      <pre><code>library(chromVAR)
+library(Seurat)
+
+# Supongamos que 'atac_matrix' es la matriz de accesibilidad (genes x muestras)
+# y 'tf_motifs' es un objeto de tipo TFBSList
+
+# Calcular chromVAR scores
+chromvar_scores &lt;- chromVAR(
+  countMatrix = atac_matrix,
+  motifMatrix = tf_motifs,
+  min.cells = 10,
+  min.regions = 10
+)
+
+# Obtener scores por muestra y TF
+scores &lt;- getChromVARScore(chromvar_scores)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Segundo paso: Inferencia de reguladores con cisTarget</h2>
+      <p>Mientras que chromVAR identifica qué TFs podrían estar activos, <strong>cisTarget</strong> va un paso más allá: infiere qué genes son regulados por esos TFs. cisTarget utiliza una base de datos de motivos de TFs y sus interacciones conocidas con genes, combinada con datos de ATAC-seq, para predecir redes regulatorias.</p>
+
+      <h3>Flujo de análisis:</h3>
+      <ol>
+        <li>Se ingresa el conjunto de regiones de ATAC-seq y el <em>motivo de TF</em> asociado.</li>
+        <li>Se identifican las regiones activas en la muestra.</li>
+        <li>Se buscan genes cercanos (por ejemplo, dentro de 100 kb) a las regiones activas que contienen motivos de TF.</li>
+        <li>Se calcula una puntuación de regulación (c-score) para cada TF-gene, que refleja la probabilidad de que el TF regule ese gen.</li>
+        <li>Se filtran resultados por significancia estadística (p-valor ajustado).</li>
+      </ol>
+
+      <pre><code>library(cisTarget)
+
+# Supongamos que 'peaks' es un objeto de tipo GRanges con picos de ATAC-seq
+# y 'tf_motifs' es una lista de motivos
+
+# Crear una base de datos de regulación
+regulatory_network &lt;- cisTarget(
+  peaks = peaks,
+  tf_motifs = tf_motifs,
+  gene_annotation = gene_annotations,
+  upstream = 100000,
+  downstream = 100000,
+  use_differential = TRUE
+)
+
+# Obtener los genes regulados por TFs con alta puntuación
+regulated_genes &lt;- getRegulatedGenes(regulatory_network, threshold = 0.01)
+</code></pre>
+
+      <p>La salida de cisTarget es una red de regulación que puede visualizarse con herramientas como <code>igraph</code> o integrarse con <code>Seurat</code> para análisis de grupos celulares.</p>
+    </section>
+
+    <section>
+      <h2>Integración de chromVAR y cisTarget: un flujo completo</h2>
+      <p>La verdadera potencia surge al combinar ambos enfoques. En una pipeline típica:</p>
+      <ol>
+        <li>Se procesa el ATAC-seq con herramientas como <code>macs2</code> o <code>csaw</code> para detectar picos.</li>
+        <li>Se calculan los chromVAR scores para identificar TFs activos en cada estado celular.</li>
+        <li>Con los TFs activos, se usa cisTarget para inferir cuáles genes están regulados por ellos.</li>
+        <li>Finalmente, se valida la red reguladora con datos de expresión génica (por ejemplo, desde scRNA-seq) o con experimentos funcionales.</li>
+      </ol>
+
+      <p>Este enfoque permite no solo identificar TFs activos, sino también construir modelos de regulación que conectan factores de transcripción con genes diana, facilitando la generación de hipótesis funcionales para experimentos posteriores.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El modelado de interacciones entre genes y reguladores es una pieza fundamental del análisis de datos de cromatina. <strong>chromVAR</strong> permite identificar factores de transcripción con actividad potencial en muestras específicas mediante el análisis de variabilidad en la accesibilidad cromatínica. <strong>cisTarget</strong>, por su parte, infiere las relaciones regulatorias entre TFs y genes diana a partir de datos de ATAC-seq. Cuando se combinan, estas herramientas permiten reconstruir redes regulatorias dinámicas, ofreciendo una visión detallada de cómo se controla la expresión génica en diferentes contextos biológicos.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar motivos sin validación:</strong> Asegúrese de que los motivos de TFs provengan de fuentes confiables como JASPAR, HOCOMOCO o cis-BP, y no se basen en motivos sintéticos.</li>
+        <li><strong>Ignorar el contexto espacial:</strong> Los genes regulados por un TF pueden no estar cerca de las regiones de ATAC-seq. Siempre considere el contexto genómico y use criterios razonables de distancia (por ejemplo, 100 kb).</li>
+        <li><strong>No validar con expresión génica:</strong> Las predicciones de cisTarget son hipotéticas. Valide los genes diana con datos de expresión de scRNA-seq o con análisis de correlación.</li>
+        <li><strong>Overfitting:</strong> Evite usar demasiados TFs o regiones. Use filtros estadísticos y ajuste el umbral de puntuación según el tamaño del dataset.</li>
+        <li><strong>No considerar la heterogeneidad celular:</strong> Si el ATAC-seq es de una población mixta, los resultados pueden estar sesgados. Prefiera datos de células aisladas o use métodos como <code>ArchR</code> o <code>Signac</code> para análisis de células individuales.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

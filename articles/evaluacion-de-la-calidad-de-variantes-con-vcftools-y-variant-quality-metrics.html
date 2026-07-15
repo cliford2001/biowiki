@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluación de la calidad de variantes con VCFtools y variant quality metrics</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Evaluación de la calidad de variantes con VCFtools y variant quality metrics</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la evaluación de calidad de variantes y por qué importa?</h2>
+      <p>En bioinformática, una <strong>variante genética</strong> es cualquier diferencia en la secuencia de ADN entre individuos. Estas variantes pueden ser polimorfismos (comunes) o mutaciones raras asociadas a enfermedades. Sin embargo, no todas las variantes detectadas son reales: algunos llamados de variantes (variant calls) son errores de secuenciación, alineamiento o análisis.</p>
+      <p>La <strong>evaluación de calidad de variantes</strong> es el proceso de verificar la confiabilidad de los llamados de variantes previamente identificados. Este paso es fundamental antes de realizar estudios de asociación, análisis de heredabilidad o anotación funcional, ya que variantes falsas positivas pueden distorsionar los resultados y llevar a conclusiones erróneas.</p>
+      <p>Para esta evaluación, el formato <strong>VCF (Variant Call Format)</strong> es el estándar. Un archivo VCF contiene información detallada sobre cada variante, incluyendo su posición, tipo, calidad de llamado, y métricas de calidad asociadas. Herramientas como <strong>VCFtools</strong> permiten analizar y filtrar estos archivos con base en métricas robustas y bien documentadas.</p>
+    </section>
+
+    <section>
+      <h2>Principales métricas de calidad en VCF</h2>
+      <p>Los archivos VCF incluyen campos como <code>QUAL</code>, <code>INFO</code>, y <code>FORMAT</code>, que contienen información sobre la calidad de cada variante. Las métricas más comunes son:</p>
+
+      <h3>QUAL (calidad del llamado)</h3>
+      <p>El campo <code>QUAL</code> representa la calidad del llamado de variante, expresada como un valor de <em>Phred</em> (<code>Q = -10 × log₁₀(P)</code>), donde <em>P</em> es la probabilidad de que el llamado sea erróneo. Un valor alto (por ejemplo, 30) implica una probabilidad de error de 1 en 1000.</p>
+
+      <h3>INFO: AC, AF, AN, DP, etc.</h3>
+      <p>El campo <code>INFO</code> contiene métricas agregadas por muestra. Algunos ejemplos:</p>
+      <ul>
+        <li><code>AC</code>: número de copias del alelo alternativo.</li>
+        <li><code>AF</code>: frecuencia alélica estimada.</li>
+        <li><code>AN</code>: número total de copias de alelos observadas.</li>
+        <li><code>DP</code>: profundidad de cobertura en la posición de la variante.</li>
+      </ul>
+      <p>Un <code>DP</code> bajo puede indicar una variante poco confiable, especialmente si está en una región con baja calidad de secuenciación.</p>
+
+      <h3>Filtrado por genotipos</h3>
+      <p>En el campo <code>FORMAT</code>, se almacena información por muestra, como <code>GT</code> (genotipo), <code>GQ</code> (calidad del genotipo), y <code>DP</code>. El <code>GQ</code> es crucial: si es bajo (< 20), el genotipo puede ser incorrecto.</p>
+    </section>
+
+    <section>
+      <h2>Uso de VCFtools para filtrar y evaluar variantes</h2>
+      <p><strong>VCFtools</strong> es una herramienta de línea de comando poderosa, escrita en C++, que permite analizar, filtrar y resumir datos VCF. A continuación se muestran ejemplos de uso real.</p>
+
+      <h3>Filtrar por calidad de llamado (QUAL)</h3>
+      <pre><code>vcftools --vcf datos.vcf --remove-filtered-all --min-qual 30 --recode --out filtrado</code></pre>
+      <p>Este comando elimina todas las variantes con calidad < < 30 y genera un nuevo archivo VCF en formato recodificado.</p>
+
+      <h3>Verificar profundidad de cobertura (DP)</h3>
+      <pre><code>vcftools --vcf datos.vcf --minDP 10 --maxDP 1000 --recode --out profundidad</code></pre>
+      <p>Este filtro mantiene solo variantes con cobertura entre 10 y 1000 lecturas, evitando regiones con muy baja o muy alta cobertura (posibles artefactos).</p>
+
+      <h3>Evaluar frecuencia alélica (AF)</h3>
+      <pre><code>vcftools --vcf datos.vcf --max-af 0.99 --min-af 0.01 --recode --out frecuencia</code></pre>
+      <p>Elimina variantes que son extremas en frecuencia (por ejemplo, AF > 99% o < 1%), que podrían ser artefactos o de origen no biológico.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>Evaluar la calidad de variantes es una etapa crítica en cualquier pipeline de análisis de variantes. Herramientas como <strong>VCFtools</strong> permiten filtrar variantes basándose en métricas bien definidas como <code>QUAL</code>, <code>DP</code>, <code>GQ</code>, y <code>AF</code>. Un buen filtrado elimina artefactos y aumenta la confianza en los resultados biológicos finales.</p>
+      <p>Es recomendable realizar análisis exploratorios antes del filtrado (usando <code>vcftools --stats</code> o <code>--site-quality</code>) para entender la distribución de métricas y ajustar umbrales de forma razonada, en lugar de usar valores fijos sin análisis previo.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar umbrales fijos sin validación:</strong> Umbral de QUAL=30 no es universal. Usa <code>vcftools --site-quality</code> para ver la distribución real.</li>
+        <li><strong>Ignorar la profundidad (DP):</strong> Variantes con DP muy bajo (<5) o muy alto (>500) pueden ser artefactos.</li>
+        <li><strong>Filtrar por AF sin contexto:</strong> Un AF bajo puede ser un SNP raro real, no un error.</li>
+        <li><strong>Eliminar todos los variantes con GQ < 20:</strong> Esto puede eliminar variantes reales en regiones con baja calidad. Mejor usar <code>--geno-filter</code> con criterios más sutiles.</li>
+        <li><strong>Usar múltiples filtros en orden:</strong> Filtrar primero por QUAL, luego por DP, y finalmente por AF o GQ.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

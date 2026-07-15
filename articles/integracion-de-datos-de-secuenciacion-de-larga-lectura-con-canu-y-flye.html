@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos de secuenciación de larga lectura con Canu y Flye</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos de secuenciación de larga lectura con Canu y Flye</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Por qué integrar datos de larga lectura</h2>
+      <p>La secuenciación de larga lectura (Long-Read Sequencing, LRS), con plataformas como Oxford Nanopore Technologies (ONT) y PacBio, ha revolucionado el ensamblaje genómico al resolver regiones complejas del ADN que los métodos de lectura corta no pueden abordar. Sin embargo, los datos de LRS suelen presentar una tasa de error más alta (hasta un 10-15% en ONT) en comparación con los datos de lectura corta (short-read). Para superar esta limitación, los investigadores recurren a la integración de datos: combinando la longitud de lectura con la alta precisión de los datos de secuenciación de corta lectura (short-read) para generar ensamblados de alta calidad.</p>
+      <p>Dos herramientas de software clave en este proceso son <strong>Canu</strong> y <strong>Flye</strong>. Ambas son herramientas de ensamblado de larga lectura de código abierto, diseñadas para manejar datos de ONT y PacBio con eficiencia y robustez. Aunque pueden funcionar independientemente, su verdadero potencial se despliega cuando se utilizan en conjunto con datos de lectura corta, permitiendo la corrección de errores y la mejora de la continuidad del ensamblado.</p>
+    </section>
+
+    <section>
+      <h2>Conceptos clave: Canu y Flye</h2>
+      <h3>Canu: Ensamblado de larga lectura con corrección de errores</h3>
+      <p>Canu (California University, Santa Cruz) es una herramienta robusta de ensamblado de larga lectura que combina alineamiento de lectura, corrección de errores y ensamblaje en un flujo de trabajo unificado. Su principal ventaja es su capacidad para manejar datos con alta tasa de error, utilizando un modelo estadístico para corregir errores en las lecturas antes de ensamblarlas. Canu puede utilizar datos de lectura corta para mejorar su corrección, lo que lo convierte en una opción ideal para integrar datos híbridos.</p>
+      <h3>Flye: Ensamblado rápido y eficiente para datos de larga lectura</h3>
+      <p>Flye (Fibonacci Long-Read Assembler) es otra herramienta de ensamblado de larga lectura, diseñada para ser rápida y eficiente, especialmente para datos de PacBio y ONT. Flye sigue un enfoque basado en grafos de de Bruijn, pero con optimizaciones que permiten manejar datos con alta variabilidad. Aunque su enfoque tradicional es el ensamblado de larga lectura autónomo, Flye también puede integrar datos de lectura corta para mejorar la corrección de errores y la calidad del ensamblado final.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo de integración: combinando Canu y Flye</h2>
+      <p>El proceso de integración de datos de secuenciación de larga lectura con Canu y Flye se puede dividir en tres fases principales:</p>
+      <ol>
+        <li><strong>Preprocesamiento</strong>: filtrado de datos de lectura corta y larga para eliminar artefactos, bajos rendimiento y contaminantes. Herramientas como <code>fastp</code> o <code>Trimmomatic</code> son comunes para este paso.</li>
+        <li><strong>Corrección de errores con datos híbridos</strong>: utilizar Canu o Flye para corregir errores en las lecturas largas con ayuda de las lecturas cortas. Esto mejora significativamente la calidad del ensamblado final.</li>
+        <li><strong>Ensamblaje final</strong>: generar el ensamblado completo usando los datos de larga lectura corregidos.</li>
+      </ol>
+      <p>La elección entre Canu y Flye depende del tipo de datos, la capacidad de memoria disponible y el tiempo de cálculo requerido. Canu tiende a ser más preciso pero más lento, mientras que Flye es más rápido pero puede requerir más ajuste de parámetros.</p>
+
+      <h3>Ejemplo práctico: uso de Canu con datos híbridos</h3>
+      <p>Un flujo de trabajo típico con Canu para integrar datos híbridos sería:</p>
+      <pre><code>canu -p my_genome -d assembly_dir \
+  genomeSize=3.5g \
+  -pacbio-raw reads_pacbio.fastq.gz \
+  -nanopore-raw reads_ont.fastq.gz \
+  -corrected-reads corrected_reads \
+  -diploid \
+  useGrid=false</code></pre>
+      <p>Este comando inicia el ensamblado con datos de PacBio y ONT, y Canu utiliza internamente datos de lectura corta si se proporcionan mediante el parámetro <code>-corrected-reads</code>. Si no se proporcionan datos de lectura corta, Canu intentará corregir errores mediante alineamiento de lectura.</p>
+
+      <h3>Ejemplo práctico: uso de Flye con datos híbridos</h3>
+      <p>Para Flye, el uso de datos híbridos requiere un paso previo de corrección. Un flujo común es:</p>
+      <pre><code>flye --nano-raw reads_ont.fastq.gz \
+  --plasmid reads_plasmid.fastq.gz \
+  --out-dir flye_output \
+  --threads 16 \
+  --min-asm-coverage 20</code></pre>
+      <p>Después del ensamblado inicial, se puede utilizar <code>minimap2</code> para alinear los datos de lectura corta al ensamblado, y luego <code>medaka</code> para corregir errores en el ensamblado utilizando las lecturas cortas como referencia. Este enfoque combina la velocidad de Flye con la precisión de datos de lectura corta.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos de secuenciación de larga lectura con Canu y Flye es una estrategia poderosa para generar ensamblados genómicos de alta calidad, combinando la longitud de lectura con la precisión de los datos de lectura corta. Canu ofrece un flujo de trabajo unificado y robusto para corrección y ensamblaje, mientras que Flye se destaca por su velocidad y eficiencia. Ambas herramientas pueden aprovechar datos híbridos para mejorar la continuidad y la exactitud del ensamblado, haciendo viable el estudio de genomas complejos, como los de organismos eucariotas y microbiomas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No proporcionar datos de lectura corta cuando se espera corrección</strong>: Si se usa Canu o Flye en modo híbrido, asegurarse de incluir datos de lectura corta en el flujo de trabajo.</li>
+        <li><strong>Subestimar el tamaño del genoma</strong>: Un valor incorrecto de <code>genomeSize</code> en Canu puede llevar a ensamblados incompletos o con artefactos.</li>
+        <li><strong>No filtrar datos previamente</strong>: Usar herramientas como <code>fastp</code> para eliminar contaminantes, bajos rendimiento y artefactos antes de el ensamblado.</li>
+        <li><strong>Usar demasiados hilos</strong>: Flye y Canu son intensivos en memoria; ajustar el número de hilos según la capacidad del sistema.</li>
+        <li><strong>Ignorar el análisis de calidad post-ensamblado</strong>: Verificar la calidad del ensamblado con herramientas como <code>QUAST</code> o <code>Busco</code> para evaluar contiguos (N50), cobertura y presencia de errores.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

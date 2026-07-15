@@ -1,0 +1,55 @@
+Cufflinks</strong> fue lanzado en 2010 como una herramienta integral para el análisis de RNA-seq, diseñada para ensamblar transcritos a partir de alineamientos producidos por aligners como TopHat. Su enfoque era más monolítico: un solo programa que realizaba el ensamblaje, la fusión de resultados entre muestras y la estimación de expresión, todo dentro de una única interfaz. Aunque revolucionó el campo en su momento, Cufflinks tenía limitaciones: era lento, consumía mucha memoria y su algoritmo de ensamblaje era sensible a la calidad del alineamiento.</p>
+
+      <p><strong>StringTie</strong>, introducido en 2013, fue diseñado como una solución más eficiente y modular. Aunque comparte el objetivo principal con Cufflinks, StringTie utiliza un algoritmo de grafo de camino (de Bruijn) más optimizado, que permite una reconstrucción más precisa de isoformas, incluso en condiciones de baja expresión. Su arquitectura modular permite integrarse fácilmente en pipelines de análisis, y su salida es compatible con múltiples herramientas de cuantificación posterior.</p>
+    </section>
+
+    <section>
+      <h2>Comparación técnica</h2>
+
+      <h3>Algoritmo de ensamblaje</h3>
+      <p>StringTie emplea un modelo de grafo de transcripción basado en la estructura de los reads alineados, donde cada exón se representa como un nodo y los enlaces entre exones como arcos. Este grafo se optimiza mediante un enfoque de <em>minimum cost flow</em> para encontrar el conjunto de transcritos más probable. En cambio, Cufflinks utilizaba un algoritmo de ensamblaje basado en el modelo de "de novo" con un enfoque de ajuste de caminos en grafos de exones, que era más propenso a generar falsos positivos y a ser ineficiente en grandes conjuntos de datos.</p>
+
+      <h3>Rendimiento y eficiencia</h3>
+      <p>StringTie es significativamente más rápido y requiere menos memoria que Cufflinks. En benchmarks comparativos, StringTie puede ejecutarse en tiempos de 20-30% más rápido en datos de RNA-seq estándar, y su uso de memoria es hasta un 50% menor. Esto se debe a optimizaciones en la estructura de datos y al algoritmo de flujo mínimo, que permite procesar grandes volúmenes de datos sin saturar los recursos del sistema.</p>
+
+      <h3>Salida y compatibilidad</h3>
+      <p>La salida de StringTie está diseñada para ser modular. Puede generar archivos de transcritos en formato GTF (Gene Transfer Format), que son ampliamente utilizados en la comunidad bioinformática. Además, StringTie incluye una opción para cuantificar la expresión (con el parámetro <code>-e</code>), lo que elimina la necesidad de usar Cufflinks para esta tarea. En contraste, Cufflinks requería una secuencia de comandos separados para ensamblaje (<code>cufflinks</code>), fusión de resultados (<code>cuffmerge</code>) y análisis diferencial (<code>cuffdiff</code>).</p>
+    </section>
+
+    <section>
+      <h2>Uso práctico: comandos clave</h2>
+      <p>A continuación se muestran ejemplos de uso práctico de ambas herramientas.</p>
+
+      <h3>StringTie</h3>
+      <pre><code>stringtie -o stringtie_output.gtf -p 8 -G ref_annotation.gtf aligned_reads.bam</code></pre>
+      <p>Este comando realiza el ensamblaje de transcritos en paralelo con 8 hilos, utilizando una referencia de anotación (si está disponible) para guiar el ensamblaje. El archivo de salida es un GTF que contiene todos los transcritos identificados.</p>
+
+      <h3>Cufflinks (en desuso)</h3>
+      <pre><code>cufflinks -o cufflinks_output -p 8 aligned_reads.bam</code></pre>
+      <p>Aunque Cufflinks sigue siendo funcional, su uso se desaconseja en nuevos proyectos debido a su descontinuación y limitaciones de rendimiento.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>StringTie representa una evolución significativa frente a Cufflinks. Ofrece un rendimiento superior, una mayor precisión en la reconstrucción de isoformas, una arquitectura más modular y una mejor integración en pipelines modernos. Aunque Cufflinks fue un pionero en el campo, su descontinuación y las limitaciones técnicas hacen que StringTie sea la herramienta preferida para el ensamblaje de transcritos en la actualidad. Para análisis de RNA-seq modernos, se recomienda usar StringTie como herramienta central para el ensamblaje, y complementarla con herramientas de cuantificación como <em>Salmon</em> o <em>kallisto</em> si se requiere una cuantificación más precisa y rápida.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar Cufflinks en nuevos proyectos:</strong> Evita usar Cufflinks. Prefiere StringTie o herramientas más modernas.</li>
+        <li><strong>Ignorar la anotación de referencia:</strong> Si tienes una anotación genómica de calidad (como GTF de GENCODE o RefSeq), úsala con el parámetro <code>-G</code> en StringTie para mejorar la precisión del ensamblaje.</li>
+        <li><strong>Usar demasiados hilos:</strong> Aunque StringTie es paralelizable, usar más de 8-12 hilos puede no mejorar el rendimiento y puede aumentar el uso de memoria.</li>
+        <li><strong>Analizar datos sin calidad:</strong> Asegúrate de que los alineamientos (BAM) estén bien procesados y validados antes de usarlos con StringTie.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

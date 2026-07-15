@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes somáticas en células tumorales con Strelka2</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Análisis de variantes somáticas en células tumorales con Strelka2</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El análisis de variantes somáticas es una pieza fundamental en la investigación del cáncer, ya que permite identificar mutaciones genéticas específicas que ocurren en las células tumorales pero no en los tejidos normales del organismo. Estas mutaciones pueden ser responsables de la transformación maligna, la progresión del tumor y la resistencia a tratamientos. Para un análisis robusto y sensible, herramientas especializadas como <strong>Strelka2</strong> han sido desarrolladas para detectar variantes somáticas con alta precisión, especialmente en datos de secuenciación de exomas o genoma completo.</p>
+            <p>Strelka2, un programa de código abierto desarrollado por el Laboratorio de Genómica del Instituto Broad, utiliza un enfoque basado en modelos estadísticos bayesianos y algoritmos de filtrado sofisticados para distinguir entre variaciones verdaderas y errores de secuenciación. Su diseño permite un análisis de pares de secuencias (tumor vs. normal) con un bajo ratio de falsos positivos, lo que lo convierte en una herramienta preferida en estudios de cáncer personalizado y en la caracterización de la heterogeneidad tumoral.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo con Strelka2</h2>
+            <p>El proceso de análisis con Strelka2 se divide en dos fases principales: la <strong>etapa de configuración</strong> y la <strong>etapa de ejecución</strong>. Antes de comenzar, es esencial contar con dos conjuntos de datos: una muestra de tumor (tumor.bam) y una muestra de tejido normal (normal.bam), ambos alineados a un genoma de referencia (por ejemplo, hg38) mediante herramientas como <code>STAR</code> o <code>BWA</code>.</p>
+
+            <h3>1. Preparación de archivos</h3>
+            <p>Es recomendable realizar una limpieza básica de los archivos BAM antes de el análisis. Esto incluye:</p>
+            <ul>
+                <li>Marcar duplicados con <code>samtools markdup</code>.</li>
+                <li>Reajustar los mapas con <code>gatk ApplyBQSR</code> si se dispone de un conjunto de variantes de referencia.</li>
+            </ul>
+
+            <h3>2. Ejecución de Strelka2</h3>
+            <p>El comando principal para ejecutar Strelka2 es el siguiente:</p>
+            <pre><code>strelka2 --normal normal.bam --tumor tumor.bam --outputDir ./strelka2_out --config strelka2.config</code></pre>
+            <p>En este comando:</p>
+            <ul>
+                <li><code>--normal</code>: archivo BAM del tejido normal.</li>
+                <li><code>--tumor</code>: archivo BAM del tumor.</li>
+                <li><code>--outputDir</code>: directorio donde se guardarán los resultados.</li>
+                <li><code>--config</code>: archivo de configuración opcional que permite personalizar parámetros del análisis.</li>
+            </ul>
+
+            <p>Strelka2 genera varios archivos, incluyendo <code>results/variants/somatic.snvs.vcf</code> y <code>results/variants/somatic.indels.vcf</code>, que contienen las variantes somáticas detectadas en formato VCF.</p>
+        </section>
+
+        <section>
+            <h2>Post-procesamiento y validación</h2>
+            <p>Una vez obtenido el archivo VCF con las variantes, se recomienda realizar una validación adicional utilizando herramientas como <code>bcftools</code> y <code>vt</code>. Por ejemplo:</p>
+            <pre><code>bcftools view -v snps somatic.snvs.vcf.gz | bcftools filter -e "INFO/DP &lt; 10" -o filtered_snvs.vcf.gz
+</code></pre>
+            <p>Esto filtra variantes con profundidad de cobertura insuficiente. Además, se puede anotar el archivo con herramientas como <code>VEP</code> (Variant Effect Predictor) para evaluar el impacto funcional de las variantes.</p>
+
+            <p>Para integrar los resultados en un análisis más amplio, los archivos VCF pueden convertirse a formato <code>tsv</code> mediante <code>bcftools query</code>:</p>
+            <pre><code>bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%QUAL\n' filtered_snvs.vcf.gz > somatic_variants.tsv</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de variantes somáticas mediante Strelka2 es una metodología robusta y confiable para identificar mutaciones tumorales específicas. Su enfoque estadístico, diseñado para minimizar falsos positivos, lo convierte en una herramienta esencial en estudios de genómica del cáncer. Al seguir un flujo de trabajo bien definido —preparación de datos, ejecución del algoritmo, validación y anotación— los investigadores pueden obtener resultados precisos y biológicamente relevantes.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar muestras de tejido normal contaminadas:</strong> asegurarse de que la muestra normal no contenga células tumorales. Una contaminación puede generar falsos positivos.</li>
+                <li><strong>Ignorar la profundidad de cobertura:</strong> variantes con baja profundidad (por ejemplo, < 10x) deben filtrarse.</li>
+                <li><strong>No validar con herramientas externas:</strong> siempre usar <code>bcftools</code> o <code>vt</code> para filtrar y verificar los resultados.</li>
+                <li><strong>Usar configuraciones predeterminadas sin revisar:</strong> ajustar parámetros como el umbral de calidad o el número de iteraciones si se trabaja con datos de baja calidad.</li>
+                <li><strong>Olvidar anotar variantes:</strong> la anotación funcional con <code>VEP</code> o <code>ANNOVAR</code> es crucial para priorizar variantes con impacto biológico.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

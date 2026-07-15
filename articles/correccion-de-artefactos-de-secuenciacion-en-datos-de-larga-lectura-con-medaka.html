@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrección de artefactos de secuenciación en datos de larga lectura con Medaka</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Corrección de artefactos de secuenciación en datos de larga lectura con Medaka</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>Los datos de secuenciación de larga lectura, generados principalmente por tecnologías como Oxford Nanopore Technologies (ONT) y PacBio, ofrecen una ventaja significativa en la resolución de regiones genómicas complejas, como repeticiones en tandem, estructuras de ARN secundario o variantes estructurales. Sin embargo, estas plataformas presentan una tasa de error intrínseca mucho más alta que los métodos de secuenciación de corta lectura. Esta característica, aunque aceptable para ciertos análisis, puede comprometer la precisión de variantes, alineamientos, y la calidad general de los resultados bioinformáticos. La corrección de artefactos de secuenciación es, por tanto, una etapa crítica en cualquier pipeline de análisis de datos de larga lectura.</p>
+      <p>Medaka, una herramienta desarrollada por Oxford Nanopore Technologies, se ha convertido en una referencia de oro para la corrección de secuencias. Utiliza un modelo de inteligencia artificial basado en redes neuronales recurrentes (RNN) entrenadas sobre datos de secuenciación ONT. Su principal ventaja radica en que aprende a distinguir entre errores técnicos reales y variantes biológicas genuinas, lo que permite una corrección más precisa y menos agresiva que las metodologías convencionales.</p>
+    </section>
+
+    <section>
+      <h2>Principios de funcionamiento de Medaka</h2>
+      <p>Medaka funciona en dos etapas principales: generación de un alineamiento de referencia y posterior corrección de la secuencia. La primera etapa implica alinear las lecturas de larga lectura contra una referencia genómica de alta calidad, utilizando herramientas como <code>minimap2</code> o <code>pbmm2</code>. Este alineamiento produce un archivo en formato BAM o CRAM que contiene información sobre el alineamiento de cada lectura.</p>
+      <p>La segunda etapa, la corrección propiamente dicha, se basa en el modelo entrenado. Medaka toma el alineamiento y, para cada base en cada lectura, evalúa la probabilidad de que sea correcta o errónea. Esta evaluación se realiza considerando no solo la señal directa de la lectura (lectura raw), sino también el contexto del alineamiento, como la calidad de la base en la referencia, la profundidad de cobertura, y la consistencia con las lecturas vecinas. El modelo genera una predicción de la base más probable en cada posición, que puede ser una corrección del nucleótido original o mantenerlo si se considera correcto.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo recomendado</h2>
+      <p>El flujo de trabajo típico con Medaka incluye los siguientes pasos:</p>
+      <ol>
+        <li>Alineamiento de las lecturas contra la referencia genómica usando <code>minimap2</code>:</li>
+      </ol>
+      <pre><code>minimap2 -x map-ont -t 8 reference.fa reads.fastq.gz | samtools sort -o aligned_reads.bam -
+</code></pre>
+      <ol start="2">
+        <li>Generación del archivo de corrección con Medaka:</li>
+      </ol>
+      <pre><code>medaka_consensus -i aligned_reads.bam -d reference.fa -o medaka_output -t 8 -m r94.1_450bps_sup
+</code></pre>
+      <p>En este comando, <code>-m r94.1_450bps_sup</code> especifica el modelo de corrección para el kit de secuenciación ONT R9.4.1 con 450 bp/supplementary. Es fundamental utilizar el modelo correcto para obtener resultados óptimos. Los modelos están disponibles para diferentes kits y plataformas (por ejemplo, <code>r10.4.1_450bps</code> para prometheus).</p>
+      <ol start="3">
+        <li>Revisión del archivo de salida:</li>
+      </ol>
+      <p>Medaka genera un archivo <code>consensus.fasta</code> en el directorio <code>medaka_output</code>, que contiene las secuencias corregidas. Además, se generan archivos de calidad (BAM, VCF) y archivos de log que permiten evaluar el rendimiento.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La corrección de artefactos de secuenciación en datos de larga lectura es esencial para mejorar la calidad de los datos y garantizar la fiabilidad de los análisis posteriores. Medaka, con su enfoque basado en inteligencia artificial, ofrece una solución poderosa y precisa para este desafío. Al integrar un modelo entrenado sobre datos reales de ONT, Medaka es capaz de distinguir entre errores técnicos y variaciones biológicas, minimizando la pérdida de información genética mientras corrige los errores de secuenciación. Su uso es altamente recomendado en cualquier pipeline de análisis genómico que implique lecturas de larga duración.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Utilizar un modelo incorrecto:</strong> Asegúrese de que el modelo especificado en el parámetro <code>-m</code> coincida con el kit de secuenciación y la configuración del experimento.</li>
+        <li><strong>Ignorar el alineamiento previo:</strong> Medaka requiere un alineamiento preciso contra una referencia de alta calidad. No se debe usar Medaka directamente sobre lecturas sin alinear.</li>
+        <li><strong>Subestimar el uso de recursos:</strong> Medaka puede consumir mucho tiempo y memoria. Asegúrese de contar con suficientes núcleos y RAM (al menos 8 GB por núcleo recomendado).</li>
+        <li><strong>Procesar todo el dataset a la vez:</strong> Para grandes proyectos, divida el alineamiento en regiones genómicas más pequeñas y procese por bloques para evitar sobrecargas del sistema.</li>
+        <li><strong>Revisar los resultados:</strong> Siempre valide la salida de Medaka con herramientas como <code>samtools</code> o <code>bcftools</code> para asegurarse de que las correcciones son razonables y no introducen artefactos nuevos.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
