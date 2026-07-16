@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cellranger-aws-pipeline</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>cellranger-aws-pipeline</h1>
+    <p class="meta">
+      <a href="https://github.com/melaniedavila/cellranger-aws-pipeline">https://github.com/melaniedavila/cellranger-aws-pipeline</a>
+      · Autores: 14 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <code>cellranger-aws-pipeline</code> es una implementación en la nube de <em>Cell Ranger</em>, el software de 10x Genomics para el análisis de datos de secuenciación de RNA de célula única (scRNA-seq). Este pipeline permite ejecutar el procesamiento de datos de scRNA-seq en Amazon Web Services (AWS), aprovechando los recursos escalables de la nube para acelerar el análisis y reducir el tiempo de ejecución local.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      El pipeline se implementa principalmente mediante <strong>Python</strong> y requiere el uso de <code>pip</code> para instalar sus dependencias. Además, se necesitan permisos y configuraciones en AWS (como credenciales y roles). Sigue estos pasos:
+    </p>
+    <pre><code>pip install cellranger-aws-pipeline
+</code></pre>
+    <p>
+      <strong>Nota:</strong> Asegúrate de tener instalado y configurado <code>awscli</code> con credenciales válidas en tu entorno antes de ejecutar el pipeline. También se recomienda usar un entorno virtual para evitar conflictos de dependencias.
+    </p>
+
+    <h2>Uso básico</h2>
+    <p>
+      A continuación se muestra un ejemplo ilustrativo de cómo iniciar el pipeline. La sintaxis real puede variar según la versión del software y los parámetros específicos del proyecto.
+    </p>
+    <pre><code>cellranger-aws-pipeline --input-dir /path/to/inputs --output-dir /path/to/output --job-name my-scRNA-seq-job --region us-east-1
+</code></pre>
+    <p>
+      <strong>Nota:</strong> Esta sintaxis es ilustrativa. Verifica los comandos exactos en la documentación oficial del proyecto, ya que el nombre y los flags pueden cambiar según la versión del pipeline.
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo de trabajo típico con <code>cellranger-aws-pipeline</code> incluye los siguientes pasos:
+    </p>
+    <ol>
+      <li>Preparar los archivos de entrada (FASTQ) generados por el secuenciador.</li>
+      <li>Subir los datos a un bucket de Amazon S3.</li>
+      <li>Ejecutar el pipeline en AWS usando la línea de comandos.</li>
+      <li>Monitorear el progreso mediante AWS Step Functions o CloudWatch.</li>
+      <li>Descargar los resultados (contenedores de análisis, matrices, archivos de expresión) desde S3.</li>
+      <li>Realizar análisis posteriores en R o Python (por ejemplo, con Seurat o Scanpy).</li>
+    </ol>
+
+    <figure>
+      <svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Boxes -->
+        <rect x="20" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="80" y="45" font-size="12" text-anchor="middle" fill="#006064">FASTQ inputs</text>
+
+        <rect x="170" y="20" width="150" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="245" y="45" font-size="12" text-anchor="middle" fill="#006064">Subir a S3</text>
+
+        <rect x="350" y="20" width="150" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="425" y="45" font-size="12" text-anchor="middle" fill="#006064">Pipeline en AWS</text>
+
+        <rect x="530" y="20" width="150" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="605" y="45" font-size="12" text-anchor="middle" fill="#006064">Resultados en S3</text>
+
+        <rect x="710" y="20" width="120" height="40" fill="#e0f7fa" stroke="#006064" />
+        <text x="770" y="45" font-size="12" text-anchor="middle" fill="#006064">Análisis posterior</text>
+
+        <!-- Arrows -->
+        <line x1="140" y1="40" x2="170" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="320" y1="40" x2="350" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="500" y1="40" x2="530" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+        <line x1="680" y1="40" x2="710" y2="40" stroke="#006064" stroke-width="2" marker-end="url(#arrowhead)" />
+
+        <!-- Arrowhead definition -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#006064" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico del pipeline: desde datos FASTQ hasta análisis final en la nube.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Problemas de permisos en AWS:</strong> Asegúrate de que las credenciales de AWS estén configuradas correctamente con <code>aws configure</code> y que el rol tenga permisos para S3, Lambda, ECS, y Step Functions.</li>
+      <li><strong>Archivos de entrada mal formados:</strong> Valida tus archivos FASTQ antes de subirlos a S3. Usa herramientas como <code>fastqc</code> para verificar el control de calidad.</li>
+      <li><strong>Uso ineficiente de recursos:</strong> Elige una instancia de AWS adecuada (por ejemplo, <code>g4dn.xlarge</code> o <code>c5.4xlarge</code>) según el tamaño del conjunto de datos.</li>
+      <li><strong>No usar entornos virtuales:</strong> Instala el pipeline en un entorno virtual para evitar conflictos de dependencias.</li>
+      <li><strong>Ignorar la facturación:</strong> Monitorea constantemente el uso de recursos en AWS para evitar costos inesperados.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">7 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42315974.html">A four-gene signature for diagnosis of acute kidney injury following kidney transplantation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/0886022x.2026.2687235" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42247321.html">Neoplastic CD3⁺ B cells remodel the DLBCL tumor microenvironment via single-cell and spatial transcriptomics.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/15384047.2026.2684140" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42290662.html">Uncovering genes driving developmental stage progression in prostate cancer through spatial transcriptomics.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1016/j.gendis.2025.101983" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41631690.html">Age-associated differences in XBB.1.5 trivalent booster vaccine-induced adaptive responses revealed by single-cell RNA sequencing.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/22221751.2026.2627067" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41496551.html">Oncolytic virus OVV-03 enhances CAR-T cell therapy against glioblastoma via immune modulation and specific HER2 upregulation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/2162402x.2025.2612377" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42178725.html">Soil-derived microbiota induces T regulatory cells and protect against mouse colitis, metabolic disease, and sepsis.</a> <span class="date">2026-07-16</span> · <a href="https://doi.org/10.1080/19490976.2026.2675089" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42035472.html">3C suppresses PINK1-mediated mitophagy and contributes to coxsackievirus B3 replication.</a> <span class="date">2026-07-16</span> · <a href="https://doi.org/10.1080/21505594.2026.2662767" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

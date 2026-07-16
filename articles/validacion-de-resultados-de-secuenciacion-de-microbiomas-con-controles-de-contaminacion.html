@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de resultados de secuenciación de microbiomas con controles de contaminación</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Validación de resultados de secuenciación de microbiomas con controles de contaminación</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La secuenciación de microbiomas, especialmente mediante métodos de alto rendimiento como el 16S rRNA o la secuenciación de todo el genoma (metagenómica), es una herramienta fundamental en biología microbiana, medicina, ecología y biotecnología. Sin embargo, los datos generados son altamente susceptibles a contaminación procedente de múltiples fuentes: reactivos, laboratorio, personal, o incluso desde las propias muestras. La presencia de contaminantes puede distorsionar los resultados, llevando a conclusiones erróneas sobre la composición microbiana, la diversidad y las relaciones funcionales. Por ello, la validación rigurosa de los resultados mediante controles de contaminación es un paso crítico que no puede omitirse en cualquier análisis de microbiomas.</p>
+        </section>
+
+        <section>
+            <h2>Orígenes y tipos de contaminación</h2>
+            <p>Las fuentes de contaminación en secuenciación de microbiomas son diversas. Entre las más comunes se encuentran:</p>
+            <ul>
+                <li><strong>Contaminación de reactivos:</strong> Enzimas, buffers, agua, y otros materiales de laboratorio pueden contener ADN microbiano residual. Esto es especialmente crítico en métodos de amplificación como PCR.</li>
+                <li><strong>Contaminación ambiental:</strong> El aire del laboratorio, superficies, utensilios, o incluso el aire inhalado por el personal pueden introducir microorganismos en las muestras.</li>
+                <li><strong>Contaminación cruzada:</strong> Durante el procesamiento en serie, las muestras pueden mezclarse si no se siguen estrictas prácticas de separación.</li>
+                <li><strong>Contaminación de control negativo:</strong> Los controles negativos (muestras que no deberían contener ADN, como agua destilada) deben ser monitoreados como indicadores de contaminación. Su presencia de secuencias microbianas es un indicador directo de problemas.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Implementación de controles de contaminación</h2>
+            <p>Para detectar y gestionar la contaminación, es esencial incorporar controles en todo el flujo de trabajo:</p>
+            <ol>
+                <li><strong>Controles negativos en el laboratorio:</strong> Incluir muestras de agua destilada o buffer sin ADN en cada etapa del procesamiento de muestras (extracción, amplificación, biblioteca).</li>
+                <li><strong>Controles de secuenciación:</strong> Añadir una muestra conocida o un control externo (como el Mock Community de Microbiome Quality Control, MQC) en el pool de secuenciación.</li>
+                <li><strong>Controles bioinformáticos:</strong> Usar herramientas como <code>decontam</code> en R, <code>ContamFind</code> o <code>scrublet</code> (para datos de scRNA-seq, aunque aplicable en contexto similar) para identificar y eliminar secuencias contaminantes en los datos de secuenciación.</li>
+            </ol>
+            <p>Estos controles deben ser analizados de forma paralela a las muestras reales y su contenido debe ser examinado en cada paso del análisis.</p>
+        </section>
+
+        <section>
+            <h2>Validación de resultados</h2>
+            <p>Una vez se han generado los datos, la validación debe incluir:</p>
+            <h3>1. Evaluación de controles negativos</h3>
+            <p>Los controles negativos deben mostrar una composición microbiana mínima. Si se detectan secuencias que representan microorganismos comunes en laboratorios (como <em>Staphylococcus aureus</em>, <em>Escherichia coli</em>, <em>Acinetobacter baumannii</em>), esto indica contaminación. Estas secuencias deben ser comparadas con bases de datos de contaminantes conocidos (como <a href="https://github.com/benjjneb/dada2/tree/master/contaminants">DADA2 Contaminants</a>).</p>
+            
+            <h3>2. Uso de herramientas de detección de contaminación</h3>
+            <p>En R, el paquete <code>decontam</code> permite identificar contaminantes utilizando modelos basados en la frecuencia de lecturas en controles negativos. Ejemplo de uso:</p>
+            <pre><code>library(decontam)
+
+# Supongamos que 'data' es una matriz de conteos de OTUs o ASVs
+# y 'controls' es un vector lógico indicando qué muestras son controles
+
+contamination_model &lt;- decontamModel(data, controls)
+
+# Obtener las secuencias identificadas como contaminantes
+contaminants &lt;- decontamTest(data, controls, model = contamination_model)
+
+# Eliminar contaminantes
+clean_data &lt;- data[!contaminants, ]
+</code></pre>
+            <p>Para datos de metagenómica, herramientas como <code>kraken2</code> o <code>Centrifuge</code> pueden ayudar a identificar secuencias que no pertenecen a la muestra, especialmente si se comparan con un genoma de referencia del organismo objetivo.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La validación de resultados de secuenciación de microbiomas no puede basarse únicamente en las métricas de calidad de lectura o en la abundancia de microorganismos. Es fundamental implementar controles de contaminación durante el procesamiento físico y aplicar técnicas bioinformáticas para detectar y corregir contaminantes. Ignorar estos pasos puede llevar a conclusiones erróneas, especialmente en estudios con muestras de baja biomasa o en contextos clínicos donde la detección de patógenos es crítica. La transparencia en el uso de controles y la documentación de su análisis son pilares esenciales para la reproducibilidad científica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar controles negativos:</strong> No analizarlos o descartarlos como irrelevantes es un error grave. Siempre deben ser parte del análisis.</li>
+                <li><strong>Asumir que los datos están limpios:</strong> No realizar una verificación de contaminantes con herramientas específicas.</li>
+                <li><strong>Usar controles negativos inadecuados:</strong> Asegurarse de que los controles negativos reflejan las condiciones reales del experimento (por ejemplo, usar el mismo buffer que en las muestras).</li>
+                <li><strong>Aplicar corrección sin validar:</strong> No revisar visualmente los resultados de detección de contaminantes antes de filtrar.</li>
+                <li><strong>Documentar sin detalle:</strong> Registrar el protocolo de control y los resultados en un archivo de métodos o en un informe de calidad.</li>
+            </ul>
+            <p>Como buenas prácticas, se recomienda:</p>
+            <ul>
+                <li>Crear un protocolo estandarizado de control de contaminación.</li>
+                <li>Utilizar bases de datos actualizadas de contaminantes.</li>
+                <li>Revisar manualmente los controles negativos si se detectan secuencias inesperadas.</li>
+                <li>Compartir los datos de los controles negativos junto con los resultados finales.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

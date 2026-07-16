@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interpretación de mapas de cobertura de variantes con IGV en regiones de alta densidad</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Interpretación de mapas de cobertura de variantes con IGV en regiones de alta densidad</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>¿Qué es la cobertura de variantes y por qué importa?</h2>
+      <p>En bioinformática, especialmente en el análisis de variantes genómicas, la <strong>cobertura</strong> se refiere al número de veces que un nucleótido específico en el genoma ha sido secuenciado. En regiones de alta densidad —como los genes codificantes, promotores o zonas de recombinación—, la presencia de múltiples variantes (SNPs, indels, etc.) puede dificultar la interpretación de los datos de secuenciación.</p>
+      <p>El software <strong>IGV</strong> (Integrative Genomics Viewer) es una herramienta esencial para visualizar estos datos. Permite explorar archivos de variantes (VCF), archivos de alineamiento (BAM) y mapas de cobertura en tiempo real. Sin embargo, en regiones con alta densidad de variantes, la interpretación precisa requiere un enfoque metodológico cuidadoso para evitar errores de llamado o falsos positivos.</p>
+    </section>
+
+    <section>
+      <h2>Entendiendo el mapa de cobertura en IGV</h2>
+      <p>En IGV, el mapa de cobertura se representa como una línea de alturas que indica la cantidad de reads que cubren cada posición del genoma. Cuando se superponen múltiples variantes, especialmente en regiones con alta variabilidad (como los genes de histocompatibilidad o las regiones de repetición), el mapa puede volverse complejo y difícil de interpretar.</p>
+      <p>Las alturas de cobertura elevadas no siempre indican variantes reales. Pueden ser el resultado de:</p>
+      <ul>
+        <li>Errores de secuenciación en regiones de baja calidad.</li>
+        <li>Mapas de alineamiento con múltiples hits de reads (especialmente en genomas repetitivos).</li>
+        <li>Presencia de múltiples variantes en el mismo sitio (p. ej., en poblaciones con alta diversidad genética).</li>
+      </ul>
+      <p>Por lo tanto, es crucial complementar la visualización con análisis cuantitativos y filtros de calidad.</p>
+    </section>
+
+    <section>
+      <h2>Procesamiento de datos previo a la visualización</h2>
+      <p>Antes de abrir los archivos en IGV, es recomendable preparar y filtrar los datos para reducir el ruido. Los siguientes comandos con <strong>samtools</strong> y <strong>bcftools</strong> son clave:</p>
+      <pre><code>## Extraer reads de una región específica (por ejemplo, una región de alta densidad)
+samtools view -b sample.bam chr6:30000000-30050000 &gt; region.bam
+
+## Calcular cobertura por posición
+samtools depth region.bam &gt; region.coverage
+
+## Filtrar variantes de baja calidad en VCF
+bcftools filter -e 'QUAL &lt; 20' -i 'INFO/AF &gt; 0.01' variants.vcf.gz &gt; filtered_variants.vcf.gz
+
+## Convertir VCF a formato más ligero si es necesario
+bcftools view -Oz -o filtered_variants.vcf.gz filtered_variants.vcf.gz</code></pre>
+      <p>Estos pasos ayudan a enfocarse en variantes biológicamente relevantes, reduciendo el ruido visual en IGV.</p>
+    </section>
+
+    <section>
+      <h2>Interpretación avanzada en IGV</h2>
+      <p>En regiones de alta densidad, se deben considerar los siguientes aspectos:</p>
+      <ul>
+        <li><strong>Desplazamiento de reads</strong>: Si los reads están alineados con desviaciones importantes respecto al genoma de referencia, puede haber errores de alineamiento. En IGV, activar <em>"Show reads with mismatches"</em> ayuda a identificar reads con altas tasas de error.</li>
+        <li><strong>Co-ocurrencia de variantes</strong>: En casos donde múltiples variantes aparecen en posiciones muy cercanas, se debe verificar si están en <em>linkage disequilibrium</em> o si representan un error de llamado. Herramientas como <strong>FreeBayes</strong> o <strong>GATK HaplotypeCaller</strong> son más robustas que llamadores simples.</li>
+        <li><strong>Asimetría en cobertura</strong>: Coberturas altas en un solo sentido (forward o reverse) pueden indicar artefactos de secuenciación. IGV muestra esta asimetría visualmente.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La interpretación de mapas de cobertura de variantes en regiones de alta densidad con IGV es un proceso crítico para la validación de variantes reales. Requiere una combinación de procesamiento previo de datos, uso de herramientas como samtools y bcftools, y un análisis cuidadoso de las características visuales en IGV, como asimetría de cobertura, desplazamiento de reads y co-ocurrencia de variantes. La precisión no depende solo de la herramienta, sino del conocimiento del contexto biológico y técnico.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Errores comunes</strong>:
+          <ul>
+            <li>Confundir altas coberturas con variantes reales sin filtrado previo.</li>
+            <li>Ignorar la asimetría de reads en sentido forward/reverse.</li>
+            <li>Interpretar variantes en regiones repetitivas sin validación adicional (p. ej., con BLAST).</li>
+          </ul>
+        </li>
+        <li><strong>Buenas prácticas</strong>:
+          <ul>
+            <li>Filtrar variantes por calidad (QUAL), frecuencia alélica (AF) y cobertura mínima (DP).</li>
+            <li>Usar herramientas de llamado de variantes de alto rendimiento como GATK HaplotypeCaller o FreeBayes en regiones de alta densidad.</li>
+            <li>Validar variantes sospechosas con herramientas externas como SnpEff o VEP para anotación funcional.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

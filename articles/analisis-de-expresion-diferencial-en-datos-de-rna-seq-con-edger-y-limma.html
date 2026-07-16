@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de expresión diferencial en datos de RNA-seq con edgeR y limma</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Expresión diferencial">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de expresión diferencial en datos de RNA-seq con edgeR y limma</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>El análisis de expresión diferencial es una de las aplicaciones más fundamentales del RNA-seq, con el objetivo de identificar genes cuya expresión cambia significativamente entre condiciones biológicas (por ejemplo, tratados vs. no tratados, enfermos vs. sanos). Entre las herramientas más ampliamente utilizadas y robustas para este propósito se encuentran <code>edgeR</code> y <code>limma</code>, dos paquetes de R desarrollados por el equipo del Bioconductor. Aunque ambos comparten un enfoque basado en modelos estadísticos lineales, sus implementaciones y asunciones subyacentes difieren en aspectos clave. Este artículo explora el uso, las diferencias y las buenas prácticas para aplicar edgeR y limma en análisis de expresión diferencial.</p>
+    </section>
+
+    <section>
+      <h2>Preprocesamiento previo: de los reads a la matriz de conteos</h2>
+      <p>Antes de aplicar edgeR o limma, es esencial contar los reads asignados a cada gen. Este paso, conocido como <em>cuantificación</em>, requiere un alineador como <code>STAR</code> o <code>Salmon</code>, o herramientas como <code>kallisto</code>. Para datos de RNA-seq en formato FASTQ, un flujo típico es:</p>
+      <pre><code>STAR --runThreadN 8 \
+     --genomeDir /path/to/genome \
+     --readFilesIn sample_R1.fastq sample_R2.fastq \
+     --outFileNamePrefix sample_ \
+     --outSAMtype BAM SortedByCoordinate</code></pre>
+      <p>Posteriormente, se generan matrices de conteos con herramientas como <code>featureCounts</code> (de Subread) o <code>salmon quant</code> para conteos directos:</p>
+      <pre><code>featureCounts -a annotations.gtf \
+              -o counts.txt \
+              -t exon \
+              -g gene_id \
+              sampleAligned.bam</code></pre>
+      <p>Esta matriz de conteos, con filas como genes y columnas como muestras, es el punto de entrada para edgeR y limma.</p>
+    </section>
+
+    <section>
+      <h2>edgeR: Modelado de la variabilidad biológica con la distribución negative binomial</h2>
+      <p><code>edgeR</code> está diseñado específicamente para datos de RNA-seq y utiliza la distribución <em>negative binomial</em> para modelar la variabilidad técnica y biológica. Su enfoque se basa en la estimación de la <em>dispersión</em> (dispersion) de cada gen, que captura tanto la variabilidad intrínseca como las diferencias biológicas entre muestras.</p>
+      <p>El flujo típico en edgeR incluye:</p>
+      <ol>
+        <li>Crear un objeto <code>DGEList</code> a partir de la matriz de conteos.</li>
+        <li>Estimar la dispersión de manera global, individual o por grupo (usando <code>estimateDisp</code>).</li>
+        <li>Realizar pruebas de diferencialidad (usando <code>exactTest</code> o <code>glmFit</code> con <code>glmLRT</code>).</li>
+      </ol>
+      <pre><code>library(edgeR)
+
+# Crear objeto DGEList
+y &lt;- DGEList(counts = counts_matrix, group = group_factor)
+
+# Estimar dispersión
+y &lt;- estimateDisp(y, design = design_matrix)
+
+# Prueba de diferencialidad (ejemplo con diseño factorial)
+y &lt;- glmFit(y, design = design_matrix)
+
+# Test de razón de verosimilitud
+lrt &lt;- glmLRT(y, contrast = c(1, -1))
+
+# Obtener genes diferencialmente expresados
+deg_edgeR &lt;- topTags(lrt, n = Inf)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>limma: Ajuste de modelos lineales y análisis con transformación voom</h2>
+      <p><code>limma</code> originalmente fue diseñado para microarreglos, pero su adaptación para RNA-seq, a través de la función <code>voom</code>, lo convierte en una alternativa poderosa. <code>voom</code> transforma los conteos en valores logarítmicos ponderados, permitiendo el uso de métodos lineales clásicos de <code>limma</code> (como <code>lmFit</code> y <code>contrasts.fit</code>) con corrección de varianza.</p>
+      <p>El flujo en limma es:</p>
+      <ol>
+        <li>Crear un objeto <code>voom</code> a partir de los conteos.</li>
+        <li>Ajustar un modelo lineal con <code>lmFit</code>.</li>
+        <li>Definir contrastes y realizar el test (usando <code>contrasts.fit</code> y <code>eBayes</code>).</li>
+      </ol>
+      <pre><code>library(limma)
+
+# Transformar conteos con voom
+v &lt;- voom(counts_matrix, design = design_matrix, plot = TRUE)
+
+# Ajuste del modelo
+fit &lt;- lmFit(v, design = design_matrix)
+
+# Definir contraste (ejemplo: grupo 2 vs grupo 1)
+contrast_matrix &lt;- makeContrasts(group2 - group1, levels = design_matrix)
+
+# Ajustar contraste
+fit2 &lt;- contrasts.fit(fit, contrast_matrix)
+
+# Estimar varianzas y realizar test
+fit2 &lt;- eBayes(fit2)
+
+# Obtener genes diferencialmente expresados
+deg_limma &lt;- topTable(fit2, number = Inf, adjust = "fdr")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Comparación y elección entre edgeR y limma</h2>
+      <p>La elección entre edgeR y limma depende del diseño experimental y de la naturaleza de los datos:</p>
+      <ul>
+        <li><strong>edgeR</strong> es más natural para datos de RNA-seq con alta variabilidad biológica y diseños complejos, especialmente cuando se requiere estimación flexible de dispersión.</li>
+        <li><strong>limma-voom</strong> ofrece mayor flexibilidad en el modelado de efectos y es particularmente útil en diseños factoriales o con múltiples factores confusos, ya que permite la incorporación de covariables y el análisis de interacciones.</li>
+      </ul>
+      <p>En general, ambos métodos son altamente comparables en rendimiento, y la diferencia en resultados suele ser mínima cuando los datos son de calidad. La elección más importante es la de la <em>estimación de la dispersión</em> (edgeR) o la <em>transformación de varianza</em> (limma-voom), que debe hacerse con cuidado y validación.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de expresión diferencial en RNA-seq con edgeR y limma es una práctica estandarizada en bioinformática. edgeR ofrece un enfoque directo y robusto para datos de secuenciación, mientras que limma-voom extiende un framework ampliamente validado a datos de conteo. Ambos requieren una preparación de datos cuidadosa, una definición correcta del diseño experimental y un análisis posterior robusto de resultados. La elección entre ambos debe basarse en el contexto del estudio y en la experiencia del investigador, pero ambos son herramientas confiables y ampliamente respaldadas en la comunidad científica.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar la calidad de los datos</strong>: Siempre revisar calidad de los reads (usando <code>FastQC</code>), alineación (<code>MultiQC</code>) y distribución de conteos antes de análisis.</li>
+        <li><strong>Mal diseño del modelo</strong>: Asegurarse de que el diseño de <code>design_matrix</code> refleje correctamente el experimento (por ejemplo, no confundir condiciones con pares).</li>
+        <li><strong>No corregir múltiples pruebas</strong>: Usar <code>adjust = "fdr"</code> o <code>adjust = "bonferroni"</code> en <code>topTable</code> o <code>topTags</code> para controlar el error de tipo I.</li>
+        <li><strong>Usar conteos brutos sin transformación</strong>: No aplicar directamente modelos lineales a conteos sin <code>voom</code> o ajuste de dispersión.</li>
+        <li><strong>Interpretar resultados sin validación</strong>: Confirmar los genes más significativos con técnicas como <code>pathway analysis</code> (por ejemplo, con <code>clusterProfiler</code>) y visualización (PCA, heatmaps).</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

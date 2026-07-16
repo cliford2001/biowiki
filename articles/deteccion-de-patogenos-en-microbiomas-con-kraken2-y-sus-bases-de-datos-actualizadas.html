@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de patógenos en microbiomas con Kraken2 y sus bases de datos actualizadas</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Detección de patógenos en microbiomas con Kraken2 y sus bases de datos actualizadas</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es Kraken2 y por qué es clave en la detección de patógenos?</h2>
+            <p>En el análisis de microbiomas, identificar la presencia de patógenos es crucial para diagnósticos clínicos, vigilancia epidemiológica y estudios de salud pública. Kraken2 es una herramienta de clasificación de secuencias de ADN/RNA altamente eficiente que utiliza un algoritmo de k-meres para asignar lecturas de alto rendimiento a taxones del árbol filogenético. Su principal ventaja radica en su combinación de <strong>precisión</strong> y <strong>rapidez</strong>, lo que lo convierte en una de las herramientas más utilizadas en el campo.</p>
+            <p>En comparación con métodos basados en alineamiento como BLAST, Kraken2 no requiere alinear cada secuencia contra una base de datos completa, lo que reduce drásticamente el tiempo de procesamiento. Además, su arquitectura permite el uso de bases de datos actualizadas y específicas para el análisis de patógenos, garantizando que se detecten microorganismos relevantes, incluso en mezclas complejas de microbios.</p>
+        </section>
+
+        <section>
+            <h2>Construcción y actualización de bases de datos de Kraken2 para patógenos</h2>
+            <p>La eficacia de Kraken2 depende directamente de la calidad y relevancia de la base de datos de referencia. Para la detección de patógenos, se recomienda utilizar bases de datos especializadas como <strong>Kraken2's standard database</strong> (que incluye todos los organismos en GenBank), o bases más enfocadas como <strong>nt</strong> (nucleotide database) o conjuntos personalizados que prioricen patógenos humanos, animales o plantas.</p>
+            <p>Es fundamental mantener estas bases de datos actualizadas. Las nuevas cepas, variantes emergentes y organismos recién descubiertos pueden no estar presentes en versiones antiguas. La actualización se realiza con el comando <code>kraken2-build</code> y requiere acceso a repositorios de secuencias como <a href="https://ftp.ncbi.nlm.nih.gov">NCBI</a> o <a href="https://www.ebi.ac.uk">EBI</a>. Por ejemplo:</p>
+            <pre><code>kraken2-build --download-taxonomy --db my_patogen_db
+kraken2-build --download-library human --db my_patogen_db
+kraken2-build --build --db my_patogen_db</code></pre>
+            <p>Este proceso descarga la taxonomía y los archivos de secuencias, luego construye el índice de k-meres. Para uso clínico, se recomienda un enfoque modular: mantener una base general y una específica para patógenos de interés (por ejemplo, <em>Salmonella</em>, <em>Mycobacterium tuberculosis</em>, <em>Staphylococcus aureus</em>).</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo para detección de patógenos en secuencias de microbioma</h2>
+            <p>El flujo típico de análisis con Kraken2 sigue estos pasos:</p>
+            <ol>
+                <li><strong>Preprocesamiento de datos:</strong> filtrar lecturas de baja calidad (con <em>Trimmomatic</em> o <em>cutadapt</em>) y eliminar contaminantes de host (por ejemplo, con <em>Bowtie2</em> o <em>BBMap</em>).</li>
+                <li><strong>Clasificación con Kraken2:</strong> ejecutar la clasificación usando una base de datos optimizada para patógenos.</li>
+                <li><strong>Interpretación de resultados:</strong> analizar la salida en formato de texto, identificar el porcentaje de lecturas asignadas a patógenos y evaluar su nivel de taxonomía (especie, género, etc.).</li>
+            </ol>
+            <p>Un ejemplo de comando para clasificación es:</p>
+            <pre><code>kraken2 --db my_patogen_db --threads 8 --report kraken_report.txt --output kraken_out.txt reads.fastq.gz</code></pre>
+            <p>La salida <code>kraken_report.txt</code> contiene un informe detallado por nivel taxonómico, mientras que <code>kraken_out.txt</code> tiene la asignación de cada lectura. Este informe puede integrarse con herramientas como <em>Bracken</em> (que estiman abundancias de nivel taxonómico) o visualizaciones en <em>ggplot2</em> (R) o <em>Plotly</em> (Python).</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Kraken2 es una herramienta poderosa y rápida para la detección de patógenos en datos de microbioma, gracias a su algoritmo basado en k-meres y su capacidad para operar con bases de datos actualizadas. Su correcto uso requiere una preparación adecuada de datos, la selección de bases de datos relevantes y una interpretación cuidadosa de los resultados, especialmente en contextos clínicos donde la precisión es crítica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No actualizar la base de datos:</strong> usar una versión desactualizada puede hacer que no se detecten nuevos patógenos o cepas emergentes. Siempre verifique la fecha de la base de datos.</li>
+                <li><strong>Usar bases de datos demasiado amplias:</strong> si solo se busca patógenos, una base de datos completa como el <em>standard database</em> puede ser lenta y generar falsos positivos. En su lugar, construya bases más pequeñas y específicas.</li>
+                <li><strong>Ignorar el preprocesamiento:</strong> lecturas contaminadas o de baja calidad pueden generar clasificaciones erróneas. Siempre realice calidad y eliminación de huésped.</li>
+                <li><strong>Confundir la salida de Kraken2 con abundancia real:</strong> Kraken2 asigna lecturas, pero no estima abundancias. Use <em>Bracken</em> para estimaciones más precisas.</li>
+                <li><strong>No validar con herramientas alternativas:</strong> para confirmar la presencia de un patógeno, compare resultados con herramientas como <em>Centrifuge</em> o <em>BLAST</em> en casos sospechosos.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

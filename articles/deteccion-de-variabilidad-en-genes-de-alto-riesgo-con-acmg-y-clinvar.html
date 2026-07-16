@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de variabilidad en genes de alto riesgo con ACMG y ClinVar</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Detección de variabilidad en genes de alto riesgo con ACMG y ClinVar</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué es crucial detectar variabilidad en genes de alto riesgo</h2>
+            <p>En el campo de la genómica clínica, la identificación de variantes genéticas en genes asociados con enfermedades de alto riesgo es fundamental para el diagnóstico, la prevención y el tratamiento personalizado. Herramientas como <strong>ACMG</strong> (American College of Medical Genetics and Genomics) y <strong>ClinVar</strong> proporcionan un marco estándar y una base de datos centralizada para la interpretación de variantes, permitiendo a los investigadores y clínicos clasificarlas según su impacto en la salud. Esta clasificación no solo guía decisiones terapéuticas, sino que también impulsa la investigación en genética funcional y el desarrollo de terapias dirigidas.</p>
+            <p>La variabilidad en genes de alto riesgo —como <em>BRCA1</em>, <em>BRCA2</em>, <em>TP53</em>, <em>APC</em> o <em>MLH1</em>— puede tener consecuencias graves, desde cáncer hereditario hasta trastornos neurológicos. Por ello, la detección precisa y sistemática de estas variantes mediante protocolos estandarizados es esencial. Este artículo explora cómo integrar ACMG y ClinVar en un flujo de análisis genómico para detectar y clasificar variabilidad en genes críticos.</p>
+        </section>
+
+        <section>
+            <h2>Marco de trabajo: ACMG y ClinVar</h2>
+            <p><strong>ACMG</strong> establece un conjunto de criterios de interpretación de variantes genéticas basados en evidencia, que incluyen:</p>
+            <ul>
+                <li><strong>Consecuencia funcional</strong>: ¿la variante altera el producto proteico?</li>
+                <li><strong>Frecuencia en poblaciones</strong>: ¿es rara en bases de datos como gnomAD?</li>
+                <li><strong>Evidencia de herencia</strong>: ¿está asociada con una enfermedad en familias?</li>
+                <li><strong>Co-ocurrencia con variantes patogénicas</strong>: ¿aparece con otras variantes conocidas en el mismo gen?</li>
+            </ul>
+            <p>Estos criterios se aplican para clasificar variantes en cinco categorías: <em>Patogénica</em>, <em>Probablemente patogénica</em>, <em>De incertidumbre clínica</em>, <em>Probablemente benigna</em> y <em>Benigna</em>.</p>
+            <p><strong>ClinVar</strong>, por otro lado, es una base de datos abierta gestionada por NCBI que recopila información sobre variantes genéticas y sus relaciones con enfermedades. Cada entrada incluye:</p>
+            <ul>
+                <li>Identificador de variante (ClinVar accession)</li>
+                <li>Gene(s) asociado(s)</li>
+                <li>Clasificación clínica</li>
+                <li>Evidencia de publicaciones, laboratorios, y criterios utilizados</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Flujo de detección de variabilidad en genes de alto riesgo</h2>
+            <p>Un flujo de análisis robusto para detectar variabilidad en genes de alto riesgo combina herramientas de alineamiento, llamado de variantes y clasificación mediante ACMG/ClinVar. A continuación, se describe un flujo estándar:</p>
+
+            <h3>1. Preprocesamiento y alineamiento</h3>
+            <p>Usando herramientas como <code>fastp</code> para filtrar lecturas y <code>STAR</code> o <code>hisat2</code> para alinear secuencias de RNA-Seq a un genoma de referencia (GRCh38).</p>
+
+            <h3>2. Llamado de variantes</h3>
+            <p>Para variantes en DNA, se utiliza <code>gatk HaplotypeCaller</code> para generar archivos <code>.g.vcf</code> o <code>.vcf</code>. Para RNA-Seq, se recomienda <code>deepvariant</code> o <code>mutect2</code> para variantes somáticas.</p>
+
+            <h3>3. Filtrado y selección de genes de alto riesgo</h3>
+            <p>Con <code>bcftools</code> o <code>vcftools</code>, se filtran variantes raras (AF < 0.01) y se extraen solo las que ocurren en genes de interés, como los de la lista de la ACMG para pruebas de cáncer hereditario.</p>
+
+            <h3>4. Clasificación con ACMG y validación en ClinVar</h3>
+            <p>Se utilizan herramientas como <code>VEP</code> (Variant Effect Predictor) o <code>snpeff</code> para anotar variantes con información funcional. Luego, se aplica un script en <strong>Python</strong> para automatizar la evaluación de criterios ACMG, comparando con datos de <code>gnomAD</code> y <code>dbNSFP</code>. Finalmente, se consulta <code>ClinVar</code> mediante su API o descarga de datos (por ejemplo, <code>clinvar_20260715.vcf</code>) para obtener la clasificación oficial.</p>
+
+            <pre><code>python3 classify_variants_acmg.py --vcf variants_filtered.vcf --clinvar clinvar_20260715.vcf --genes high_risk_genes.txt</code></pre>
+
+            <p>Este script puede integrarse en un pipeline de CI/CD para análisis de rutina en laboratorios clínicos.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La detección de variabilidad en genes de alto riesgo mediante el marco de ACMG y la base de datos ClinVar es un pilar fundamental en la genómica clínica moderna. Al combinar alineamiento de alto rendimiento, llamado de variantes preciso y una clasificación sistemática basada en evidencia, se logra una interpretación confiable de variantes que puede impactar directamente en la atención médica. La integración automatizada de estos recursos permite escalar análisis a grandes cohortes, facilitando diagnósticos tempranos y tratamientos personalizados.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar la actualización de ClinVar</strong>: Las clasificaciones cambian con nuevos datos. Siempre usar una versión reciente (por ejemplo, descargada cada mes).</li>
+                <li><strong>Aplicar ACMG sin ver la evidencia</strong>: No confiar únicamente en scripts automáticos. Revisar manualmente variantes de incertidumbre clínica.</li>
+                <li><strong>Usar bases de datos poblacionales sin ajuste</strong>: gnomAD no es representativo de todos los grupos étnicos. Considerar la frecuencia en poblaciones de origen del paciente.</li>
+                <li><strong>Omisiones en la anotación</strong>: Usar <code>VEP</code> con enriquecimiento de datos (ClinVar, dbSNP, LOVD, etc.) para mayor precisión.</li>
+                <li><strong>No documentar el flujo</strong>: Registrar cada paso, herramienta, versión y parámetros para reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

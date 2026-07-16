@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes en regiones reguladoras con DeepSEA y Ensembl Regulatory Build</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Análisis de variantes en regiones reguladoras con DeepSEA y Ensembl Regulatory Build</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El papel clave de las regiones reguladoras</h2>
+            <p>Las variantes genéticas no codificantes, especialmente aquellas localizadas en regiones reguladoras del ADN, pueden tener un impacto funcional significativo en la expresión génica y, por ende, en enfermedades y rasgos complejos. Aunque el 98% del genoma humano no codifica proteínas, gran parte de él está involucrada en el control de la expresión génica. Identificar y anotar estas variantes es fundamental para entender su potencial efecto biológico. En este artículo, exploramos cómo integrar dos herramientas poderosas: <strong>DeepSEA</strong> y el <strong>Ensembl Regulatory Build</strong>, para evaluar el efecto de variantes en regiones reguladoras.</p>
+        </section>
+
+        <section>
+            <h2>Entendiendo las herramientas clave</h2>
+            <h3>Ensembl Regulatory Build</h3>
+            <p>El <a href="https://www.ensembl.org/info/genome/regulatory_build.html" target="_blank">Ensembl Regulatory Build</a> es una base de datos que mapea elementos reguladores en el genoma humano (como promotores, enhancers, silencers, etc.) utilizando datos experimentales de ChIP-seq, DNase-seq y otros ensayos. Cada región se clasifica según su tipo funcional y se asocia con genes diana. Este recurso proporciona un mapa genómico de alta resolución de la regulación génica, esencial para contextualizar variantes.</p>
+
+            <h3>DeepSEA</h3>
+            <p><strong>DeepSEA</strong> (Deep learning-based Sequence Element Analysis) es un modelo de redes neuronales profunda entrenado para predecir el efecto funcional de variaciones genéticas en regiones reguladoras. A partir de secuencias de ADN, DeepSEA predice cambios en la actividad de elementos reguladores (como cambios en la expresión de genes o en la señal de histonas) a nivel de nucleótido. Es particularmente útil para priorizar variantes potencialmente patogénicas en regiones no codificantes.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de análisis paso a paso</h2>
+            <p>El análisis combinado de DeepSEA y el Ensembl Regulatory Build sigue un flujo lógico que permite una evaluación integrada del impacto funcional de una variante.</p>
+
+            <h3>Paso 1: Identificación de variantes en regiones reguladoras</h3>
+            <p>Primero, se debe obtener un conjunto de variantes de interés (por ejemplo, SNVs o indels). Luego, se filtran aquellas que se localizan dentro de regiones anotadas por el Ensembl Regulatory Build. Esto puede hacerse usando herramientas como <code>bedtools intersect</code> o <code>bcftools</code> con archivos de región reguladora.</p>
+
+            <pre><code>bcftools query -f '%CHROM\t%POS\t%ID\n' variantes.vcf | \
+    bedtools intersect -a - -b ensembl_regulatory_regions.bed -wa -wb | \
+    cut -f1-3,6 > variantes_en_reguladoras.txt</code></pre>
+
+            <h3>Paso 2: Extraer secuencias flanqueadoras</h3>
+            <p>DeepSEA requiere secuencias de ADN de 1000 nucleótidos alrededor de la variante. Se extrae la secuencia de referencia y de la variante para cada posición. Esto puede hacerse con <code>bcftools</code> y un archivo de referencia FASTA (por ejemplo, GRCh38).</p>
+
+            <pre><code>bcftools view -r chr1:1000000-1001000 -Ou reference.vcf | \
+    bedtools getfasta -fi hg38.fa -bed - -fo sequence_ref.fasta</code></pre>
+
+            <h3>Paso 3: Análisis con DeepSEA</h3>
+            <p>DeepSEA no está disponible como herramienta de línea de comandos directa. Se puede utilizar a través de su interfaz web (<a href="https://deepsea.princeton.edu/" target="_blank">deepsea.princeton.edu</a>) o mediante API (en desarrollo). En entornos de investigación, se pueden usar versiones locales si están disponibles. El modelo se alimenta con la secuencia de 1000 nt y predice el cambio en la actividad reguladora.</p>
+
+            <p>El resultado incluye predicciones para múltiples marcadores funcionales, como <em>log-fold change</em> en la expresión de genes, cambios en la señal de H3K27ac, etc.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de variantes en regiones reguladoras mediante la integración de <strong>Ensembl Regulatory Build</strong> y <strong>DeepSEA</strong> permite una evaluación funcional profunda y contextualizada de variantes no codificantes. El Ensembl Regulatory Build proporciona el mapa genómico de elementos reguladores, mientras que DeepSEA aporta una predicción de impacto funcional a nivel de nucleótido. Juntas, estas herramientas son esenciales para priorizar variantes candidatas en estudios de asociación genómica (GWAS), análisis de enfermedades raras y descubrimiento de biomarcadores funcionales.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No asumir que todas las variantes en regiones reguladoras son funcionales.</strong> El Ensembl Regulatory Build identifica regiones, pero el efecto real debe evaluarse con modelos como DeepSEA o datos experimentales.</li>
+                <li><strong>Verificar la referencia genómica.</strong> Asegúrese de que los archivos de secuencia de referencia (FASTA) y las regiones reguladoras estén alineados con el mismo ensamblaje genómico (GRCh38).</li>
+                <li><strong>Usar variantes con calidad suficiente.</strong> Filtrar variantes con bajo valor de calidad (por ejemplo, GQ < 20) antes del análisis.</li>
+                <li><strong>Interpretar con cautela las predicciones de DeepSEA.</strong> Las predicciones son estadísticas y no pruebas funcionales. Siempre validar con experimentos o datos clínicos cuando sea posible.</li>
+                <li><strong>Combinar con otras herramientas.</strong> Añadir anotaciones de VEP, CADD o LRT para una evaluación más robusta.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="categoria" content="Alineamiento">
+    <title>Optimización del alineamiento de reads con minimap2 para datos de metagenómica</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Optimización del alineamiento de reads con minimap2 para datos de metagenómica</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El alineamiento de reads de secuenciación de nueva generación (NGS) es un paso fundamental en el análisis de datos metagenómicos. A diferencia de los estudios de genómica de individuos, donde se alinea a un genoma de referencia único, en metagenómica se enfrenta a una mezcla compleja de genomas de múltiples organismos. En este contexto, <strong>minimap2</strong> se ha consolidado como una herramienta clave debido a su combinación de velocidad, sensibilidad y capacidad para manejar secuencias largas y variantes. Sin embargo, su desempeño críticamente depende de la configuración adecuada de sus parámetros. Este artículo explora estrategias para optimizar el alineamiento de reads con minimap2, maximizando la precisión del mapeo mientras se conserva una eficiencia computacional razonable.</p>
+        </section>
+
+        <section>
+            <h2>Conceptos clave del alineamiento en metagenómica</h2>
+            <p>En metagenómica, el objetivo principal del alineamiento no es necesariamente reconstruir el genoma completo de cada especie, sino identificar y cuantificar la presencia de diferentes microorganismos. Esto implica que el alineamiento debe ser sensible a secuencias muy divergentes y capaz de mapear reads a múltiples ubicaciones en el genoma de referencia. El uso de un genoma de referencia combinado de múltiples especies, conocido como <em>pan-genoma</em> o <em>metagenome-assembled genome (MAG)</em>, es una práctica común. La elección de la base de referencia y el modelo de alineamiento son, por tanto, determinantes del éxito del análisis.</p>
+        </section>
+
+        <section>
+            <h2>Parámetros críticos de minimap2</h2>
+            <p>minimap2 ofrece una gran flexibilidad mediante sus múltiples opciones de parámetros. Algunos de los más importantes para el análisis metagenómico son:</p>
+            <h3>1. Modo de alineamiento</h3>
+            <p>El parámetro <code>-ax</code> define el modo de alineamiento. Para datos de metagenómica, se recomienda:</p>
+            <ul>
+                <li><code>-ax map-pb</code> para reads de secuenciación de larga duración (PacBio)</li>
+                <li><code>-ax map-ont</code> para reads de secuenciación de larga duración (Oxford Nanopore)</li>
+                <li><code>-ax sr</code> para reads cortos de Illumina (sólo si el genoma de referencia es pequeño)</li>
+            </ul>
+            <p>En general, para datos Illumina con genomas complejos, <code>-ax sr</code> puede no ser óptimo; en su lugar, se puede usar <code>-ax asm20</code> o <code>-ax splice</code> si se espera altas tasas de variación o fusiones genéticas.</p>
+            
+            <h3>2. Umbral de calidad (minimap2 -k)</h3>
+            <p>El parámetro <code>-k</code> controla el tamaño de los k-mers utilizados para la búsqueda inicial. Un valor bajo (<em>por ejemplo, 15-17</em>) aumenta la sensibilidad, permitiendo alinear reads con muchas mutaciones, pero puede generar más falsos positivos. Un valor alto (<em>por ejemplo, 21-25</em>) mejora la especificidad pero puede hacer que reads muy divergentes no se alineen. Para metagenómica, un valor intermedio como <code>-k19</code> suele ser un buen compromiso.</p>
+
+            <h3>3. Filtrado de alineamientos</h3>
+            <p>Es crucial filtrar alineamientos de baja calidad. Se recomienda usar <code>--secondary=no</code> para descartar alineamientos secundarios, y <code>--no-alt</code> para evitar alineamientos a regiones alternativas. Además, se puede usar <code>minimap2 -a</code> para generar archivos SAM, que luego pueden ser procesados con herramientas como <a href="https://github.com/samtools/samtools">samtools</a> para filtrar por calidad de alineamiento (mapq) o por número de alineamientos.</p>
+        </section>
+
+        <section>
+            <h2>Ejemplo práctico</h2>
+            <p>Supongamos que se tiene un conjunto de reads de Illumina (en formato fastq) y un genoma de referencia combinado (en formato FASTA). El siguiente comando representa una configuración óptima para metagenómica:</p>
+            <pre><code>minimap2 -ax map-ont -k19 -t 8 -o alineamiento.sam referencia_genomica.fasta reads.fastq.gz</code></pre>
+            <p>Este comando:</p>
+            <ul>
+                <li>Usa el modo <code>map-ont</code> (adecuado para datos de secuenciación de larga duración, pero también útil en datos de corta duración cuando se busca alta sensibilidad).</li>
+                <li>Establece <code>-k19</code> para un buen balance entre sensibilidad y especificidad.</li>
+                <li>Utiliza 8 hilos con <code>-t 8</code> para aprovechar el paralelismo.</li>
+                <li>Genera un archivo SAM de salida.</li>
+            </ul>
+            <p>Posteriormente, se puede filtrar el archivo SAM usando <code>samtools view</code> para mantener solo alineamientos con calidad de mapeo (mapq) mayor o igual a 10.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El alineamiento de reads en metagenómica con minimap2 es un proceso que requiere una configuración cuidadosa. La elección del modo de alineamiento, el tamaño de los k-mers y la filtración de resultados son factores clave que influyen en la precisión y la sensibilidad del análisis. Aunque minimap2 es rápidamente configurable, su potencial se alcanza solo cuando se ajusta a las características específicas del conjunto de datos (tipo de secuenciación, complejidad genética, tamaño del genoma de referencia). Una buena estrategia es probar varios conjuntos de parámetros en un subconjunto de datos antes de aplicarlos al conjunto completo.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar -ax sr para datos complejos</strong>: Este modo está optimizado para lecturas cortas y genomas pequeños. En metagenómica, puede fallar al alinear reads a organismos con alta diversidad genética.</li>
+                <li><strong>Establecer k demasiado alto</strong>: Un k-mer grande puede excluir reads con variantes comunes, reduciendo la sensibilidad.</li>
+                <li><strong>Ignorar el filtrado de alineamientos</strong>: Un archivo SAM sin filtrar puede contener muchos alineamientos secundarios y de baja calidad, distorsionando resultados de cuantificación.</li>
+                <li><strong>Usar el mismo genoma de referencia para todos los estudios</strong>: Los datos metagenómicos varían ampliamente. Es mejor usar un pan-genoma actualizado o construir un genoma de referencia personalizado si se trata de un microbioma específico (por ejemplo, microbioma intestinal humano).</li>
+                <li><strong>Probar solo un conjunto de parámetros</strong>: Es recomendable realizar un experimento de validación con diferentes configuraciones y evaluar el número de reads alineados, la cobertura y la dispersión del mapeo.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

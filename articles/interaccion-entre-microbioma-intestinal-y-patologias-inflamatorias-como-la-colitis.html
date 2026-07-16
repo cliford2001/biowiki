@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interacción entre microbioma intestinal y patologías inflamatorias como la colitis</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="General">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Interacción entre microbioma intestinal y patologías inflamatorias como la colitis</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El microbioma como sistema regulatorio del intestino</h2>
+      <p>El microbioma intestinal, compuesto por billones de microorganismos (bacterias, arqueas, hongos, virus), no es un simple pasajero del tracto digestivo, sino un organismo simbiótico esencial que modula funciones clave del huésped: inmunidad, metabolismo, barrera epitelial y neurotrasmisión. Su disbiosis —alteración de la composición y función microbiana— está fuertemente asociada con enfermedades inflamatorias intestinales (EII), particularmente la colitis ulcerosa y la enfermedad de Crohn. Comprender esta interacción es fundamental para desarrollar estrategias diagnósticas y terapéuticas innovadoras.</p>
+    </section>
+
+    <section>
+      <h2>Funciones fisiológicas del microbioma intestinal</h2>
+      <p>En condiciones normales, el microbioma desempeña múltiples roles protectoras:</p>
+      <ul>
+        <li><strong>Formación y mantenimiento de la barrera intestinal</strong>: Las bacterias productoras de ácidos grasos de cadena corta (AGCC), como <em>Faecalibacterium prausnitzii</em> y <em>Roseburia</em>, fermentan fibras no digeribles y generan butirato, el principal combustible para los enterocitos. El butirato refuerza las uniones estrechas entre células epiteliales y previene la translocación bacteriana.</li>
+        <li><strong>Regulación inmune</strong>: El microbioma entrena al sistema inmune del huésped durante la infancia y mantiene un estado de tolerancia inmune en adultos. Por ejemplo, ciertas cepas de <em>Lactobacillus</em> y <em>Bifidobacterium</em> promueven la diferenciación de células T reguladoras (Treg) que suprimen respuestas inflamatorias excesivas.</li>
+        <li><strong>Metabolismo de nutrientes y fármacos</strong>: Muchas especies metabolizan compuestos dietéticos (por ejemplo, colina, fenilalanina) y fármacos (como el azatioprina), alterando su biodisponibilidad y toxicidad.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Desregulación en colitis: de la disbiosis a la inflamación crónica</h2>
+      <p>En pacientes con colitis, se observa un patrón característico de disbiosis:</p>
+      <ul>
+        <li>Reducción de la diversidad microbiana (alpha-diversidad).</li>
+        <li>Disminución de bacterias productoras de AGCC (especialmente <em>F. prausnitzii</em>).</li>
+        <li>Aumento de bacterias potencialmente proinflamatorias, como ciertas cepas de <em>Escherichia coli</em> (E. coli) y <em>Enterobacteriaceae</em>.</li>
+      </ul>
+      <p>Esta alteración desencadena una cascada de eventos:</p>
+      <ol>
+        <li>Disminución de butirato → debilitamiento de la barrera epitelial → translocación de antígenos microbianos.</li>
+        <li>Activación de receptores de patrón (TLR, NLR) en células inmunes → producción de citocinas proinflamatorias (TNF-α, IL-1β, IL-6).</li>
+        <li>Recruitment de neutrófilos y linfocitos T proinflamatorios (Th1, Th17).</li>
+        <li>Daño tisular, ulceración y cicatrización anómala.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Enfoques tecnológicos para estudiar la interacción microbioma-huésped</h2>
+      <p>El análisis del microbioma intestinal se basa en técnicas de secuenciación de alto rendimiento:</p>
+      <h3>1. Secuenciación de 16S rRNA</h3>
+      <p>Se amplifica y secuencia el gen 16S rRNA, que es conservado en bacterias. Es útil para estimar la composición taxonómica, pero tiene limitaciones para identificar funciones específicas.</p>
+      <pre><code>usearch -cluster_fast otus.fq -id 0.97 -centroids otus.fa -sort length -minseqlength 150</code></pre>
+
+      <h3>2. Secuenciación metagenómica</h3>
+      <p>Se secuencian todos los ADN de un muestras (microbioma + huésped). Permite identificar no solo qué microorganismos están presentes, sino también sus genes funcionales. Herramientas clave incluyen:</p>
+      <ul>
+        <li><strong>MetaPhlAn</strong>: para perfil taxonómico.</li>
+        <li><strong>Humann3</strong>: para inferir funciones metabólicas.</li>
+      </ul>
+      <pre><code>humann2 --input metagenome.fq --output humann_out --threads 8</code></pre>
+
+      <h3>3. Metatranscriptómica</h3>
+      <p>Se secuencian ARN, lo que permite evaluar cuáles genes están activos en el microbioma en un momento dado. Es más costoso, pero ofrece una visión dinámica de la función microbiana.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La interacción entre el microbioma intestinal y el sistema inmune del huésped es un eje central en la fisiopatología de la colitis. La disbiosis, caracterizada por pérdida de bacterias protectoras y proliferación de proinflamatorias, compromete la barrera intestinal y desencadena una inflamación crónica. Técnicas de secuenciación metagenómica y metatranscriptómica son esenciales para desentrañar estos mecanismos. El futuro radica en la integración de datos microbiómicos con datos genómicos, transcriptómicos y clínicos del paciente para personalizar estrategias terapéuticas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Errores comunes</strong>:
+          <ul>
+            <li>Confundir correlación con causalidad: una disminución de <em>F. prausnitzii</em> no prueba que sea la causa de la colitis.</li>
+            <li>Usar solo 16S rRNA para inferir funciones metabólicas: esta herramienta no permite predecir funciones con precisión.</li>
+            <li>No considerar factores de confusión: dieta, edad, medicación (especialmente antibióticos), y estrés influyen fuertemente en el microbioma.</li>
+          </ul>
+        </li>
+        <li><strong>Buenas prácticas</strong>:
+          <ul>
+            <li>Usar metagenómica o metatranscriptómica cuando se requiera inferencia funcional.</li>
+            <li>Validar hallazgos con modelos animales (por ejemplo, ratones germ-free colonizados con microbioma de pacientes).</li>
+            <li>Reproducir análisis en múltiples cohortes de pacientes para verificar la robustez de los resultados.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

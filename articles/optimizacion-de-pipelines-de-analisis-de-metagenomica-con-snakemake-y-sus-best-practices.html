@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización de pipelines de análisis de metagenómica con Snakemake y sus best practices</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Análisis de datos">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización de pipelines de análisis de metagenómica con Snakemake y sus best practices</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El desafío de la metagenómica</h2>
+            <p>El análisis de metagenómica permite estudiar la diversidad microbiana en muestras ambientales, clínicas o industriales sin la necesidad de cultivo. Sin embargo, estos estudios generan grandes volúmenes de datos de alto ruido, con múltiples etapas interdependientes: control de calidad, ensamblaje, anotación funcional, clasificación taxonómica y análisis comparativo. La gestión manual de este flujo es inviable, lo que hace imprescindible el uso de pipelines robustos, reproducibles y escalables. Snakemake, un sistema de orquestación de pipelines basado en Python, emerge como una solución ideal gracias a su sintaxis declarativa, soporte nativo para la reproducibilidad y capacidad de integrarse con entornos de computación de alto rendimiento (HPC).</p>
+        </section>
+
+        <section>
+            <h2>Principios fundamentales de Snakemake en metagenómica</h2>
+            <p>Snakemake se basa en una serie de principios clave que deben ser respetados para construir pipelines eficientes:</p>
+            <ul>
+                <li><strong>Reproducibilidad:</strong> Cada paso debe ser determinista, con entradas y salidas explícitas.</li>
+                <li><strong>Declaratividad:</strong> El flujo se define en un archivo <code>Snakefile</code> que especifica reglas, dependencias y recursos.</li>
+                <li><strong>Paralelización:</strong> Snakemake puede ejecutar reglas independientes simultáneamente, aprovechando múltiples núcleos o nodos.</li>
+            </ul>
+            <p>La estructura típica de un pipeline de metagenómica en Snakemake incluye etapas como:</p>
+            <ul>
+                <li>QC con <code>fastp</code> o <code>Trimmomatic</code></li>
+                <li>Ensamblaje con <code>MEGAHIT</code> o <code>MetaSPAdes</code></li>
+                <li>Identificación de genes con <code>Prodigal</code> o <code>MetaGeneMark</code></li>
+                <li>Anotación funcional con <code>DIAMOND</code> + <code>KEGG</code> o <code>eggNOG-mapper</code></li>
+                <li>Clasificación taxonómica con <code>Kraken2</code> o <code>Centrifuge</code></li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Optimización de pipelines: desde el diseño hasta la ejecución</h2>
+            <h3>1. Diseño modular y reutilizable</h3>
+            <p>Divide tu pipeline en reglas pequeñas y reutilizables. Por ejemplo, una regla para el QC de pares de lecturas:</p>
+            <pre><code>rule fastp_qc:
+    input:
+        r1 = "data/{sample}_R1.fastq.gz",
+        r2 = "data/{sample}_R2.fastq.gz"
+    output:
+        r1 = "qc/{sample}_R1.fastp.fastq.gz",
+        r2 = "qc/{sample}_R2.fastp.fastq.gz",
+        html = "qc/{sample}_fastp.html",
+        json = "qc/{sample}_fastp.json"
+    params:
+        outdir = "qc"
+    shell:
+        "fastp \
+        -i {input.r1} \
+        -o {output.r1} \
+        -I {input.r2} \
+        -O {output.r2} \
+        -h {output.html} \
+        -j {output.json} \
+        --detect_adapter_for_pe \
+        --trim_front1 5 \
+        --trim_front2 5 \
+        --cut_front --cut_tail --length_required 50"
+</code></pre>
+
+            <h3>2. Uso eficiente de recursos</h3>
+            <p>Define los recursos necesarios para cada regla para evitar sobrecargas. Usa <code>threads</code>, <code>memory_mb</code> y <code>resources</code>:</p>
+            <pre><code>rule megahit_assembly:
+    input:
+        r1 = "qc/{sample}_R1.fastp.fastq.gz",
+        r2 = "qc/{sample}_R2.fastp.fastq.gz"
+    output:
+        "assemblies/{sample}.contigs.fa"
+    threads: 16
+    resources:
+        mem_mb = 32000
+    shell:
+        "megahit -1 {input.r1} -2 {input.r2} \
+        -o assemblies/{wildcards.sample} \
+        --min-contig-len 500"
+</code></pre>
+
+            <h3>3. Manejo de errores y resiliencia</h3>
+            <p>Usa <code>try:</code> y <code>except</code> en reglas críticas, y considera el uso de <code>snakemake --restart-times</code> para reintentos automáticos. También puedes usar <code>ruleorder</code> para forzar secuencias cuando sea necesario.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Snakemake proporciona un marco potente y flexible para diseñar, optimizar y ejecutar pipelines de metagenómica de manera reproducible, escalable y eficiente. La clave está en seguir buenas prácticas: modularidad, definición clara de entradas/salidas, uso adecuado de recursos y manejo proactivo de errores. Al aplicar estas técnicas, los investigadores pueden automatizar flujos complejos, reducir errores humanos, compartir sus análisis con otros y acelerar el avance en el campo del análisis microbiano.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Evita reglas sin salida:</strong> Cada regla debe tener al menos una salida, o Snakemake no podrá determinar si está completada.</li>
+                <li><strong>Usa wildcards correctamente:</strong> Asegúrate de que los nombres de los wildcards coincidan exactamente entre entradas y salidas.</li>
+                <li><strong>Define threads y memoria:</strong> No asumas que los programas usan solo un núcleo. Usa <code>threads</code> y <code>resources</code> para evitar colapsos en HPC.</li>
+                <li><strong>Evita dependencias circulares:</strong> Snakemake no puede resolver reglas que se dependen entre sí de forma cíclica.</li>
+                <li><strong>Usa <code>snakemake --dry-run</code>:</strong> Prueba tu pipeline sin ejecutarlo real y observa el grafo de dependencias.</li>
+                <li><strong>Documenta tu Snakefile:</strong> Añade comentarios descriptivos. Usa <code>#</code> para explicar la intención detrás de cada regla.</li>
+                <li><strong>Versiona tu pipeline:</strong> Usa Git para seguir cambios en tu <code>Snakefile</code> y <code>config.yaml</code>.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

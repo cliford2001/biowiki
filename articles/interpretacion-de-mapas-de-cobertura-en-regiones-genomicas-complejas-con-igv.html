@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpretación de mapas de cobertura en regiones genómicas complejas con IGV</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Interpretación de mapas de cobertura en regiones genómicas complejas con IGV</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es la cobertura genómica y por qué importa?</h2>
+            <p>La cobertura (o depth) en bioinformática se refiere al número de veces que cada posición del genoma ha sido secuenciada. En regiones genómicas complejas —como duplicaciones segmentales, regiones de alta homología, repetitivos, o loci de variación estructural— la interpretación de los mapas de cobertura no es trivial. Herramientas como <strong>IGV (Integrative Genomics Viewer)</strong> permiten visualizar estos datos de forma interactiva, pero requieren un entendimiento profundo para evitar interpretaciones erróneas.</p>
+            <p>Una cobertura inesperadamente alta o baja puede indicar artefactos de secuenciado, errores en el alineamiento, o verdaderas variaciones genómicas. En este artículo, aprenderás a distinguir entre estos escenarios en IGV.</p>
+        </section>
+
+        <section>
+            <h2>Preparación de los datos: desde el alineamiento hasta la cobertura</h2>
+            <p>Antes de visualizar en IGV, necesitas un archivo de alineamiento (BAM) y un archivo de índice (BAI). Los alineadores como <strong>STAR</strong> o <strong>BWA</strong> generan estos archivos directamente. A continuación, calcula la cobertura usando herramientas como <strong>samtools</strong> o <strong>deepTools</strong>:</p>
+            <pre><code> samtools depth -aa alineamiento.sorted.bam | head -10
+
+ # Para generar un track de cobertura en formato WIG (opcional)
+ bamCoverage -b alineamiento.sorted.bam \
+     --outFileName coverage.wig \
+     --binSize 100 --normalizeUsing RPKM</code></pre>
+            <p>El comando <code>samtools depth</code> genera una tabla con la cobertura por posición. Un valor elevado en regiones de duplicación o repetitivos es esperado, pero puede confundirse con errores de alineamiento si no se interpreta con cuidado.</p>
+        </section>
+
+        <section>
+            <h2>Cómo interpretar patrones en IGV</h2>
+            <p>Una vez cargado el archivo BAM en IGV, el mapa de cobertura se muestra como un gráfico de barras por encima de los reads. Observa estos patrones clave:</p>
+            <ul>
+                <li><strong>Cobertura uniforme</strong>: Indica buen alineamiento en la región, sin artefactos.</li>
+                <li><strong>Picos de cobertura</strong>: Pueden indicar duplicaciones segmentales, regiones de alta homología, o errores en el alineamiento si los reads se sobrealinean en múltiples posiciones.</li>
+                <li><strong>Valles de cobertura baja</strong>: Pueden ser causados por regiones de difícil secuenciado (como GC altos), o por pérdida de reads en regiones con variaciones estructurales.</li>
+                <li><strong>Desviaciones abruptas</strong>: Sospecha de variaciones estructurales (deleciones, inserciones, inversiones).</li>
+            </ul>
+            <p>Recuerda: IGV muestra los reads alineados. Si ves muchos reads alineados en una región con alta cobertura pero sin variaciones reales, podría ser un <em>mapping bias</em> debido a secuencias repetitivas.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <h3>Errores frecuentes</h3>
+            <ul>
+                <li><strong>Interpretar picos como variantes reales</strong>: Un pico en cobertura puede ser debido a una duplicación segmental, no a un gen de fusión. Verifica con herramientas como <strong>DELLY</strong> o <strong>Sniffles</strong> si hay variaciones estructurales.</li>
+                <li><strong>Ignorar el contexto de homología</strong>: Si la región tiene alta homología con otra parte del genoma, muchos reads podrían alinearse incorrectamente, creando falsos picos.</li>
+                <li><strong>Confundir baja cobertura con ausencia de secuencias</strong>: Una región con baja cobertura puede deberse a secuenciado incompleto, no a una ausencia real del gen.</li>
+            </ul>
+            
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Usa <strong>IGV con múltiples tracks</strong>: Compara el mapa de cobertura con el alineamiento de reads, variantes (VCF) y anotaciones genómicas.</li>
+                <li>Activa el modo <em>"Show alignments"</em> y revisa si los reads están bien alineados o si hay sobrealineamientos en regiones repetitivas.</li>
+                <li>Usa <strong>deepTools</strong> para calcular la cobertura promedio del genoma y comparar con la región en estudio.</li>
+                <li>Verifica si el archivo BAM está correctamente ordenado y indexado: <code>samtools sort</code> y <code>samtools index</code>.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Conclusión</h2>
+            <p>La interpretación de mapas de cobertura en regiones genómicas complejas requiere combinación de visualización (IGV), análisis cuantitativo (samtools, deepTools) y conocimiento biológico. No todos los picos son variantes, y no todos los valles indican pérdida de material genético. Con una lectura crítica y el uso de herramientas complementarias, puedes distinguir entre artefactos técnicos y hallazgos biológicos reales.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

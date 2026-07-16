@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de microbiomas intestinales con QIIME2 y sus workflows de calidad</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de microbiomas intestinales con QIIME2 y sus workflows de calidad</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El microbioma intestinal y su relevancia en salud y enfermedad</h2>
+            <p>El microbioma intestinal es un ecosistema complejo compuesto por billones de microorganismos —bacterias, arqueas, hongos y virus— que habitan en el tracto gastrointestinal humano. Estos microbios desempeñan funciones cruciales en la digestión, la modulación inmune, la producción de metabolitos esenciales y la protección contra patógenos. El desequilibrio del microbioma, conocido como disbiosis, se ha asociado con una amplia gama de condiciones, desde enfermedades inflamatorias intestinales (como la colitis ulcerosa) hasta trastornos neurológicos, obesidad y diabetes tipo 2.</p>
+            <p>El análisis de microbiomas intestinales mediante secuenciación de ADN o ARN (especialmente de los genes 16S rRNA o metagenómica) requiere pipelines robustos, estandarizados y de alta calidad. En este contexto, <strong>QIIME 2</strong> (Quantitative Insights Into Microbial Ecology 2) se ha consolidado como una de las plataformas más utilizadas en la comunidad bioinformática por su enfoque modular, reproducible y centrado en el control de calidad. Este artículo explora las principales etapas del flujo de trabajo de QIIME 2, con un énfasis particular en los workflows de calidad que garantizan resultados confiables y comparables.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo de QIIME2: de los datos brutos a la interpretación biológica</h2>
+            <p>El flujo de trabajo de QIIME2 se estructura en etapas bien definidas, cada una ejecutada mediante comandos específicos y con una arquitectura basada en plugins. A continuación, se describe el proceso desde la importación de datos hasta el análisis final.</p>
+
+            <h3>1. Importación de datos</h3>
+            <p>QIIME2 acepta datos en diversos formatos, como archivos FASTQ (lecturas de secuenciación), FASTA (secuencias) o archivos de tabulación (como los generados por DADA2). El primer paso es convertir estos datos en un formato interno de QIIME2 (archivo `.qza`) mediante el plugin <code>qiime tools import</code>.</p>
+            <pre><code>qiime tools import \
+  --type 'SampleData[SequencesWithQuality]' \
+  --input-path demultiplexed_sequences \
+  --output-path demux.qza \
+  --input-format SingleEndFastqManifestPhred33</code></pre>
+
+            <h3>2. Control de calidad y filtrado de lecturas</h3>
+            <p>La calidad de los datos es fundamental. QIIME2 incorpora herramientas como <strong>DADA2</strong> (Denoising Algorithm for High-Throughput Sequencing) y <strong>Deblur</strong> para eliminar errores de secuenciación y generar representaciones de OTUs (Unidades de Taxonomía Operativa) o ASVs (Unidades de Secuencia Amplicon). Estos algoritmos se integran mediante plugins de QIIME2, como <code>qiime dada2 denoise-single</code>.</p>
+            <pre><code>qiime dada2 denoise-single \
+  --i-demultiplexed-seqs demux.qza \
+  --p-trunc-len 250 \
+  --p-min-len 150 \
+  --p-n-threads 4 \
+  --o-table table.qza \
+  --o-representative-sequences rep-seqs.qza \
+  --o-denoising-stats denoising-stats.qza</code></pre>
+
+            <p>En este comando, los parámetros clave son <code>--p-trunc-len</code> (longitud máxima de truncado), <code>--p-min-len</code> (longitud mínima para mantener lecturas), y <code>--p-n-threads</code> (número de hilos para acelerar el proceso).</p>
+
+            <h3>3. Construcción de árboles filogenéticos y anotación taxonómica</h3>
+            <p>Una vez obtenidas las secuencias representativas (ASVs), se puede generar un árbol filogenético usando <code>qiime phylogeny align-to-tree-mafft-fasttree</code>, esencial para análisis filogenéticos como la diversidad beta. Además, se asigna la taxonomía mediante bases de datos como <strong>SILVA</strong> o <strong>Greengenes</strong> usando <code>qiime feature-classifier classify-sklearn</code>.</p>
+            <pre><code>qiime feature-classifier classify-sklearn \
+  --i-classifier silva-138-99-515-806-nb-classifier.qza \
+  --i-reads rep-seqs.qza \
+  --o-classification taxonomy.qza</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen: De la calidad a la interpretación</h2>
+            <p>El análisis de microbiomas intestinales con QIIME2 no es solo una serie de comandos, sino un proceso estricto de control de calidad que debe seguirse rigurosamente. Desde la importación de datos hasta la clasificación taxonómica, cada paso incluye mecanismos de validación, como la visualización de estadísticas de denoising, el análisis de calidad de lecturas, y la evaluación de la representatividad de las secuencias. El uso de workflows estandarizados permite la reproducibilidad y la comparabilidad entre estudios, lo cual es fundamental en investigaciones microbiológicas.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar los stats de denoising:</strong> Siempre revisa el archivo <code>denoising-stats.qza</code> para detectar pérdida de lecturas, alta proporción de errores o secuencias contaminadas.</li>
+                <li><strong>Usar parámetros inadecuados:</strong> No ajustar <code>--p-trunc-len</code> o <code>--p-min-len</code> según el tipo de secuenciación (Illumina MiSeq, NovaSeq, etc.) puede generar sesgos o pérdida de información.</li>
+                <li><strong>Seleccionar mal la base de datos taxonómica:</strong> Elige una base de datos (SILVA, Greengenes) que coincida con el región amplificada (V3-V4, V4) y con la resolución taxonómica requerida.</li>
+                <li><strong>Reproducir sin documentar:</strong> Usa <code>qiime tools export</code> para generar archivos de salida en formatos estándar (como BIOM) y documenta cada paso con <code>qiime metadata tabulate</code> o <code>qiime metadata summarize</code>.</li>
+                <li><strong>Correr en paralelo sin recursos suficientes:</strong> Aunque QIIME2 permite múltiples hilos, asegúrate de tener suficiente memoria RAM (al menos 16 GB) y CPU para evitar fallos.</li>
+            </ul>
+            <p>En resumen, el éxito del análisis microbiomático con QIIME2 depende más del rigor en el control de calidad que de los métodos de análisis avanzados. Una buena práctica es siempre validar los datos en cada etapa y documentar el flujo de trabajo completo.</p>
+        </section>
+    </article>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes de fusión en tumores con Arriba y FusionCatcher en datasets clínicos</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de variantes de fusión en tumores con Arriba y FusionCatcher en datasets clínicos</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: La importancia de las fusiones génicas en oncología</h2>
+            <p>Las fusiones génicas son eventos genéticos que ocurren cuando dos genes distintos se unen anormalmente, generando un nuevo gen quimérico que puede codificar una proteína con funciones oncogénicas. En tumores, estas variantes están implicadas en la patogénesis de diversos cánceres, como el linfoma de Hodgkin, leucemias mieloide aguda y carcinomas pulmonares. Su detección es clave para el diagnóstico, pronóstico y selección de terapias dirigidas, especialmente en el contexto de ensayos clínicos y medicina personalizada.</p>
+            <p>En datasets clínicos —donde los datos suelen provenir de biopsias tumorales con perfil de secuenciación de alta profundidad (exome o whole genome)— el análisis de fusiones requiere herramientas robustas, sensibles y específicas. En este artículo, exploraremos el uso de <strong>Arriba</strong> y <strong>FusionCatcher</strong>, dos herramientas de detección de fusiones con enfoques complementarios, en el análisis de datasets clínicos.</p>
+        </section>
+
+        <section>
+            <h2>Marco técnico: Alineamiento y preprocesamiento</h2>
+            <p>Antes de la detección de fusiones, es crucial realizar un alineamiento de los reads de secuenciación contra el genoma de referencia. La herramienta <code>STAR</code> (Spliced Transcripts Alignment to a Reference) es ampliamente utilizada por su capacidad para alinear reads con eventos de splicing, incluyendo aquellos que podrían indicar fusiones.</p>
+            <pre><code class="language-bash">STAR \
+  --runThreadN 8 \
+  --genomeDir /path/to/genome_index \
+  --readFilesIn tumor_R1.fastq tumor_R2.fastq \
+  --outFileNamePrefix fusion_analysis/ \
+  --outSAMtype BAM SortedByCoordinate</code></pre>
+            <p>El resultado es un archivo BAM alineado, que se utiliza como entrada para ambos pipelines: Arriba y FusionCatcher.</p>
+        </section>
+
+        <section>
+            <h2>Arriba: Enfoque basado en alineamientos de reads en pareja (paired-end)</h2>
+            <p><strong>Arriba</strong> es un pipeline de detección de fusiones diseñado específicamente para datos de secuenciación de pareja de lectura (paired-end). Su principal ventaja es la precisión en la localización de los puntos de fusión, ya que explota el patrón de alineamiento de reads que no cumplen con las expectativas de distancia y orientación en el genoma.</p>
+            <p>Arriba identifica fusiones cuando un read alineado a un gen se encuentra con otro read que alinea a un gen diferente, y la distancia entre ellos es mayor que la esperada. Este enfoque reduce el número de falsos positivos en comparación con métodos que dependen de la identificación de reads chimeras directas.</p>
+            <pre><code class="language-bash">arriba --input fusion_analysis/Aligned.sortedByCoord.out.bam \
+      --reference /path/to/hg38.fasta \
+      --output fusion_results/arriba_output \
+      --threads 8</code></pre>
+            <p>El output de Arriba incluye un archivo de resultados en formato BEDPE, que detalla el par de genes fusionados, su orientación y la cobertura de reads que respaldan la fusión.</p>
+        </section>
+
+        <section>
+            <h2>FusionCatcher: Enfoque basado en alineamientos de reads individuales</h2>
+            <p><strong>FusionCatcher</strong> es una herramienta más versátil que puede manejar tanto datos de secuenciación en pareja como de lectura única (single-end), y es especialmente útil en datasets clínicos donde la calidad de los datos puede variar. Su algoritmo combina múltiples fuentes de evidencia: alineamientos de reads individuales que abarcan el punto de fusión, reads chimeras y alineamientos de reads que se distribuyen entre genes.</p>
+            <p>Una característica clave de FusionCatcher es su capacidad de identificar fusiones con baja cobertura, lo cual es común en muestras clínicas con bajo contenido de tumor. Además, incluye una base de datos de fusiones conocidas para filtrar resultados y priorizar los eventos biológicamente relevantes.</p>
+            <pre><code class="language-bash">fusioncatcher -i fusion_analysis/Aligned.sortedByCoord.out.bam \
+             --output fusion_results/fusioncatcher_output \
+             --reference hg38 \
+             --threads 8</code></pre>
+            <p>FusionCatcher genera un reporte detallado con los genes fusionados, la estructura de la fusión, el número de reads que la respaldan y su clasificación (por ejemplo, <em>known</em>, <em>novel</em>, <em>putative</em>).</p>
+        </section>
+
+        <section>
+            <h2>Comparación y combinación de resultados</h2>
+            <p>Para aumentar la confianza en los resultados, es recomendable comparar las fusiones detectadas por Arriba y FusionCatcher. Los eventos detectados por ambas herramientas son altamente confiables. Las fusiones detectadas solo por una herramienta deben ser examinadas con cuidado: pueden ser falsos positivos o casos de baja cobertura.</p>
+            <p>Se puede utilizar herramientas como <code>bedtools intersect</code> para obtener la intersección de los resultados:</p>
+            <pre><code class="language-bash">bedtools intersect -a arriba_output.bedpe -b fusioncatcher_output.fusions.txt -wa -wb &gt; common_fusions.txt</code></pre>
+            <p>Este enfoque combinado es fundamental en análisis clínicos, donde la precisión es crucial para decisiones terapéuticas.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de variantes de fusión en tumores requiere herramientas especializadas que puedan manejar la complejidad y variabilidad de los datasets clínicos. <strong>Arriba</strong> ofrece alta precisión en datos de pareja de lectura, aprovechando el patrón de alineamiento de reads, mientras que <strong>FusionCatcher</strong> proporciona flexibilidad y sensibilidad en condiciones de baja cobertura o datos de lectura única. Su uso conjunto mejora la confiabilidad de los hallazgos y es esencial en contextos diagnósticos y de investigación en oncología.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar datos sin calidad previa:</strong> siempre filtrar reads de baja calidad y realizar QC con herramientas como <code>FastQC</code> y <code>MultiQC</code>.</li>
+                <li><strong>Ignorar el contexto biológico:</strong> priorizar fusiones que involucren genes conocidos en oncología (por ejemplo, <code>BCR-ABL1</code>, <code>RET-CCDC6</code>) y evaluar el contexto funcional.</li>
+                <li><strong>Confundir filtros de cobertura:</strong> establecer umbrales mínimos de cobertura de reads (por ejemplo, ≥3 reads soportando la fusión).</li>
+                <li><strong>Usar una sola herramienta:</strong> combinar resultados de Arriba y FusionCatcher para aumentar la robustez del análisis.</li>
+                <li><strong>Olvidar la validación:</strong> confirmar fusiones sospechosas con RT-PCR o secuenciación directa si es posible.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

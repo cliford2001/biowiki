@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de interacciones entre genes y microARN con miRDB y TargetScan</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de interacciones entre genes y microARN con miRDB y TargetScan</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: la regulación post-transcripcional por microARN</h2>
+      <p>Los microARN (miRNA) son pequeñas moléculas de ARN no codificante (20–24 nucleótidos) que regulan la expresión génica al unirse a secuencias complementarias en el ARN mensajero (ARNm) de genes diana, generalmente en su región 3' no traducida (3'UTR). Este proceso puede inducir degradación del ARNm o inhibir su traducción, afectando así procesos biológicos clave como el desarrollo, el metabolismo y la respuesta a estímulos. El modelado preciso de estas interacciones es esencial para comprender mecanismos moleculares en enfermedades como el cáncer, donde los miRNA están frecuentemente deregulados.</p>
+      <p>La predicción de dianas de miRNA se basa en principios de complementariedad de secuencias y estabilidad energética del complejo ARN-ARN. Dos herramientas computacionales ampliamente utilizadas para este fin son <strong>miRDB</strong> y <strong>TargetScan</strong>. Aunque ambas comparten el objetivo de identificar dianas biológicamente relevantes, emplean enfoques distintos: miRDB se centra en redes neuronales profundas entrenadas en datos experimentales, mientras que TargetScan utiliza un modelo basado en reglas biológicas y conservación evolutiva.</p>
+    </section>
+
+    <section>
+      <h2>miRDB: predicción basada en aprendizaje profundo</h2>
+      <p><strong>miRDB</strong> (miRNA target database) es una herramienta web que utiliza <em>deep learning</em> para predecir dianas de miRNA. Su modelo se entrena con datos experimentales de expresión génica y resultados de ensayos de luciferasa, permitiendo una alta precisión en la identificación de interacciones funcionales. El sistema evalúa múltiples factores, incluyendo la complementariedad entre el miRNA (especialmente en su región 2–8, conocida como "seed region") y el ARNm, el contexto alrededor de la secuencia diana, y la presencia de sitios múltiples para el mismo miRNA.</p>
+      <p>El resultado se presenta como una puntuación de predecibilidad ("target score") que indica la probabilidad de que una interacción sea funcional. Las dianas con puntuaciones altas (>90) se consideran altamente confiables. Además, miRDB permite buscar por miRNA individual o por ARNm, y ofrece análisis de enriquecimiento funcional de las dianas predichas.</p>
+      <pre><code>curl -X POST https://mirdb.org/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"mirna": "hsa-miR-21-5p", "seq": "UAGCUUAUCAGGUUGUGUGGUG"}'</code></pre>
+      <p>Este ejemplo muestra una solicitud POST a la API de miRDB para predecir dianas del miRNA hsa-miR-21-5p. El resultado incluye una lista de genes diana con sus puntuaciones.</p>
+    </section>
+
+    <section>
+      <h2>TargetScan: modelado basado en reglas biológicas y conservación</h2>
+      <p><strong>TargetScan</strong> es una plataforma de predicción de dianas de miRNA que combina reglas biológicas con el análisis de conservación evolutiva de secuencias. Su modelo evalúa la complementariedad del miRNA con el ARNm, especialmente en la región 2–8 del miRNA ("seed match"), y considera el número de sitios de unión, su posición, y la presencia de "compensatory pairing" en la región 3' del miRNA.</p>
+      <p>Un aspecto distintivo de TargetScan es su uso de un "conservation score" que mide cuán conservada es una secuencia diana en múltiples especies. Las dianas con alta conservación evolutiva son más propensas a ser funcionales. Además, TargetScan proporciona puntuaciones de "context score" que integran el contexto local del sitio diana, como el contenido de ARN y la estructura secundaria.</p>
+      <p>Los resultados se clasifican en tipos de unión: "8mer", "7mer-m8", "7mer-A1", y "6mer", con los primeros siendo más fuertes y más confiables. TargetScan también ofrece una base de datos con dianas experimentales y una interfaz para visualizar resultados.</p>
+      <pre><code>python3 -m targetscan \
+  --mirna hsa-miR-21-5p \
+  --target-utr GCGGACUUAGCUUAUCAGGUUGUGUGUGGUGGUGAAGUGGUGUAGCGGUGU \
+  --species human</code></pre>
+      <p>Este comando ejecuta una predicción en TargetScan (si se dispone de una versión local o API) para un ARNm específico, devolviendo una lista de puntuaciones y tipos de unión.</p>
+    </section>
+
+    <section>
+      <h2>Comparación y uso integrado de ambos enfoques</h2>
+      <p>Aunque miRDB y TargetScan son herramientas independientes, su uso combinado puede aumentar la confiabilidad de las predicciones. Se recomienda identificar dianas comunes entre ambas herramientas como candidatos de alto valor, ya que la coincidencia de predicciones indica una mayor probabilidad de que la interacción sea funcional.</p>
+      <p>Además, se puede integrar el análisis con herramientas de biología de redes, como <strong>STRING</strong> o <strong>GeneMANIA</strong>, para explorar las vías funcionales en las que participan los genes diana. Estos enfoques permiten pasar de una lista de dianas a una red funcional que puede ser evaluada mediante análisis de enriquecimiento (GO, KEGG).</p>
+      <pre><code>library(deseq2)
+library(mirdb)
+
+# Cargar datos de expresión y predicciones de miRDB
+expr_data &lt;- read.csv("expression_data.csv", row.names = 1)
+dianas_mirdb &lt;- read.csv("dianas_mirdb.csv")
+
+# Identificar genes con expresión alterada y dianas
+upregulated_genes &lt;- rownames(expr_data)[expr_data$fold_change &gt; 1.5]
+dianas_comunes &lt;- intersect(upregulated_genes, dianas_mirdb$gene)
+</code></pre>
+      <p>Este fragmento de R muestra cómo integrar datos de expresión diferencial con dianas predichas por miRDB para identificar genes que podrían estar regulados por miRNA en un contexto de estudio específico.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El modelado de interacciones entre genes y microARN mediante herramientas como miRDB y TargetScan es una piedra angular del análisis funcional de ARN no codificantes. miRDB aporta una precisión alta mediante aprendizaje profundo y datos experimentales, mientras que TargetScan ofrece una base biológica sólida con enfoque en la conservación evolutiva. Su uso conjunto mejora la confiabilidad de las predicciones y permite una integración más profunda con análisis de expresión diferencial y redes biológicas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No confundir predicción con validación funcional:</strong> Las predicciones son solo hipótesis. Siempre se debe validar experimentalmente (por ejemplo, mediante ensayos de luciferasa o edición genética).</li>
+        <li><strong>Evitar el uso de datos no actualizados:</strong> Asegúrese de usar versiones recientes de las bases de datos (miRDB 7.0+, TargetScan 8.0+).</li>
+        <li><strong>No ignorar el contexto biológico:</strong> Un alto score no garantiza funcionalidad. Evalúe si el gene diana está expresado en el tejido o condición de estudio.</li>
+        <li><strong>Usar ambas herramientas en paralelo:</strong> Las dianas comunes entre miRDB y TargetScan son las más fiables.</li>
+        <li><strong>Validar conservación evolutiva:</strong> En TargetScan, priorice dianas con alto conservation score, especialmente si el estudio es en especies modelo.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

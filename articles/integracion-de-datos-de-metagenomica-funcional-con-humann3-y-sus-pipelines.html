@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos de metagenómica funcional con HUMAnN3 y sus pipelines</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos de metagenómica funcional con HUMAnN3 y sus pipelines</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El poder del análisis funcional en metagenómica</h2>
+      <p>La metagenómica funcional permite explorar no solo qué microorganismos están presentes en un microbioma, sino también qué funciones biológicas están activas en ese ecosistema. HUMAnN3 (HMP Unified Metabolic Analysis Network) es una de las herramientas más robustas para este propósito, transformando datos de secuenciación de DNA en perfiles funcionales detallados. Sin embargo, la verdadera potencia de HUMAnN3 se revela cuando se integran sus resultados con otros tipos de datos – como metagenómica taxonómica, metatranscriptómica o datos clínicos – para obtener una visión más completa del microbioma. Este artículo explora los principios y prácticas clave de la integración de datos funcionales obtenidos con HUMAnN3, destacando las herramientas y pipelines que facilitan este proceso.</p>
+    </section>
+
+    <section>
+      <h2>Desde el alineamiento a la función: el pipeline de HUMAnN3</h2>
+      <p>El pipeline de HUMAnN3 se divide en tres fases principales: (1) mapeo de reads a genes funcionales, (2) agregación de información a nivel de vía metabólica, y (3) análisis de resultados. En la primera etapa, HUMAnN3 utiliza alineadores como <code>bowtie2</code> o <code>mmseqs2</code> para mapear reads de secuenciación de DNA a una base de datos de genes funcionales (HUMAnN3’s UniRef90 database). Esta base de datos es la clave, ya que permite la unificación de datos de diferentes organismos al agrupar genes similares.</p>
+
+      <p>En la etapa de agregación, los conteos de genes se suman y se normalizan para obtener abundancias por vía metabólica. HUMAnN3 incluye un módulo de normalización por longitud de vía, similar al concepto de RPKM/FPKM, y ofrece opciones para normalización por abundancia total (como en CPM). Los resultados se generan en formatos tabulados estándar, como <code>path_abundance.tsv</code> y <code>gene_abundance.tsv</code>, que son fáciles de importar en R, Python o herramientas de visualización.</p>
+    </section>
+
+    <section>
+      <h2>Integración de datos funcionales con otros tipos de datos</h2>
+      <p>La integración no es solo una opción; es una necesidad para generar conocimiento biológico. Una de las aplicaciones más comunes es combinar los perfiles funcionales de HUMAnN3 con datos taxonómicos, generados por herramientas como <code>MetaPhlAn</code> (que también forma parte del ecosistema HUMAnN). Esto permite responder preguntas como: &quot;¿Qué vías metabólicas están activas en los microorganismos del género <em>Bacteroides</em>?&quot;.</p>
+
+      <p>En R, este tipo de integración se puede realizar fácilmente con <code>tidyverse</code>:</p>
+
+      <pre><code>library(tidyverse)
+
+# Cargar datos funcionales de HUMAnN3
+functional_data &lt;- read_tsv("path_abundance.tsv")
+
+# Cargar datos taxonómicos de MetaPhlAn
+taxonomy_data &lt;- read_tsv("metaphlan3_output.tsv")
+
+# Fusionar datos por identificador de muestra (por ejemplo, "sample_id")
+combined_data &lt;- functional_data %&gt;%
+  inner_join(taxonomy_data, by = "sample_id") %&gt;%
+  select(sample_id, path, abundance, genus, species)
+</code></pre>
+
+      <p>Esta integración permite análisis más profundos, como correlaciones entre taxones y vías funcionales, o el diseño de redes de interacción microbiana.</p>
+
+      <h3>Integración con datos clínicos y de fenotipo</h3>
+      <p>La integración con datos clínicos (edad, sexo, enfermedad, tratamiento) permite explorar las relaciones entre el estado funcional del microbioma y el fenotipo del huésped. Por ejemplo, se puede usar <code>DESeq2</code> en R para detectar vías metabólicas diferencialmente abundantes entre pacientes con enfermedad inflamatoria intestinal (IBD) y controles:</p>
+
+      <pre><code>library(DESeq2)
+
+# Crear diseño experimental
+sample_info &lt;- read_tsv("sample_metadata.tsv")
+
+# Crear objeto DESeqDataSet
+dds &lt;- DESeqDataSetFromMatrix(countData = functional_counts,
+                              colData = sample_info,
+                              design = ~ disease_status)
+
+# Realizar análisis diferencial
+dds &lt;- DESeq(dds)
+results &lt;- results(dds)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos funcionales obtenidos con HUMAnN3 es un pilar fundamental del análisis moderno del microbioma. Al combinar perfiles funcionales con datos taxonómicos, transcriptómicos o clínicos, los investigadores pueden trascender la simple identificación de microorganismos para comprender su papel funcional en ecosistemas complejos. Los pipelines de HUMAnN3 están diseñados para facilitar esta integración, generando resultados en formatos abiertos y estándar que son compatibles con un amplio rango de herramientas bioinformáticas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar la normalización:</strong> siempre normaliza las abundancias funcionales según el tamaño de la vía o el total de lecturas para evitar sesgos. HUMAnN3 ofrece opciones, pero debes elegir la adecuada según tu pregunta.</li>
+        <li><strong>Usar datos sin validación:</strong> verifica que los archivos de entrada (reads) estén bien limpiados y que no haya contaminación de datos de otros tipos (por ejemplo, secuencias de ADN genómico del huésped).</li>
+        <li><strong>Integrar sin cuidado:</strong> asegúrate de que las muestras en los diferentes conjuntos de datos (funcionales, taxonómicos, clínicos) estén alineadas por identificador único. Usa <code>join</code> o <code>merge</code> con precaución.</li>
+        <li><strong>Asumir que todos los genes de una vía están activos:</strong> una vía puede estar presente pero no activa. Considera complementar con datos de metatranscriptómica (por ejemplo, usando <code>Salmon</code> o <code>kallisto</code>).</li>
+        <li><strong>Usar HUMAnN3 sin actualizar:</strong> la base de datos de genes se actualiza periódicamente. Usa <code>humann_config</code> para verificar y actualizar la configuración.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

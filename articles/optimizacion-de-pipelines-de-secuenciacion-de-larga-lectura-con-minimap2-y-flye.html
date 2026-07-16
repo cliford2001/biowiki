@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización de pipelines de secuenciación de larga lectura con Minimap2 y Flye</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización de pipelines de secuenciación de larga lectura con Minimap2 y Flye</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué optimizar el alineamiento y ensamblaje de lecturas largas</h2>
+            <p>La secuenciación de larga lectura (Long-Read Sequencing), impulsada por tecnologías como PacBio HiFi y Oxford Nanopore, ha revolucionado el ensamblaje genómico al permitir la lectura de fragmentos de DNA de varios miles de pares de bases. Sin embargo, el análisis de estos datos requiere pipelines especializados que manejen su alta tasa de error y gran tamaño. Minimap2 y Flye son dos herramientas fundamentales en este flujo: Minimap2 para el alineamiento preciso de lecturas a un genoma de referencia o entre sí, y Flye para el ensamblaje de de novo de genomas complejos. Optimizar su uso no solo mejora la calidad del ensamblaje final, sino que también reduce significativamente el tiempo de cómputo y el uso de memoria.</p>
+            <p>Este artículo explora estrategias clave para maximizar el rendimiento de estos dos componentes, destacando ajustes de parámetros, uso eficiente de recursos y buenas prácticas que garantizan resultados robustos y reproducibles en análisis genómicos de alto nivel.</p>
+        </section>
+
+        <section>
+            <h2>Minimap2: Parámetros críticos para el alineamiento de largas lecturas</h2>
+            <p>Minimap2 es un alineador de alta velocidad que maneja lecturas de larga duración con gran eficiencia. Su correcta configuración es esencial para evitar alineamientos incorrectos o la pérdida de información. El primer paso es elegir el modo adecuado según el tipo de dato:</p>
+
+            <ul>
+                <li><strong>Para lecturas de PacBio (SMRT) o Nanopore:</strong> usar <code>-x map-pb</code> o <code>-x map-ont</code> para optimizar el alineamiento considerando la tasa de error típica de cada tecnología.</li>
+                <li><strong>Para lecturas HiFi de PacBio:</strong> usar <code>-x map-hifi</code> para aprovechar la alta precisión y reducir el ruido.</li>
+            </ul>
+
+            <p>Además, el parámetro <code>--secondary=no</code> puede reducir el tiempo de ejecución al evitar el cálculo de alineamientos secundarios. En escenarios con alto contenido repetitivo, el uso de <code>--no-softclip</code> puede evitar falsos positivos en regiones difíciles.</p>
+
+            <h3>Ejemplo de uso eficiente:</h3>
+            <pre><code>minimap2 -x map-ont -t 8 -a -o alineamiento.paf lecturas.fastq referencia.fasta</code></pre>
+            <p>Este comando alinea lecturas de Nanopore a una referencia usando 8 hilos, genera salidas en formato PAF (Portable Alignment Format) y mantiene el alineamiento de mejor calidad.</p>
+        </section>
+
+        <section>
+            <h2>Flye: Ajustes para ensamblaje de de novo de alta calidad</h2>
+            <p>Flye es un ensamblador de de novo diseñado específicamente para datos de larga lectura. Su rendimiento depende críticamente de la calidad del alineamiento de entrada. Una buena práctica es preprocesar los datos con herramientas como <strong>canu</strong> o <strong>guppy</strong> antes de pasarlos a Flye, pero cuando se usa directamente, la configuración de parámetros es clave:</p>
+
+            <ul>
+                <li><strong><code>--nano-raw</code>:</strong> Especifica que las lecturas son de Nanopore sin corrección (no recomendado para datos de alta calidad).</li>
+                <li><strong><code>--pacbio</code>:</strong> Para datos de PacBio SMRT (sin corrección).</li>
+                <li><strong><code>--hifi</code>:</strong> Para datos de PacBio HiFi, que ofrecen mayor precisión.</li>
+                <li><strong><code>--threads</code>:</strong> Ajustar según la cantidad de CPU disponible. No exceder el número de núcleos reales.</li>
+            </ul>
+
+            <h3>Ejemplo de ensamblaje con datos HiFi:</h3>
+            <pre><code>flye --hifi lecturas.hifi.fastq --threads 12 --out-dir ensamblaje --genome-size 3.5m</code></pre>
+            <p>Este comando inicia un ensamblaje con datos HiFi, usando 12 hilos y estimando un tamaño genómico de 3.5 millones de pares de bases.</p>
+
+            <p>Para mejorar la calidad del ensamblaje, se recomienda usar <code>--plasmid</code> si se sospecha la presencia de plásmidos, y <code>--polish</code> para realizar una corrección posterior con herramientas como <strong>medaka</strong> o <strong>pilon</strong>.</p>
+        </section>
+
+        <section>
+            <h2>Integración y optimización del pipeline completo</h2>
+            <p>El flujo ideal combina Minimap2 y Flye en una secuencia lógica:</p>
+
+            <ol>
+                <li>Preprocesar lecturas (corrección de errores si es necesario).</li>
+                <li>Usar Minimap2 para alinear lecturas a un genoma de referencia (para control de calidad) o entre sí (para ensamblaje).</li>
+                <li>Utilizar los resultados del alineamiento como entrada para Flye, especialmente si se trabaja con datos de referencia parcial o se busca un ensamblaje híbrido.</li>
+                <li>Polinizar el ensamblaje final con herramientas como <strong>medaka</strong> (para datos de Nanopore) o <strong>pilon</strong> (para datos de PacBio).</li>
+            </ol>
+
+            <p>Un enfoque avanzado es usar Minimap2 con <code>--secondary=no</code> y filtrar los alineamientos por cobertura antes de el ensamblaje, para evitar que regiones repetitivas distorsionen el resultado.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>Optimizar pipelines de secuenciación de larga lectura con Minimap2 y Flye implica seleccionar parámetros adecuados según el tipo de dato (HiFi, SMRT, ONT), gestionar eficientemente los recursos computacionales y seguir buenas prácticas de preprocesamiento y validación. Minimap2 debe configurarse con modos específicos para cada tecnología, mientras que Flye requiere una estimación precisa del tamaño genómico y ajustes de threads. La integración de ambos herramientas en un flujo estructurado mejora la calidad del ensamblaje y reduce el tiempo de cómputo.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Evitar parámetros genéricos:</strong> No usar <code>-x map-ont</code> con datos HiFi o viceversa. La elección incorrecta reduce la precisión.</li>
+                <li><strong>Limitar threads:</strong> Ajustar <code>--threads</code> a menos de los núcleos disponibles puede causar ineficiencia. No exceder los núcleos físicos.</li>
+                <li><strong>Verificar tamaño genómico:</strong> Estimar correctamente el tamaño del genoma con <strong>genomesize.py</strong> o <strong>merqury</strong> es crucial para Flye.</li>
+                <li><strong>Usar corrección de errores:</strong> Siempre preprocesar lecturas con herramientas como <strong>guppy</strong> (Nanopore) o <strong>canu</strong> antes de Flye.</li>
+                <li><strong>Validar resultados:</strong> Usar herramientas como <strong>quast</strong> o <strong>merqury</strong> para evaluar el ensamblaje final.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

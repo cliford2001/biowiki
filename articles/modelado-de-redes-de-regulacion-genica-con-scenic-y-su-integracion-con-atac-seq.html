@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de redes de regulación génica con SCENIC y su integración con ATAC-seq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de redes de regulación génica con SCENIC y su integración con ATAC-seq</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>El modelado de redes de regulación génica es una clave para comprender cómo los factores de transcripción (TFs) controlan la expresión génica en células y tejidos. La integración de datos de secuenciación de cromatina abierta (ATAC-seq) con análisis de expresión génica permite una inferencia más robusta y biológicamente relevante de estas redes. SCENIC (Single-Cell rEgulatory Network Inference and Clustering) se ha consolidado como una herramienta de referencia para esta tarea, especialmente en contextos de célula única. Este artículo explora el flujo de trabajo de SCENIC, desde el preprocesamiento de datos hasta la construcción y validación de redes reguladoras, destacando su integración con ATAC-seq y las mejores prácticas para obtener resultados biológicamente significativos.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo</h2>
+
+      <h3>Preprocesamiento de datos ATAC-seq y RNA-seq</h3>
+      <p>El primer paso consiste en el preprocesamiento independiente de los datos ATAC-seq y RNA-seq. Para ATAC-seq, se recomienda alinear los reads a un genoma de referencia usando herramientas como <code>bowtie2</code> o <code>STAR</code>, y luego detectar picos de accesibilidad con <code>MACS2</code> o <code>HOMER</code>. Para RNA-seq, los reads se alinean con <code>STAR</code> o <code>kallisto</code>, y se cuantifican los genes usando <code>featureCounts</code> o <code>salmon</code>. Es fundamental mantener la consistencia en el genoma y la versión del genoma entre ambos conjuntos de datos.</p>
+
+      <h3>Construcción de las redes reguladoras con SCENIC</h3>
+      <p>SCENIC se basa en la identificación de correlaciones entre la actividad de factores de transcripción (TFs) y la expresión génica. El proceso comienza con la creación de una <em>regulon</em> para cada TF, definida como un conjunto de genes cuyas promociones están asociadas a un TF específico. Esta asociación se infiere usando el <em>regulatory motif</em> (motivo regulador) del TF, obtenido de bases de datos como <code>TRRUST</code>, <code>ENCODE</code>, o <code>ChIP-seq</code> publicadas. A continuación, se calcula la <em>regulon activity</em> (actividad del regulón) para cada célula, que mide la expresión de los genes en el regulón, corregida por la expresión general del genoma.</p>
+
+      <h3>Integración con ATAC-seq</h3>
+      <p>La integración con ATAC-seq es un paso clave para aumentar la especificidad del modelo. SCENIC utiliza la accesibilidad cromatina como una señal directa de la actividad del TF en cada célula. En lugar de depender únicamente de la correlación entre expresión génica y motif, se puede usar la frecuencia de los motivos de TF en regiones abiertas (peak regions) para priorizar las asociaciones. Esto se realiza mediante el cálculo de una <em>chromatin accessibility score</em> para cada TF, que combina la presencia del motivo con la profundidad de la señal ATAC-seq en regiones cercanas. Esta integración mejora la capacidad de SCENIC para distinguir entre activos y pasivos en la regulación.</p>
+
+      <h3>Aplicación y validación</h3>
+      <p>Una vez construidas las redes, se pueden usar para tareas como la identificación de tipos celulares, la inferencia de estados celulares y la predicción de respuestas a tratamientos. La validación se realiza mediante comparación con datos de ChIP-seq, perturbaciones genéticas (como CRISPRa/i), o análisis de expresión de TFs reportados. Además, se pueden aplicar técnicas de análisis de red (como análisis de centralidad) para identificar TFs centrales en las redes.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>SCENIC ofrece una plataforma poderosa para modelar redes de regulación génica a partir de datos de expresión y accesibilidad cromatina. Su integración con ATAC-seq permite una inferencia más precisa y biológicamente realista de la actividad de los factores de transcripción, reduciendo los falsos positivos y mejorando la interpretabilidad de los resultados. Este enfoque es especialmente valioso en estudios de desarrollo, enfermedad y respuesta a fármacos, donde la regulación génica subyacente es clave.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar motivos de TF no validados:</strong> Siempre prioriza motivos de TF de bases de datos confiables (ENCODE, TRRUST) y verifica su relevancia biológica en el contexto celular.</li>
+        <li><strong>Ignorar la calidad de los datos:</strong> Realiza análisis de control de calidad en los datos ATAC-seq (fracción de reads en picos, ruido de fondo) y RNA-seq (porcentaje de reads en exones, ratio de genes expresados).</li>
+        <li><strong>Usar un genoma inconsistente:</strong> Asegúrate de que tanto ATAC-seq como RNA-seq se hayan alineado al mismo genoma (por ejemplo, hg38 o mm10).</li>
+        <li><strong>Analizar sin filtrar células:</strong> Filtra células con baja expresión total o baja cantidad de reads en picos para evitar ruido.</li>
+        <li><strong>Interpretar sin validación:</strong> Nunca asumas que un regulón identificado es biológicamente relevante sin validar con datos externos (ChIP-seq, perturbaciones).</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

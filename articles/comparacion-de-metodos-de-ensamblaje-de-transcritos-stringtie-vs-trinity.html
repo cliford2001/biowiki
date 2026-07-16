@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparación de métodos de ensamblaje de transcritos: StringTie vs. Trinity</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Comparación de métodos de ensamblaje de transcritos: StringTie vs. Trinity</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El ensamblaje de transcritos es un paso fundamental en el análisis de datos de secuenciación de ARN (RNA-seq) que permite reconstruir los ARNm a partir de lecturas de corta longitud. Dos de las herramientas más ampliamente utilizadas para este fin son <strong>StringTie</strong> y <strong>Trinity</strong>. Aunque ambas comparten el objetivo de reconstruir la transcripción completa, sus enfoques algorítmicos, supuestos biológicos y escenarios de uso son significativamente diferentes. Entender sus diferencias permite elegir la herramienta adecuada según el tipo de experimento, la calidad de los datos y los objetivos biológicos.</p>
+        </section>
+
+        <section>
+            <h2>Enfoques algorítmicos</h2>
+            <h3>StringTie: Ensamblaje basado en alineamiento</h3>
+            <p>StringTie se diseña para funcionar en conjunto con un alineador de lecturas, como <code>STAR</code> o <code>Hisat2</code>. Su enfoque consiste en tomar un alineamiento de lecturas (<code>.bam</code>) como entrada y reconstruir transcritos a partir de los patrones de cobertura en el genoma. Utiliza un modelo de grafo de ruta (string graph) donde los nodos representan exones y los arcos representan uniones exónicas. La estrategia se basa en el principio de que las lecturas alineadas a regiones contiguas deben pertenecer a la misma transcripción. StringTie es especialmente eficaz cuando se dispone de un buen genoma de referencia y cuando se busca un ensamblaje de alta precisión en regiones bien caracterizadas.</p>
+
+            <h3>Trinity: Ensamblaje de *de novo*</h3>
+            <p>En contraste, Trinity está diseñada para el ensamblaje <em>de novo</em>, es decir, sin requerir un genoma de referencia. Utiliza un grafo de De Bruijn para representar las lecturas, agrupando secuencias comunes en componentes. Luego, realiza un ensamblaje por caminos (path-based assembly) para reconstruir transcritos a partir de estos componentes. Es ideal para organismos con genomas incompletos, no secuenciados, o cuando se buscan isoformas nuevas, alternativas o fusionadas que no se encuentran en la referencia. Su gran ventaja radica en su capacidad para descubrir transcripciones desconocidas.</p>
+        </section>
+
+        <section>
+            <h2>Aplicaciones y casos de uso</h2>
+            <p><strong>StringTie</strong> es la herramienta preferida cuando:</p>
+            <ul>
+                <li>Se dispone de un genoma de referencia bien anotado.</li>
+                <li>El objetivo es cuantificar isoformas conocidas con precisión.</li>
+                <li>Se desea integrar los resultados con otros análisis de expresión diferencial (por ejemplo, con <code>DESeq2</code> o <code>edgeR</code>).</li>
+                <li>El experimento es de tipo "estándar" con muestras de referencia bien definidas.</li>
+            </ul>
+
+            <p><strong>Trinity</strong> es más adecuado cuando:</p>
+            <ul>
+                <li>No existe un genoma de referencia de calidad.</li>
+                <li>Se busca descubrir nuevas isoformas, fusiones génicas o transcritos no anotados.</li>
+                <li>Se analiza un organismo modelo poco estudiado o no comercial.</li>
+                <li>Se requiere un ensamblaje completo sin asunción previa del genoma.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <p><strong>Errores frecuentes:</strong></p>
+            <ul>
+                <li>Usar StringTie sin alineamiento previo o con un alineamiento de baja calidad.</li>
+                <li>Intentar usar Trinity en datos con genoma de referencia disponible, lo que puede generar resultados redundantes y ruidosos.</li>
+                <li>Ignorar la calidad de los datos de entrada (mala alineación, baja cobertura).</li>
+                <li>No validar los resultados con herramientas como <code>StringTie</code> con <code>gffcompare</code> o <code>Trinity</code> con <code>TransRate</code>.</li>
+            </ul>
+
+            <p><strong>Buenas prácticas:</strong></p>
+            <ul>
+                <li>Preprocesar los datos con <code>fastp</code> o <code>Trimmomatic</code> antes de alinear.</li>
+                <li>Usar <code>STAR</code> o <code>Hisat2</code> con opciones optimizadas para el tipo de experimento.</li>
+                <li>Verificar la cobertura del genoma y la calidad del ensamblaje.</li>
+                <li>Comparar resultados entre herramientas usando <code>gffcompare</code> cuando es posible.</li>
+                <li>Documentar los parámetros utilizados y el flujo de trabajo completo.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>StringTie y Trinity representan dos enfoques complementarios al ensamblaje de transcritos: StringTie, basado en alineamiento y referencia, ofrece alta precisión en la reconstrucción de isoformas conocidas; Trinity, de *de novo*, excela en el descubrimiento de transcripciones nuevas sin necesidad de genoma de referencia. La elección entre ambos debe basarse en el contexto biológico, la disponibilidad de referencias genómicas y los objetivos del estudio. En muchos casos, el uso combinado de ambas herramientas —por ejemplo, usando Trinity para descubrimiento y StringTie para cuantificación— puede ofrecer un panorama más completo del transcriptoma.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

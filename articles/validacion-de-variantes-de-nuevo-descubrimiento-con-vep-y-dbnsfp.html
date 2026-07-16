@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validación de variantes de nuevo descubrimiento con VEP y dbNSFP</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Validación de variantes de nuevo descubrimiento con VEP y dbNSFP</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>En el análisis de variantes genéticas, especialmente en estudios de descubrimiento de nuevas variantes (novel variants), la anotación funcional es un paso crítico para evaluar su posible impacto biológico. Las herramientas <strong>VEP (Variant Effect Predictor)</strong> y <strong>dbNSFP</strong> son fundamentales en este proceso. VEP proporciona una anotación detallada de los efectos de las variantes sobre genes y enzimas, mientras que dbNSFP integra información de múltiples fuentes sobre el impacto funcional, conservación, y asociación con enfermedades.</p>
+      <p>La validación de variantes de nuevo descubrimiento no se limita a su identificación, sino que requiere una evaluación rigurosa de su potencial patogenicidad. En este artículo, explicaremos cómo combinar VEP y dbNSFP para validar variantes recién descubiertas, asegurando precisión, reproducibilidad y coherencia con la evidencia científica actual.</p>
+    </section>
+
+    <section>
+      <h2>Preparación de los datos</h2>
+      <p>Antes de anotar las variantes, es esencial tener un archivo de variantes en formato <strong>BCF</strong> o <strong>VCF</strong> (variant call format), que contenga al menos las columnas necesarias: <code>CHROM</code>, <code>POS</code>, <code>ID</code>, <code>REF</code>, <code>ALT</code>, y <code>INFO</code>. Si se trabaja con variantes de nuevo descubrimiento, es recomendable filtrar por calidad (por ejemplo, <code>QUAL > 30</code>), frecuencia en poblaciones (como gnomAD), y soporte de lectura (DP).</p>
+      <pre><code>bcftools view -i 'QUAL &gt; 30 &amp;&amp; AF &lt; 0.01' raw_variants.vcf.gz -O z -o filtered_variants.vcf.gz</code></pre>
+    </section>
+
+    <section>
+      <h2>Análisis con VEP</h2>
+      <p>VEP es una herramienta de la EBI (European Bioinformatics Institute) que anota variantes con información funcional, incluyendo efectos sobre genes (síntesis de proteína, splicing), consecuencias (missense, nonsense, frameshift), y puntuaciones de impacto como CADD.</p>
+      <p>Para anotar variantes, se requiere un archivo de entrada VCF (o BCF) y una base de datos local o en línea. Se recomienda usar una base de datos local para mayor eficiencia.</p>
+      <pre><code>vep --input_file filtered_variants.vcf.gz \
+    --output_file annotated_variants.vcf \
+    --cache --dir /path/to/vep/cache \
+    --format vcf --sift b --polyphen b --symbol --hgvs --af --af_1000g --af_gnomad \
+    --minimal --force_overwrite</code></pre>
+      <p>Las opciones clave incluyen:</p>
+      <ul>
+        <li><code>--cache</code>: Usa la base de datos de VEP local.</li>
+        <li><code>--format vcf</code>: Mantiene el formato VCF.</li>
+        <li><code>--sift b</code> y <code>--polyphen b</code>: Anota puntuaciones SIFT y PolyPhen.</li>
+        <li><code>--af_1000g</code> y <code>--af_gnomad</code>: Incluye frecuencias en poblaciones.</li>
+        <li><code>--minimal</code>: Reduce la cantidad de columnas.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Integración con dbNSFP</h2>
+      <p>dbNSFP es una base de datos que integra múltiples fuentes de información funcional, como CADD, REVEL, FATHMM, LRT, y más. Es especialmente útil para evaluar variantes con bajo impacto fenotípico, que pueden no ser detectadas por VEP solo.</p>
+      <p>Para integrar dbNSFP, primero se debe obtener el archivo de dbNSFP en formato VCF (por ejemplo, <code>dbNSFP.vcf.gz</code>), y luego usar <code>bcftools</code> para unirlo con el archivo anotado por VEP.</p>
+      <pre><code>bcftools annotate -a dbNSFP.vcf.gz -c "CHROM,POS,REF,ALT,REVEL,PROTEIN_CHANGE,CADD,GERP++RS,phyloP,1000Gp3_AF,gnomAD_AF" -h -o annotated_with_dbnsfp.vcf.gz filtered_variants.vcf.gz</code></pre>
+      <p>Este comando añade las columnas seleccionadas de dbNSFP al archivo VCF. Es importante verificar que los campos coincidan (por ejemplo, <code>CHROM</code>, <code>POS</code>, <code>REF</code>, <code>ALT</code>).</p>
+    </section>
+
+    <section>
+      <h2>Evaluación y validación</h2>
+      <p>Una vez anotado, el análisis final consiste en filtrar variantes según criterios de interés. Por ejemplo, se pueden seleccionar variantes con:</p>
+      <ul>
+        <li><strong>Impacto funcional alto</strong>: <code>Consequence = "stop_gained"</code>, <code>frameshift_variant</code>, <code>nonsense_mediated_decay</code>.</li>
+        <li><strong>Puntuación REVEL > 0.5</strong>: indicador de patogenicidad.</li>
+        <li><strong>CADD > 20</strong>: alto impacto predictivo.</li>
+        <li><strong>Frecuencia en poblaciones baja</strong>: <code>gnomAD_AF &lt; 0.001</code>.</li>
+      </ul>
+      <p>En R, se puede usar <code>vcfR</code> para cargar y filtrar los datos:</p>
+      <pre><code>library(vcfR)
+
+# Cargar el archivo
+vcf <- read.vcfR("annotated_with_dbnsfp.vcf.gz")
+
+# Filtrar
+filtered <- vcfR::select.vcfR(vcf, 
+  filter = "INFO_REVEL > 0.5 &amp;&amp; INFO_CADD &gt; 20 &amp;&amp; INFO_gnomAD_AF &lt; 0.001")
+
+# Guardar
+write.vcfR(filtered, "high_impact_variants.vcf.gz")</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La validación de variantes de nuevo descubrimiento requiere una combinación de herramientas robustas y datos actualizados. VEP proporciona una anotación funcional detallada, mientras que dbNSFP aporta puntuaciones predictivas basadas en múltiples modelos. Juntas, estas herramientas permiten identificar variantes de alto impacto, con baja frecuencia en poblaciones y alta puntuación de patogenicidad, facilitando la selección de candidatas para estudios funcionales posteriores.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar bases de datos actualizadas</strong>: siempre verificar que VEP y dbNSFP estén actualizados (se recomienda usar la última versión).</li>
+        <li><strong>Ignorar frecuencias poblacionales</strong>: variantes con alta frecuencia en gnomAD o 1000 Genomes rara vez son patógenas de novo.</li>
+        <li><strong>Confundir CADD con REVEL</strong>: CADD es una puntuación de daño, REVEL es una puntuación de patogenicidad; usar ambas con cautela.</li>
+        <li><strong>Usar datos sin filtrar</strong>: siempre aplicar filtros de calidad antes de anotar.</li>
+        <li><strong>Combinar bases de datos sin validar coincidencia de coordenadas</strong>: usar <code>bcftools merge</code> o <code>vcf-merge</code> para asegurar consistencia.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

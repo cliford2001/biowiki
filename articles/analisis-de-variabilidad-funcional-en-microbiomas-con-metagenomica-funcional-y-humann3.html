@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de variabilidad funcional en microbiomas con metagenómica funcional y HUMAnN3</title>
+  <meta name="categoria" content="Anotación funcional">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de variabilidad funcional en microbiomas con metagenómica funcional y HUMAnN3</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Qué es el análisis funcional en microbiomas y por qué importa?</h2>
+      <p>El microbioma humano y ambiental está compuesto por miles de especies microbianas cuya presencia y abundancia determinan funciones clave en procesos ecológicos, salud humana y enfermedades. Mientras que el análisis taxonómico (por ejemplo, mediante <code>QIIME2</code> o <code>mothur</code>) describe <em>quién está presente</em>, el análisis funcional busca responder <em>qué están haciendo</em> los microorganismos.</p>
+      <p>La <strong>metagenómica funcional</strong> permite estudiar los genes y vías metabólicas presentes en un microbioma sin necesidad de cultivar microorganismos. En este contexto, <code>HUMAnN3</code> (HMP Unified Metagenomic Analysis Network) se ha consolidado como una de las herramientas más robustas y ampliamente utilizadas para la inferencia funcional a partir de secuencias metagenómicas, especialmente en estudios de microbioma humano.</p>
+    </section>
+
+    <section>
+      <h2>El flujo de trabajo con HUMAnN3: de secuencias a vías funcionales</h2>
+      <p>El proceso de análisis funcional con HUMAnN3 sigue una arquitectura modular basada en el mapeo de lecturas a referencias funcionales. El flujo típico incluye:</p>
+      <ol>
+        <li><strong>Alineamiento de lecturas</strong>: mapeo de secuencias de DNA (de <code>fastq</code>) a bases de datos de genes (como <code>UniRef90</code> o <code>MetaPhlAn</code>).</li>
+        <li><strong>Conteo de genes</strong>: agrupación de alineamientos para obtener un perfil de abundancia genética.</li>
+        <li><strong>Inferencia de vías</strong>: uso de modelos de vías (como <code>KEGG</code>, <code>MetaCyc</code>, <code>MetaCyc</code>) para inferir la actividad de rutas metabólicas a partir de los genes detectados.</li>
+      </ol>
+      <p>HUMAnN3 optimiza este proceso mediante un modelo de mapeo que evita redundancias y mejora la sensibilidad, especialmente en muestras con alta diversidad.</p>
+
+      <h3>Ejecución del pipeline</h3>
+      <p>El comando básico para ejecutar HUMAnN3 es:</p>
+      <pre><code>humann3 --input input_reads.fastq \
+       --output humann_output \
+       --threads 8 \
+       --nucleotide-database uniref90 \
+       --protein-database uniref90 \
+       --pathways
+</code></pre>
+      <p>Este comando genera archivos con contadores de genes y vías, que se pueden usar para análisis estadísticos posteriores.</p>
+    </section>
+
+    <section>
+      <h2>Estudio de la variabilidad funcional entre grupos</h2>
+      <p>Una vez obtenido el perfil funcional, el siguiente paso es evaluar la variabilidad funcional entre grupos de muestras (por ejemplo, pacientes con enfermedad vs. controles). Esto requiere:</p>
+      <ul>
+        <li>Normalización del conteo (por ejemplo, con <code>TMM</code> o <code>DESeq2</code>).</li>
+        <li>Pruebas estadísticas para detectar diferencias significativas (como <code>DESeq2</code> o <code>edgeR</code>).</li>
+        <li>Análisis de componentes principales (<code>PCA</code>) para visualizar la separación funcional.</li>
+      </ul>
+
+      <h3>Ejemplo de análisis en R</h3>
+      <p>Usando <code>DESeq2</code> para identificar vías diferencialmente activas:</p>
+      <pre><code>library(DESeq2)
+library(dplyr)
+
+# Cargar datos de vías
+pathway_counts &lt;- read.table("humann_output/path_abundance.tsv", header=TRUE, row.names=1)
+
+# Preparar diseño
+sample_info &lt;- data.frame(condition = factor(c("control", "disease", "control", "disease")))
+
+# Crear objeto DESeq2
+dds &lt;- DESeqDataSetFromMatrix(countData = pathway_counts,
+                             colData = sample_info,
+                             design = ~ condition)
+
+# Ajustar modelo
+dds &lt;- DESeq(dds)
+
+# Obtener resultados
+results &lt;- results(dds)
+
+# Filtrar y guardar
+sig_results &lt;- results %&gt;%
+  filter(padj &lt; 0.05) %&gt;%
+  arrange(padj)
+
+write.csv(sig_results, "differential_pathways.csv")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variabilidad funcional en microbiomas mediante metagenómica funcional y HUMAnN3 permite descubrir vías metabólicas clave asociadas a condiciones fisiológicas o patológicas. HUMAnN3 ofrece un flujo robusto, eficiente y bien documentado que integra alineamiento, conteo y análisis de vías. Su uso combinado con herramientas estadísticas como <code>DESeq2</code> o <code>edgeR</code> permite identificar diferencias funcionales significativas entre grupos, contribuyendo a la comprensión de la función del microbioma en salud y enfermedad.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar bases de datos actualizadas</strong>: siempre asegurarse de tener las últimas versiones de <code>uniref90</code> y <code>KEGG</code> para evitar sesgos por datos obsoletos.</li>
+        <li><strong>Ignorar la normalización</strong>: los datos de vías deben normalizarse antes del análisis estadístico (evitar análisis directos sobre conteos brutos).</li>
+        <li><strong>Interpretar sin validación</strong>: las vías inferidas por HUMAnN3 son probabilísticas; siempre validar resultados con análisis complementarios (por ejemplo, proteómica o metabolómica).</li>
+        <li><strong>Usar demasiados threads</strong>: ajustar el número de hilos según la memoria disponible; HUMAnN3 puede consumir mucho RAM.</li>
+        <li><strong>Mal manejo de archivos temporales</strong>: usar la opción <code>--no-purge</code> en entornos interactivos y limpiar manualmente si es necesario.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

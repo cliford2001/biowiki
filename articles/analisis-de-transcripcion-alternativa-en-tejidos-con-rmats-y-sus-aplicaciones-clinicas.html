@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de transcripción alternativa en tejidos con rMATS y sus aplicaciones clínicas</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Expresión diferencial">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Análisis de transcripción alternativa en tejidos con rMATS y sus aplicaciones clínicas</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: ¿Qué es la transcripción alternativa y por qué importa?</h2>
+            <p>La transcripción alternativa es un mecanismo fundamental en eucariotas que permite a un solo gen generar múltiples isoformas de ARNm mediante la selección alternativa de exones, sitios de splicing o promotores. Este proceso amplía significativamente la diversidad proteica sin incrementar el número de genes, y está implicado en procesos celulares clave como el desarrollo, la diferenciación y la respuesta inmune.</p>
+            <p>En contextos patológicos, como el cáncer, enfermedades neurodegenerativas y trastornos genéticos, el splicing alternativo se ve alterado. Estas alteraciones pueden ser tanto causa como consecuencia de la enfermedad. Por esta razón, su análisis es crucial para entender los mecanismos moleculares detrás de la patología y para identificar biomarcadores potenciales.</p>
+            <p>Para estudiar estos cambios a gran escala en tejidos, herramientas bioinformáticas como <strong>rMATS</strong> (replicate Multivariate Analysis of Transcript Splicing) se han convertido en estándares de facto. rMATS permite detectar eventos de splicing alternativo diferencial entre condiciones biológicas (por ejemplo, tumor vs. tejido normal) con alta sensibilidad y especificidad, incluso con datos de baja profundidad.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: rMATS y su rol en el análisis de tejidos</h2>
+            <h3>1. Flujo de trabajo típico con rMATS</h3>
+            <p>El análisis de transcripción alternativa con rMATS sigue un flujo bien definido:</p>
+            <ol>
+                <li><strong>Alineamiento de lecturas:</strong> Se alinean los reads de RNA-seq (por ejemplo, con <code>STAR</code> o <code>Hisat2</code>) contra un genoma de referencia.</li>
+                <li><strong>Generación de archivos de splicing:</strong> Se procesan los archivos SAM/BAM generados con herramientas como <code>samtools</code> o <code>htsjdk</code> para extraer información de splicing.</li>
+                <li><strong>Ejecución de rMATS:</strong> Se ejecuta el script principal de rMATS, que compara condiciones (por ejemplo, caso vs. control) para detectar eventos de splicing diferencial.</li>
+                <li><strong>Análisis posterior:</strong> Se interpretan los resultados con herramientas como <code>DESeq2</code> o <code>edgeR</code> para validar diferencias de expresión, y se anotan eventos con <code>gencode</code> o <code>UCSC</code> para entender su impacto funcional.</li>
+            </ol>
+
+            <h3>2. Tipos de eventos de splicing alternativo analizados por rMATS</h3>
+            <p>rMATS detecta cinco tipos principales de eventos de splicing alternativo:</p>
+            <ul>
+                <li><strong>ES (Exon Skipping):</strong> Inclusión o exclusión de un exón.</li>
+                <li><strong>RI (Retained Intron):</strong> Mantenimiento de un intrón en el ARNm maduro.</li>
+                <li><strong>ME (Mutually Exclusive Exons):</strong> Selección de uno de varios exones alternativos.</li>
+                <li><strong>SE (Skipped Exon):</strong> Similar a ES, pero con énfasis en el exón excluido.</li>
+                <li><strong>AF (Alternative 5' Splice Site) / AL (Alternative 3' Splice Site):</strong> Cambio en el sitio de splicing del 5' o 3'.</li>
+            </ul>
+            <p>Cada tipo puede tener implicaciones funcionales distintas, desde la pérdida de dominios proteicos hasta la generación de isoformas con nuevas funciones.</p>
+
+            <h3>3. Ejemplo práctico: Uso de rMATS en datos de tumor vs. tejido normal</h3>
+            <p>A continuación se muestra un fragmento del script de uso típico de rMATS en un estudio de cáncer de mama:</p>
+            <pre><code>python3 /path/to/rMATS/Pairwise/analyze.py \
+    --b1 case_bam1.bam,case_bam2.bam \
+    --b2 control_bam1.bam,control_bam2.bam \
+    --gtf /path/to/gencode.gtf \
+    --output ./results/rmats_output \
+    --nthread 8 \
+    --readLength 150 \
+    --task pair \
+    --lfc 0.5 \
+    --pvalue 0.05</code></pre>
+            <p>Este comando compara dos grupos de muestras (caso y control), utiliza un archivo GTF de referencia, y define umbrales de log2 fold change (LFC) y valor-p para la detección de eventos diferencialmente regulados.</p>
+        </section>
+
+        <section>
+            <h2>Aplicaciones clínicas: de la investigación al diagnóstico</h2>
+            <p>Los hallazgos de splicing alternativo diferencial tienen múltiples aplicaciones clínicas:</p>
+            <ul>
+                <li><strong>Biomarcadores:</strong> Eventos de splicing específicos pueden servir como indicadores de progresión tumoral o respuesta a tratamiento. Por ejemplo, la alteración en el splicing del gen <em>CD44</em> se ha asociado con metástasis en varios tipos de cáncer.</li>
+                <li><strong>Terapias dirigidas:</strong> Algunas terapias, como oligonucleótidos antisentido (ASOs), están diseñadas para corregir errores de splicing. Ejemplos incluyen tratamientos para distrofia muscular de Duchenne (exon skipping).</li>
+                <li><strong>Diagnóstico diferencial:</strong> El perfil de splicing puede ayudar a diferenciar entre subtipos de enfermedades genéticas o tumores, mejorando la precisión diagnóstica.</li>
+            </ul>
+            <p>Además, la integración de rMATS con datos de secuenciación del exoma (WES) o del genoma (WGS) permite identificar mutaciones que afectan sitios de splicing, lo que enriquece el análisis funcional.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de transcripción alternativa mediante rMATS es una herramienta poderosa para investigar los mecanismos moleculares detrás de enfermedades complejas. Al permitir la detección de eventos de splicing diferencial entre tejidos, rMATS contribuye a la identificación de biomarcadores, el desarrollo de terapias dirigidas y la mejora del diagnóstico clínico. Su integración con flujos de trabajo de RNA-seq convencionales lo convierte en una pieza clave en el arsenal del bioinformático clínico.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Uso inadecuado del archivo GTF:</strong> Asegurarse de que el archivo GTF usado coincide con la versión del genoma (hg38, mm10, etc.) y que contiene información de exones y enlaces de splicing.</li>
+                <li><strong>Profundidad de secuenciación insuficiente:</strong> rMATS funciona mejor con al menos 30 millones de reads por muestra, especialmente para detectar eventos de baja frecuencia.</li>
+                <li><strong>Ignorar el control de calidad:</strong> Siempre validar alineamientos (con <code>MultiQC</code> o <code>FastQC</code>) y la calidad de los datos antes de ejecutar rMATS.</li>
+                <li><strong>Interpretación sin validación:</strong> Los eventos detectados deben validarse por RT-PCR o secuenciación de ARNm, especialmente en estudios clínicos.</li>
+                <li><strong>Uso excesivo de umbrales:</strong> Evitar fijar p-values o LFC demasiado estrictos que puedan generar falsos negativos; usar corrección de múltiples pruebas (Benjamini-Hochberg) adecuada.</li>
+            </ul>
+            <p>Finalmente, documentar cada paso del análisis y usar entornos reproducibles (como <code>Snakemake</code> o <code>Nextflow</code>) es fundamental para la validez científica.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrección de sesgos de cobertura en datos de secuenciación de nueva generación con Xicor</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Corrección de sesgos de cobertura en datos de secuenciación de nueva generación con Xicor</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>En el análisis de datos de secuenciación de nueva generación (NGS), los sesgos de cobertura son un problema recurrente que puede distorsionar los resultados de estudios de expresión génica, variantes, o análisis de epigenética. Estos sesgos se manifiestan como variaciones no biológicas en la profundidad de secuenciación a lo largo del genoma, afectando la precisión y la reproducibilidad de los hallazgos. Herramientas como <code>Samtools</code> y <code>Bedtools</code> permiten detectar estos sesgos, pero su corrección requiere métodos estadísticos avanzados.</p>
+            <p><code>Xicor</code> es un paquete de R diseñado específicamente para corregir sesgos de cobertura en datos de NGS mediante un enfoque basado en corrección de covarianza. A diferencia de métodos tradicionales que ajustan la cobertura global o aplican suavizado local, Xicor utiliza un modelo de regresión de tipo <em>quantile regression</em> para estimar y eliminar sesgos sistémicos de forma más robusta, especialmente en datos de RNA-seq y secuenciación exómica.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+
+            <h3>Origen y naturaleza de los sesgos de cobertura</h3>
+            <p>Los sesgos de cobertura pueden tener múltiples orígenes, incluyendo:</p>
+            <ul>
+                <li>Preparación del biblioteca (por ejemplo, preferencia por ciertos fragmentos).</li>
+                <li>Complejidad del genoma (regiones repetitivas, GC alto).</li>
+                <li>Limitaciones técnicas del secuenciador.</li>
+                <li>Errores en el alineamiento (por ejemplo, alineamiento múltiple).</li>
+            </ul>
+            <p>Estos sesgos introducen variabilidad no biológica que puede llevar a falsos positivos o negativos en análisis de diferencial expresión o variantes.</p>
+
+            <h3>Funcionamiento de Xicor</h3>
+            <p>Xicor trabaja sobre archivos de cobertura generados por herramientas como <code>samtools depth</code>. El proceso se divide en tres etapas:</p>
+            <ol>
+                <li><strong>Generación de perfil de cobertura</strong>: se crea un vector de profundidad para cada posición del genoma (usando <code>samtools depth -a</code>).</li>
+                <li><strong>Modelado del sesgo</strong>: se aplica un modelo de regresión cuantílica para estimar el sesgo sistemático en función de variables predictivas (como GC content, posición, o propiedades de los fragmentos).</li>
+                <li><strong>Corrección</strong>: se ajustan los valores de cobertura observados para obtener una versión corregida, que puede usarse en análisis posteriores.</li>
+            </ol>
+
+            <h3>Implementación en R</h3>
+            <p>El siguiente ejemplo muestra cómo usar Xicor en un análisis típico:</p>
+            <pre><code>library(Xicor)
+
+# 1. Generar perfil de cobertura con samtools
+system("samtools depth -a aligned_reads.bam &gt; coverage.txt")
+
+# 2. Cargar datos y crear objeto de entrada
+coverage &lt;- read.table("coverage.txt", header = FALSE, col.names = c("chrom", "pos", "depth"))
+
+# 3. Ajustar modelo de corrección
+model &lt;- xicor_fit(coverage, 
+                   covariates = c("GC_content", "fragment_length"), 
+                   quantiles = c(0.1, 0.5, 0.9))
+
+# 4. Obtener cobertura corregida
+corrected_coverage &lt;- xicor_correct(coverage, model)
+
+# 5. Guardar resultado
+write.table(corrected_coverage, "corrected_coverage.txt", sep="\t", row.names = FALSE, quote = FALSE)</code></pre>
+
+            <p>El paquete Xicor también incluye funciones para visualización de sesgos antes y después de la corrección, como <code>plot_bias()</code> y <code>compare_coverage()</code>, que facilitan la validación del proceso.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La corrección de sesgos de cobertura es un paso crítico para garantizar la validez de los análisis de NGS. Xicor ofrece una solución robusta y estadísticamente fundamentada, especialmente útil en estudios de RNA-seq donde el sesgo de GC y la variabilidad de fragmentos afectan la detección de expresión. Al integrarlo en el flujo de trabajo con herramientas como <code>samtools</code> y <code>R</code>, se mejora la calidad de los datos y se reduce la tasa de falsos descubrimientos, asegurando resultados más confiables y reproducibles.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar datos sin corregir</strong>: nunca realices análisis de diferencial expresión con cobertura cruda si existe evidencia de sesgo.</li>
+                <li><strong>Validar los predictores</strong>: asegúrate de que las variables como <code>GC_content</code> o <code>fragment_length</code> estén correctamente calculadas (por ejemplo, usando <code>bedtools genomecov</code> o <code>picard CollectGcBiasMetrics</code>).</li>
+                <li><strong>No sobreajustar</strong>: usar demasiadas covariables puede llevar a sobreajuste. Evalúa el modelo con diagnósticos (residuales, AIC/BIC).</li>
+                <li><strong>Verificar la salida</strong>: siempre compara el perfil de cobertura antes y después de la corrección usando <code>plot_bias()</code> o <code>compare_coverage()</code>.</li>
+                <li><strong>Documentar el proceso</strong>: registra qué métodos y parámetros se usaron, para garantizar la reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

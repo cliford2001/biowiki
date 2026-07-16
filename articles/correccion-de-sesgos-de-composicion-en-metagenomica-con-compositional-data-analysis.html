@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Corrección de sesgos de composición en metagenómica con compositional data analysis</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="stylesheet" href="../style.css" />
+    <meta name="categoria" content="Control de calidad" />
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Corrección de sesgos de composición en metagenómica con compositional data analysis</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El problema de la composición en metagenómica</h2>
+            <p>
+                En metagenómica, el análisis de comunidades microbianas a partir de datos de secuenciación de alto rendimiento plantea un desafío fundamental: los datos son <strong>composicionales</strong>. Esto significa que las abundancias de los microorganismos se representan como fracciones o proporciones que suman 1 (o 100%), lo que introduce un sesgo estadístico conocido como <em>sesgo de composición</em>. Este sesgo distorsiona las relaciones entre especies, haciendo que una disminución en la abundancia de una especie se interprete erróneamente como un crecimiento en otras, incluso si no hay cambio real.
+            </p>
+            <p>
+                Herramientas comunes como <code>DESeq2</code>, <code>edgeR</code> o <code>Scanpy</code> están diseñadas para datos de expresión genética, donde los valores absolutos son más estables. Cuando se aplican directamente a datos composicionales sin corrección, generan resultados engañosos y falsos positivos en análisis de diferencias de abundancia, correlaciones o clustering.
+            </p>
+        </section>
+
+        <section>
+            <h2>¿Qué es el análisis de datos composicionales (Compositional Data Analysis, CoDA)?</h2>
+            <p>
+                El <strong>análisis de datos composicionales</strong> es un marco estadístico formal para manejar datos que representan partes de un todo. Su fundamento teórico está en la geometría de simplex y se basa en la transformación de datos mediante métodos como la <em>transformación log-ratio</em> (log-ratio transformation), especialmente la <strong>transformación allogarítmica</strong> (alr) o la <strong>transformación isométrica</strong> (ilr).
+            </p>
+            <p>
+                La idea clave es que las relaciones entre componentes deben evaluarse en términos de sus <em>razones de abundancia</em>, no en sus valores absolutos o relativos. Por ejemplo, en lugar de comparar la abundancia de <em>Bacteroides</em> con <em>Prevotella</em> directamente, se analiza el logaritmo de su cociente: <code>log(Bacteroides / Prevotella)</code>. Esta transformación elimina el efecto de la suma constante y permite un análisis estadístico válido.
+            </p>
+        </section>
+
+        <section>
+            <h2>Aplicación práctica: Transformación y análisis con R</h2>
+            <p>
+                La librería <code>compositions</code> en R proporciona herramientas robustas para CoDA. A continuación, un ejemplo de procesamiento de datos metagenómicos:
+            </p>
+            <pre><code>library(compositions)
+
+# Supongamos que 'data' es una matriz de contadores (muestras x especies)
+# y ya ha sido filtrada y normalizada (por ejemplo, con TMM o CSS)
+
+# Convertir a datos composicionales (por ejemplo, con log-ratio)
+data_compositional &lt;- ilr(data) # Transformación isométrica
+
+# Ahora sí se puede aplicar análisis estadístico
+# Ejemplo: prueba t para diferencias entre grupos
+library(limma)
+
+# Diseño del experimento
+design &lt;- model.matrix(~0 + group, data = metadata)
+
+# Análisis diferencial
+fit &lt;- lmFit(data_compositional, design)
+cont.matrix &lt;- makeContrasts(groupB - groupA, levels = design)
+fit2 &lt;- contrasts.fit(fit, cont.matrix)
+fit2 &lt;- eBayes(fit2)
+results &lt;- topTable(fit2, number = Inf, adjust = "BH")
+</code></pre>
+            <p>
+                Este flujo garantiza que los análisis de diferencias de abundancia se realicen sobre datos transformados, eliminando el sesgo de composición.
+            </p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No aplicar transformación antes del análisis</strong>: Usar datos brutos o normalizados sin CoDA lleva a conclusiones erróneas. Siempre transforma antes de usar <code>DESeq2</code> o <code>edgeR</code> en metagenómica.</li>
+                <li><strong>Usar transformaciones incorrectas</strong>: Evita transformaciones como el logaritmo directo <code>log(x)</code>, que no resuelven el problema del sesgo.</li>
+                <li><strong>Ignorar el cero</strong>: Los datos metagenómicos tienen muchos ceros (especies no detectadas). Usa métodos robustos como <code>compositions::ilr</code> que manejan ceros mediante imputación o ajuste, o considera <code>ancom</code> (Analysis of Composition of Microbiomes) como alternativa.</li>
+                <li><strong>Analizar datos sin preprocesamiento adecuado</strong>: Asegúrate de filtrar especies raras, normalizar (por ejemplo, con <code>css</code> o <code>median</code>), y eliminar muestras de baja profundidad antes de la transformación.</li>
+                <li><strong>Usar métodos no validados para datos composicionales</strong>: Herramientas como <code>gamlss</code> o <code>metagenomeSeq</code> tienen soporte para CoDA, pero no todas las funciones están pensadas para este contexto.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Conclusión</h2>
+            <p>
+                La corrección de sesgos de composición mediante <strong>análisis de datos composicionales</strong> es esencial para obtener resultados fiables en metagenómica. Ignorar este aspecto puede llevar a interpretaciones erróneas, falsos descubrimientos y una pérdida de poder estadístico. La adopción de transformaciones como <code>ilr</code> o <code>alr</code> en combinación con herramientas como <code>compositions</code> en R o <code>ancom</code> permite un análisis robusto y estadísticamente válido de las comunidades microbianas. Es un paso obligado para cualquier estudio serio de metagenómica.
+            </p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

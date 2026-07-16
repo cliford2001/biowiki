@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelado de interacciones microbianas con redes de co-ocurrencia y correlación</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="General">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Modelado de interacciones microbianas con redes de co-ocurrencia y correlación</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>El análisis de comunidades microbianas ha evolucionado más allá de la simple descripción de la composición taxonómica. Hoy en día, se busca comprender no solo <em>qué</em> microorganismos están presentes, sino <em>cómo</em> interactúan entre sí y con el entorno. El modelado de interacciones microbianas mediante redes de co-ocurrencia y correlación permite identificar patrones de asociación, competencia, cooperación y dependencia entre taxones, ofreciendo una visión funcional y ecológica de los ecosistemas microbianos.</p>
+            <p>Estas redes se construyen a partir de datos de abundancia microbiana, como aquellos obtenidos de secuenciación de genes 16S rRNA o metagenómica de ensamblaje (metagenomics-assembled genomes, MAGs). A través de métodos estadísticos y de aprendizaje automático, se detectan relaciones significativas entre especies, lo que permite generar hipótesis sobre procesos ecológicos subyacentes.</p>
+        </section>
+
+        <section>
+            <h2>Construcción de redes de co-ocurrencia</h2>
+            <p>El primer paso en el modelado de interacciones es la creación de una matriz de abundancia, donde cada fila representa un taxón (especie, género, u otro nivel taxonómico) y cada columna una muestra. Esta matriz debe estar previamente procesada para eliminar ruido, normalizar abundancias y tratar valores cero (por ejemplo, con transformaciones como <code>log(x+1)</code>).</p>
+
+            <h3>Correlación y co-ocurrencia</h3>
+            <p>La co-ocurrencia se basa en la presencia o ausencia simultánea de taxones en múltiples muestras. Se puede modelar mediante el coeficiente de <em>co-ocurrencia de Jaccard</em> o el <em>índice de Sørensen</em>, útiles para datos binarios.</p>
+
+            <p>En cambio, la correlación se aplica a datos continuos de abundancia. Se utilizan coeficientes como el de <em>Pearson</em>, <em>Spearman</em> o <em> Kendall</em>. Por ejemplo, en R:</p>
+
+            <pre><code>library(vegan)
+
+# Matriz de abundancia (filas: taxones, columnas: muestras)
+abundance_matrix &lt;- read.table("abundances.txt", header=TRUE, row.names=1)
+
+# Calcular correlación de Spearman
+correlation_matrix &lt;- cor(abundance_matrix, method = "spearman")
+
+# Filtrar correlaciones significativas
+p_values &lt;- cor.test(abundance_matrix[,1], abundance_matrix[,2])$p.value
+significant_pairs &lt;- which(correlation_matrix &gt; 0.6 | correlation_matrix &lt; -0.6, arr.ind=TRUE)</code></pre>
+
+            <p>Es fundamental ajustar múltiples pruebas para evitar falsos positivos. Métodos como <em>Bonferroni</em>, <em>Benjamini-Hochberg</em> o <em>False Discovery Rate (FDR)</em> son recomendados.</p>
+        </section>
+
+        <section>
+            <h2>Interpretación y validación</h2>
+            <p>Una red de interacciones no indica causalidad, sino asociación. Las correlaciones fuertes pueden deberse a factores ambientales compartidos (confusión) o a efectos indirectos. Es esencial validar las conclusiones con datos adicionales, como datos de cultivo, metagenómica funcional, o experimentos controlados.</p>
+
+            <h3>Herramientas clave</h3>
+            <p>Existen varias herramientas especializadas que automatizan el proceso:</p>
+            <ul>
+                <li><strong>CoNet</strong>: permite crear redes basadas en co-ocurrencia y correlación, con múltiples métodos estadísticos y ajuste de p-valores.</li>
+                <li><strong>SpiecEasi</strong>: utiliza modelos de regresión de grafos para inferir redes de interacciones, adecuado para datos de abundancia con muchas cero.</li>
+                <li><strong>LEfSe</strong>: aunque se enfoca en hallar marcadores diferenciales, puede integrarse en análisis de redes.</li>
+            </ul>
+
+            <p>En Python, el paquete <code>scikit-bio</code> y <code>scanpy</code> facilitan el análisis de datos microbiológicos, incluyendo correlaciones.</p>
+
+            <pre><code>import scanpy as sc
+import numpy as np
+
+# Cargar datos
+adata = sc.read("microbiome.h5ad")
+
+# Calcular correlaciones entre genes (o taxones)
+pearson_corr = np.corrcoef(adata.X.T)
+
+# Filtrar por valor absoluto
+threshold = 0.5
+significant_edges = np.abs(pearson_corr) &gt; threshold
+
+# Convertir a red (ej. con NetworkX)
+import networkx as nx
+G = nx.Graph()
+for i in range(len(pearson_corr)):
+    for j in range(i+1, len(pearson_corr)):
+        if significant_edges[i,j]:
+            G.add_edge(i, j, weight=pearson_corr[i,j])</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El modelado de interacciones microbianas mediante redes de co-ocurrencia y correlación es una herramienta poderosa para revelar relaciones ecológicas en comunidades microbiológicas. Al combinar datos de abundancia con métodos estadísticos rigurosos, se pueden identificar patrones de asociación significativos que impulsan la hipótesis de trabajo. Sin embargo, es crucial interpretar estos resultados con cautela, recordando que la correlación no implica causalidad. Las herramientas disponibles, como CoNet, SpiecEasi y paquetes de Python/R, facilitan el análisis, pero requieren una adecuada validación empírica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No ajustar por múltiples pruebas</strong>: Genera un alto número de falsos positivos. Siempre aplicar FDR o Bonferroni.</li>
+                <li><strong>Usar correlación sin normalizar datos</strong>: Los valores de abundancia pueden tener escalas muy distintas. Normalizar con transformaciones logarítmicas o escalado.</li>
+                <li><strong>Interpretar correlaciones como causalidad</strong>: Las redes indican asociaciones, no mecanismos. Buscar evidencia funcional o experimental.</li>
+                <li><strong>Ignorar el contexto ambiental</strong>: Factores como pH, temperatura o nutrientes pueden explicar correlaciones. Incluir variables ambientales en el análisis (por ejemplo, con <em>mantel test</em>).</li>
+                <li><strong>Usar todos los pares posibles sin filtrar</strong>: Redes densas son difíciles de interpretar. Filtrar por umbral de correlación y p-valor.</li>
+            </ul>
+            <p>Adoptar estas buenas prácticas garantiza que los modelos sean robustos, reproducibles y científicamente válidos.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

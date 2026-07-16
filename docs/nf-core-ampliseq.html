@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nf-core/ampliseq</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>nf-core/ampliseq</h1>
+    <p class="meta">
+      <a href="https://github.com/nf-core/ampliseq">Repositorio en GitHub</a> · 
+      253 estrellas · Nextflow
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <code>nf-core/ampliseq</code> es un flujo de trabajo automatizado para el análisis de secuenciación de amplicones (amplicon sequencing), diseñado para ser robusto, reproducible y fácil de usar. 
+      Utiliza <a href="https://docs.qiime2.org/">QIIME2</a> y <a href="https://www.bioconductor.org/packages/release/bioc/html/DADA2.html">DADA2</a> para realizar la calidad de lecturas, la denoising, la asignación de OTUs o ASVs, y el análisis taxonómico.
+      Es ideal para estudios microbiológicos, como la caracterización de comunidades microbianas en muestras de suelo, agua, intestino, entre otros.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      Este flujo de trabajo se ejecuta con <a href="https://www.nextflow.io/">Nextflow</a> y requiere <a href="https://www.qiime2.org/">QIIME2</a> (versión 2023.5 o superior) instalado.
+      Sigue estos pasos:
+    </p>
+    <pre><code>conda create -n qiime2-2023.5 qiime2=2023.5
+conda activate qiime2-2023.5
+</code></pre>
+    <p>Instala Nextflow:</p>
+    <pre><code>curl -fsSL get.nextflow.io | bash
+sudo mv nextflow /usr/local/bin
+</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      Ejecuta el flujo de trabajo con un archivo de configuración y datos de entrada:
+    </p>
+    <pre><code>nextflow run nf-core/ampliseq \ 
+  -profile docker \ 
+  --input samplesheet.csv \ 
+  --outdir results \ 
+  --email your.email@example.com</code></pre>
+    <p>Nota: El ejemplo anterior es ilustrativo. La sintaxis exacta de los parámetros debe verificarse en la documentación oficial del flujo.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo de trabajo típico sigue estos pasos:
+    </p>
+    <ol>
+      <li>Recopilación de datos: secuencias en formato FASTQ (emparejadas o no).</li>
+      <li>Calidad: filtrado de calidad y truncado de lecturas.</li>
+      <li>Denoising: uso de DADA2 para generar ASVs (Unidades de Secuencias Amplicon).</li>
+      <li>Clasificación taxonómica: asignación de identidad a cada ASV.</li>
+      <li>Generación de tablas: frecuencia de ASVs por muestra.</li>
+      <li>Visualización: análisis y representación gráfica de resultados.</li>
+    </ol>
+    
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <style>
+          .step { fill: #f0f8ff; stroke: #005a9c; stroke-width: 2; }
+          .label { font-size: 12px; font-family: sans-serif; text-anchor: middle; }
+          .arrow { stroke: #005a9c; stroke-width: 1.5; marker-end: url(#arrowhead); }
+        </style>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#005a9c" />
+          </marker>
+        </defs>
+        <!-- Pasos -->
+        <rect x="40" y="20" width="120" height="40" class="step" />
+        <text x="100" y="45" class="label">Datos FASTQ</text>
+
+        <rect x="180" y="20" width="120" height="40" class="step" />
+        <text x="240" y="45" class="label">Calidad</text>
+
+        <rect x="320" y="20" width="120" height="40" class="step" />
+        <text x="380" y="45" class="label">Denoising (DADA2)</text>
+
+        <rect x="460" y="20" width="120" height="40" class="step" />
+        <text x="520" y="45" class="label">ASVs</text>
+
+        <rect x="180" y="80" width="120" height="40" class="step" />
+        <text x="240" y="105" class="label">Clasificación</text>
+
+        <rect x="320" y="80" width="120" height="40" class="step" />
+        <text x="380" y="105" class="label">Taxonomía</text>
+
+        <rect x="460" y="80" width="120" height="40" class="step" />
+        <text x="520" y="105" class="label">Tablas</text>
+
+        <!-- Flechas -->
+        <line x1="160" y1="40" x2="180" y2="40" class="arrow" />
+        <line x1="300" y1="40" x2="320" y2="40" class="arrow" />
+        <line x1="440" y1="40" x2="460" y2="40" class="arrow" />
+        <line x1="300" y1="80" x2="320" y2="80" class="arrow" />
+        <line x1="440" y1="80" x2="460" y2="80" class="arrow" />
+      </svg>
+      <figcaption>Diagrama del flujo de trabajo típico de <code>nf-core/ampliseq</code>: entrada de secuencias, calidad, denoising con DADA2, clasificación taxonómica y generación de resultados.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Problemas con el entorno QIIME2:</strong> Asegúrate de activar el entorno correcto antes de ejecutar el flujo.</li>
+      <li><strong>Archivos de muestra mal formateados:</strong> El archivo <code>samplesheet.csv</code> debe tener las columnas correctas: <code>sample_name</code>, <code>forward</code>, <code>reverse</code>.</li>
+      <li><strong>Uso de perfiles:</strong> Usa <code>--profile docker</code> para evitar conflictos de dependencias. También puedes usar <code>--profile singularity</code> si tienes Singularity instalado.</li>
+      <li><strong>Verificación de resultados:</strong> Revisa los archivos de log y los informes generados para detectar errores en el pipeline.</li>
+      <li><strong>Documentación oficial:</strong> Siempre consulta la documentación del proyecto en GitHub para detalles exactos sobre opciones, versiones y actualizaciones.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">3 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42310970.html">High thrombin activity associated with crohn&#x27;s disease induces microbiota pathogenicity contributing to mucosal inflammation.</a> <span class="date">2026-07-15</span> · <a href="https://doi.org/10.1080/19490976.2026.2687903" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42305661.html">Bacterial microbiome and flavor metabolome shifts in traditional Hinggan league sauerkraut fermentation.</a> <span class="date">2026-07-15</span> · <a href="https://doi.org/10.1016/j.fochms.2026.100430" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42305112.html">Synergistic interactions in designed bacterial consortia: Dual effects on control rusty root rot and growth promotion in ginseng.</a> <span class="date">2026-07-16</span> · <a href="https://doi.org/10.1016/j.synbio.2026.04.003" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>
