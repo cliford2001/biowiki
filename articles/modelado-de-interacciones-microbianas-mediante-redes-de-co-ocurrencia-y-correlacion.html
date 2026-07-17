@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de interacciones microbianas mediante redes de co-ocurrencia y correlación</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de interacciones microbianas mediante redes de co-ocurrencia y correlación</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>En el análisis de comunidades microbianas, el entendimiento de las interacciones entre taxones no puede reducirse a simples conteos de abundancia. Las redes de co-ocurrencia y correlación permiten modelar relaciones ecológicas, identificando patrones de asociación que sugieren mutualismo, competencia o comensalismo. Esta aproximación trasciende el análisis descriptivo y abre nuevas vías para la hipótesis generadora en microbiología, medicina y ecología.</p>
+      <p>La base de este modelo es la suposición de que la presencia o ausencia de un microorganismo en un hábitat está relacionada con la presencia de otros. Estas relaciones pueden ser estocásticas, pero también reflejan interacciones ecológicas reales. Herramientas como <code>phyloseq</code> en R, <code>microbiome</code> y paquetes de Python como <code>scanpy</code> y <code>anndata</code> permiten la integración de datos de secuenciación de 16S rRNA o metagenómica para construir matrices de abundancia que son el input necesario para estas redes.</p>
+    </section>
+
+    <section>
+      <h2>Construcción de redes de co-ocurrencia y correlación</h2>
+      <h3>Preprocesamiento de datos</h3>
+      <p>Antes de construir cualquier red, es esencial el preprocesamiento de datos. Se recomienda:</p>
+      <ul>
+        <li>Eliminar taxa con baja abundancia (< 1% en más del 10% de las muestras).</li>
+        <li>Aplicar transformación logarítmica (e.g., <code>log1p</code>) para estabilizar la varianza.</li>
+        <li>Corregir efectos técnicos como la composicionalidad mediante métodos como <code>ALDEx2</code> o <code>ANCOM-BC</code>.</li>
+      </ul>
+      <p>Estos pasos reducen el ruido y previenen artefactos en la estimación de correlaciones.</p>
+
+      <h3>Estimación de correlaciones</h3>
+      <p>Se pueden usar diferentes métodos para medir asociaciones:</p>
+      <ul>
+        <li><strong>Correlación de Pearson:</strong> adecuada para datos normalizados, sensible a outliers.</li>
+        <li><strong>Correlación de Spearman:</strong> no paramétrica, robusta a distribuciones sesgadas.</li>
+        <li><strong>Correlación de Bray-Curtis o distancia de Hellinger:</strong> para datos de composición.</li>
+      </ul>
+      <p>En R, se puede usar el paquete <code>phyloseq</code> junto con funciones como <code>cor.test</code> o <code>corrplot</code>. En Python, <code>scanpy</code> permite calcular correlaciones entre genes o taxa con <code>scanpy.tl.pca</code> y <code>scanpy.tl.correlation</code>.</p>
+
+      <h3>Construcción de la red</h3>
+      <p>Una vez obtenida la matriz de correlaciones, se puede aplicar un umbral para definir aristas:</p>
+      <pre><code>## R: ejemplo con phyloseq
+library(phyloseq)
+library(corrplot)
+
+# Supongamos que `ps` es un objeto phyloseq
+otu_table <- otu_table(ps, use.t = FALSE)
+
+# Calcular correlación de Spearman
+cor_matrix &lt;- cor(t(as.matrix(otu_table)), method = "spearman")
+
+# Aplicar umbral
+threshold &lt;- 0.7
+cor_matrix[abs(cor_matrix) &lt; threshold] &lt;- 0
+
+# Visualizar
+corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.8)</code></pre>
+      <p>El resultado es una matriz simétrica donde los valores no nulos representan relaciones significativas.</p>
+    </section>
+
+    <section>
+      <h2>Interpretación y análisis de redes</h2>
+      <h3>Parámetros de red</h3>
+      <p>Después de construir la red, se pueden calcular métricas clave:</p>
+      <ul>
+        <li><strong>Grado:</strong> número de conexiones de un nodo.</li>
+        <li><strong>Centralidad:</strong> importancia del nodo en la red (e.g., betweenness, closeness).</li>
+        <li><strong>Clustering coefficient:</strong> proporción de vecinos de un nodo que están entre sí conectados.</li>
+      </ul>
+      <p>Estas métricas ayudan a identificar <em>hubs</em> (taxones altamente interconectados) que podrían ser clave en la estabilidad del ecosistema microbiano.</p>
+
+      <h3>Validación y control de falsos positivos</h3>
+      <p>Las correlaciones espurias son un riesgo. Para mitigarlo:</p>
+      <ul>
+        <li>Usar corrección múltiple (e.g., BH, Bonferroni).</li>
+        <li>Aplicar métodos de selección de aristas basados en significancia (p-valor < 0.01).</li>
+        <li>Validar resultados con datos independientes o mediante análisis de red aleatoria (e.g., <code>randomization</code> de las matrices).</li>
+      </ul>
+      <p>Se recomienda el uso de herramientas como <code>SpiecEasi</code> (para modelos de precisión de red) o <code>CoNet</code> que combinan múltiples métodos para mejorar la robustez.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El modelado de interacciones microbianas mediante redes de co-ocurrencia y correlación es una herramienta poderosa para explorar la dinámica de comunidades microbianas. Permite ir más allá de la abundancia relativa y revelar patrones ecológicos subyacentes. Sin embargo, requiere un cuidadoso preprocesamiento, elección de métodos adecuados y validación estadística para evitar conclusiones erróneas.</p>
+      <p>Las herramientas disponibles en R (<code>phyloseq</code>, <code>CoNet</code>, <code>SpiecEasi</code>) y Python (<code>scanpy</code>, <code>anndata</code>) hacen accesible este análisis a investigadores de distintos niveles. La clave está en la interpretación crítica: no toda correlación implica interacción biológica real.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Evitar umbrals arbitrarios:</strong> usar métodos estadísticos para definir significancia, no valores fijos como 0.7.</li>
+        <li><strong>No ignorar la composicionalidad:</strong> los datos de secuenciación son proporcionales, no absolutos. Usar métodos como ALDEx2 o ANCOM-BC antes del análisis de correlación.</li>
+        <li><strong>Validar con datos externos:</strong> si posible, comparar redes entre cohortes o condiciones para verificar la reproducibilidad.</li>
+        <li><strong>Visualizar con cuidado:</strong> usar herramientas como <code>igraph</code> o <code>ggraph</code> en R para representar redes con layout inteligente y evitar superposición.</li>
+        <li><strong>Interpretar con cautela:</strong> una alta correlación no implica causalidad. Considerar datos metadatos (pH, temperatura, dieta) para contextualizar.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

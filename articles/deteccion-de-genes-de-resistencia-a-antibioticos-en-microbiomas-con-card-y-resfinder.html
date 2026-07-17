@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de genes de resistencia a antibióticos en microbiomas con CARD y ResFinder</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Detección de genes de resistencia a antibióticos en microbiomas con CARD y ResFinder</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La creciente prevalencia de resistencia a antibióticos (RA) representa una de las mayores amenazas para la salud pública mundial. En el contexto de los microbiomas —comunidades microbianas complejas que habitan en humanos, animales y entornos naturales—, la detección de genes de resistencia es crucial para entender la transmisión, evolución y potencial impacto clínico de estos elementos genéticos. Herramientas como <strong>CARD</strong> (Comprehensive Antibiotic Resistance Database) y <strong>ResFinder</strong> permiten identificar y anotar genes de resistencia en secuencias de ADN obtenidas de estudios metagenómicos, proporcionando una base científica para el monitoreo y la prevención de brotes de RA.</p>
+        </section>
+
+        <section>
+            <h2>Marco conceptual: CARD y ResFinder</h2>
+            <p><strong>CARD</strong> es una base de datos integrada que ofrece una visión completa de los genes de resistencia, sus mecanismos moleculares, variantes, y relaciones con antibióticos. Incluye información sobre genes, proteínas, y variantes mutacionales que confieren resistencia. Su estructura jerárquica permite clasificar genes por mecanismo (por ejemplo, <em>efluxo</em>, <em>modificación de blanco</em>, <em>desactivación del antibiótico</em>) y por tipo de antibiótico (beta-lactámicos, fluoroquinolonas, etc.).</p>
+            <p><strong>ResFinder</strong> es una base de datos especializada en el análisis de secuencias de ARN y ADN de bacterias aisladas, especialmente en estudios clínicos. Aunque está enfocada en genomas completos, se puede utilizar en datos metagenómicos mediante alineamiento de lecturas cortas. ResFinder se centra en genes de resistencia de especies bacterianas relevantes, con un enfoque en la identificación precisa y en el uso de criterios de alineamiento estrictos.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de análisis: desde secuencias hasta anotación</h2>
+            <p>El proceso típico para detectar genes de resistencia en un microbioma sigue estos pasos:</p>
+            <ol>
+                <li><strong>Preprocesamiento de datos</strong>: limpieza y filtro de calidad (por ejemplo, con <code>fastp</code> o <code>Trimmomatic</code>).</li>
+                <li><strong>Asamblea o mapeo</strong>: si se trabaja con secuencias cortas (Illumina), se puede usar un mapeo contra un genoma de referencia (con <code>bowtie2</code> o <code>minimap2</code>) o una asamblea delectivas (con <code>metaspades</code>).</li>
+                <li><strong>Identificación de genes</strong>: uso de <code>BLAST</code> o <code>DIAMOND</code> para alinear secuencias contra las bases de datos CARD o ResFinder.</li>
+                <li><strong>Anotación y análisis</strong>: interpretación de resultados, filtrado por cobertura y identidad, y visualización de la distribución de genes.</li>
+            </ol>
+            
+            <h3>Ejemplo práctico con DIAMOND y CARD</h3>
+            <p>Se puede usar <code>DIAMOND</code> (para alta velocidad) para alinear los contigs o lecturas contra la base de datos CARD. Ejemplo de comando:</p>
+            <pre><code>diamond blastx -d /path/to/card/diamond_index --query contigs.fasta --out results.tsv --outfmt 6 --max-target-seqs 10 --evalue 1e-5 --threads 8</code></pre>
+            <p>Los resultados pueden procesarse con <code>Python</code> o <code>R</code> para filtrar genes con alineamiento >90% de identidad y >80% de cobertura:</p>
+            <pre><code>import pandas as pd
+
+df = pd.read_csv('results.tsv', sep='\t', header=None)
+df.columns = ['query', 'subject', 'pident', 'length', 'mismatches', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore']
+
+filtered = df[(df['pident'] &gt;= 90) & (df['length'] / df['qend'] &gt;= 0.8)]
+filtered.to_csv('filtered_resistance_genes.csv', index=False)</code></pre>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <p><strong>Errores frecuentes:</strong></p>
+            <ul>
+                <li><strong>Uso inadecuado de umbrales</strong>: no filtrar por identidad o cobertura puede generar falsos positivos. Siempre revisar los criterios de alineamiento.</li>
+                <li><strong>Base de datos obsoleta</strong>: usar versiones antiguas de CARD o ResFinder puede omitir nuevos genes o variantes. Verificar fechas de actualización de las bases.</li>
+                <li><strong>Confusión entre datos metagenómicos y genómicos</strong>: ResFinder está optimizado para genomas completos; en metagenómica, es más recomendable usar CARD con ajustes de filtro.</li>
+                <li><strong>Ignorar contextos genéticos</strong>: un gen de resistencia puede estar en un plásmido o elemento móvil. Analizar su entorno (por ejemplo, con <code>BLAST</code> contra <code>NCBI nt</code>) para verificar si está asociado a elementos transponibles.</li>
+            </ul>
+            
+            <p><strong>Buenas prácticas:</strong></p>
+            <ul>
+                <li>Usar <code>DIAMOND</code> en lugar de <code>BLAST</code> para velocidades de análisis más altas con datos grandes.</li>
+                <li>Validar resultados con múltiples herramientas (por ejemplo, comparar resultados entre CARD y ResFinder).</li>
+                <li>Documentar exhaustivamente los parámetros y versiones de las bases de datos usadas.</li>
+                <li>Visualizar los genes de resistencia por muestra o grupo, usando <code>ggplot2</code> o <code>Seurat</code> para análisis comparativos.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La detección de genes de resistencia a antibióticos en microbiomas con herramientas como CARD y ResFinder es fundamental para el estudio de la resistencia en ecosistemas microbianos. Al combinar métodos de alineamiento eficientes (como DIAMOND), análisis estadístico riguroso y buenas prácticas de validación, los investigadores pueden obtener un panorama claro y fiable de la presencia y distribución de estos genes. Este enfoque no solo ayuda a monitorear la propagación de la resistencia, sino que también apoya el diseño de estrategias de intervención y control.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+    <li><a href="../docs/timflutre-trimmomatic.html">trimmomatic</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

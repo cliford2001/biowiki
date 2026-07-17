@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización de pipelines de análisis de metagenómica con Snakemake y contenedores</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Optimización de pipelines de análisis de metagenómica con Snakemake y contenedores</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: La necesidad de pipelines reproducibles y escalables</h2>
+            <p>El análisis de metagenómica, que estudia el material genético recuperado directamente de muestras ambientales, genera grandes volúmenes de datos secuenciales con alta complejidad técnica. La variabilidad entre laboratorios, diferencias en los protocolos de extracción de ADN y las diferencias en los datos de secuenciación hacen que la reproducibilidad de los resultados sea un reto constante. En este contexto, las herramientas de orquestación de pipelines, como <strong>Snakemake</strong>, junto con el uso de contenedores mediante <strong>Docker</strong> y <strong>Singularity</strong>, se han convertido en estándares de facto para garantizar la exactitud, transparencia y escalabilidad del análisis bioinformático.</p>
+            <p>Snakemake permite definir pipelines mediante reglas en un archivo <code>SNAKEMAKE</code> en Python, automatizando el flujo de datos desde la entrada hasta los resultados. Al combinarlo con contenedores, se asegura que cada paso del análisis se ejecute en un entorno consistente, eliminando dependencias y versiones de software que podrían alterar los resultados. Este artículo explora cómo optimizar estos pipelines para maximizar eficiencia, reproducibilidad y rendimiento, aplicando buenas prácticas y técnicas avanzadas.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo: Estructura, orquestación y optimización</h2>
+            
+            <h3>1. Definición modular del pipeline con Snakemake</h3>
+            <p>Un pipeline bien estructurado comienza con una arquitectura modular. En lugar de escribir todo en un único archivo, se recomienda dividir las reglas en módulos, como <code>rules/quality_control.smk</code>, <code>rules/assembly.smk</code> y <code>rules/annotation.smk</code>. Esto mejora la legibilidad, facilita la depuración y permite reutilizar reglas en otros proyectos.</p>
+
+            <h3>2. Uso de contenedores para reproducibilidad</h3>
+            <p>La clave de la reproducibilidad está en el uso de contenedores. <strong>Docker</strong> es ideal para desarrollo local, mientras que <strong>Singularity</strong> es preferido en entornos de supercomputación por su seguridad y compatibilidad con la gestión de usuarios.</p>
+
+            <p>Para usar contenedores en Snakemake, se especifica el contenedor en la regla con el atributo <code>container</code>:</p>
+
+            <pre><code>rule fastqc:
+    input:
+        "data/raw/{sample}.fastq.gz"
+    output:
+        "results/fastqc/{sample}_fastqc.html",
+        "results/fastqc/{sample}_fastqc.zip"
+    params:
+        outdir="results/fastqc"
+    container: "quay.io/biocontainers/fastqc:0.11.9--0"
+    shell:
+        "fastqc -o {params.outdir} {input}"
+</code></pre>
+
+            <p>Este enfoque garantiza que <code>fastqc</code> se ejecute con la versión exacta incluida en el contenedor, sin necesidad de instalarla localmente.</p>
+
+            <h3>3. Optimización de recursos: paralelización y gestión de memoria</h3>
+            <p>Snakemake permite ejecutar múltiples reglas simultáneamente mediante la opción <code>--cores</code>. Se recomienda usar un valor igual al número de núcleos disponibles. Además, se pueden definir límites de memoria con <code>--resources</code>:</p>
+
+            <pre><code>rule spades_assembly:
+    input:
+        "data/trimmed/{sample}.fastq.gz"
+    output:
+        "results/assembly/{sample}/contigs.fasta"
+    resources:
+        mem_mb=16384,  # 16 GB
+        threads=8
+    container: "quay.io/biocontainers/spades:3.15.5--py38pl5262_0"
+    shell:
+        "spades.py -1 {input} -o {output} -t {threads} -m {resources.mem_mb}"</code></pre>
+
+            <p>Esto evita que un proceso consuma más recursos de los disponibles y mejora el rendimiento general del sistema.</p>
+
+            <h3>4. Manejo de entradas y salidas: globales y enlaces simbólicos</h3>
+            <p>Para evitar duplicar archivos en cada paso, se recomienda usar enlaces simbólicos (symlinks) o el uso de <code>include</code> para reutilizar reglas. Además, se puede usar el atributo <code>input</code> con globbing para procesar múltiples archivos:</p>
+
+            <pre><code>rule multi_fastqc:
+    input:
+        expand("data/raw/{sample}.fastq.gz", sample=["sample1", "sample2", "sample3"])
+    output:
+        expand("results/fastqc/{sample}_fastqc.html", sample=["sample1", "sample2", "sample3"])
+    shell:
+        "fastqc {input}"</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La optimización de pipelines de análisis de metagenómica con Snakemake y contenedores combina orquestación robusta con entornos reproducibles. Al estructurar los pipelines modularmente, usar contenedores para garantizar consistencia, y gestionar recursos adecuadamente, se logra una mayor eficiencia, transparencia y confiabilidad en los análisis. Esta práctica no solo acelera la investigación, sino que también permite la validación independiente de los resultados por parte de otros científicos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Evitar el uso de comandos en línea sin contenedores</strong>: Todos los pasos deben especificar un contenedor para garantizar reproducibilidad.</li>
+                <li><strong>No usar <code>python</code> en lugar de <code>python3</code></strong>: Asegúrese de que el entorno del contenedor utilice la versión correcta.</li>
+                <li><strong>Validar la sintaxis del archivo <code>SNAKEMAKE</code></strong> con <code>snakemake --lint</code> antes de ejecutar.</li>
+                <li><strong>Usar <code>--dryrun</code> para probar el flujo sin ejecutar comandos reales.</strong></li>
+                <li><strong>Documentar cada regla con comentarios</strong> para que otros puedan entender el propósito del paso.</li>
+                <li><strong>Evitar el uso de <code>shell: "..."</code> para operaciones complejas</strong>: Prefiera usar funciones de Python en el archivo <code>SNAKEMAKE</code> cuando sea posible.</li>
+                <li><strong>Usar <code>--keep-going</code> en ejecuciones largas</strong> para continuar a pesar de errores en algunas reglas.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

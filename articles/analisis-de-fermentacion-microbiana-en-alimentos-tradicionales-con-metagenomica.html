@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de fermentación microbiana en alimentos tradicionales con metagenómica</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Análisis de datos">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de fermentación microbiana en alimentos tradicionales con metagenómica</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El papel de los microbios en la transformación de alimentos</h2>
+            <p>La fermentación microbiana es un proceso fundamental en la elaboración de numerosos alimentos tradicionales, desde el pan y el vino hasta el chucrut, el kimchi y el yogur. Estos procesos no solo mejoran el sabor, textura y conservación, sino que también pueden incrementar el valor nutricional y funcional de los alimentos. La metagenómica, el estudio del genoma completo de comunidades microbianas sin necesidad de cultivo, ha revolucionado nuestra comprensión de estas comunidades complejas. A través del análisis de secuencias de ADN o ARN obtenidas directamente de muestras de alimentos, es posible identificar qué microorganismos están presentes, qué funciones metabólicas realizan y cómo interactúan entre sí.</p>
+            <p>Este artículo explora el enfoque metodológico para analizar la fermentación microbiana en alimentos tradicionales usando metagenómica, destacando herramientas y técnicas clave, desde la preparación de muestras hasta el análisis bioinformático y la interpretación biológica de los resultados.</p>
+        </section>
+
+        <section>
+            <h2>Proceso de análisis metagenómico: desde la muestra hasta la interpretación</h2>
+            <h3>1. Preparación de la muestra y secuenciación</h3>
+            <p>El primer paso consiste en obtener una muestra representativa del alimento fermentado. El ADN debe extraerse cuidadosamente, considerando la alta cantidad de materia orgánica y posibles inhibidores. A continuación, se genera una biblioteca de ADN y se secuencia utilizando plataformas de secuenciación de próxima generación (NGS), como Illumina, que producen lecturas de corta longitud (paquetes de 150-300 pb). Las secuencias se almacenan en formatos estándar como FASTQ.</p>
+
+            <h3>2. Preprocesamiento y control de calidad</h3>
+            <p>Antes de cualquier análisis, es esencial realizar un control de calidad de las lecturas. Herramientas como <code>fastp</code> o <code>Trimmomatic</code> permiten eliminar secuencias de baja calidad, adaptadores y ruido técnico.</p>
+
+            <pre><code>fastp -i input.fastq -o trimmed.fastq \
+  -q 20 -u 10 -l 50 -h report.html</code></pre>
+
+            <h3>3. Asamblea y binning (opcional)</h3>
+            <p>Para obtener genomas completos o casi completos de microorganismos (MAGs, metagenome-assembled genomes), se puede realizar asamblea delectura. Herramientas como <code>MEGAHIT</code> o <code>metaspades</code> son ampliamente utilizadas.</p>
+
+            <pre><code>megahit -1 trimmed_R1.fastq -2 trimmed_R2.fastq -o megahit_output</code></pre>
+
+            <p>Posteriormente, se realiza el binning de los contigs para asignarlos a organismos específicos mediante herramientas como <code>MaxBin2</code>, <code>CONCOCT</code> o <code>DAS Tool</code>.</p>
+
+            <h3>4. Análisis taxonómico y funcional</h3>
+            <p>La identificación taxonómica se realiza comparando las lecturas o contigs contra bases de datos como <code>GTDB</code> (Genome Taxonomy Database) usando <code>MetaPhlAn</code> o <code>Kraken2</code>. Para el análisis funcional, se utiliza <code>KEGG</code>, <code>COG</code> o <code>KEGG Orthology</code> mediante herramientas como <code>HUMAnN3</code> o <code>KEGG-mapper</code>.</p>
+
+            <pre><code>metaphlan2 input.fq -t rel_ab -o metaphlan_output.txt</code></pre>
+
+            <h3>5. Comparación entre muestras y detección de diferencias</h3>
+            <p>Para comparar distintos momentos de fermentación o diferentes tipos de alimentos, se pueden utilizar herramientas de análisis de expresión diferencial. Aunque tradicionalmente usadas en transcriptómica, <code>DESeq2</code> y <code>edgeR</code> en R pueden aplicarse a datos de abundancia de funciones metagenómicas.</p>
+
+            <pre><code>library(DESeq2)
+
+# Suponiendo un dataframe `counts` con columnas de muestras
+# y filas con funciones (KEGG, COG, etc.)
+dds &lt;- DESeqDataSetFromMatrix(countData = counts,
+                              colData = sample_info,
+                              design = ~ condition)
+dds &lt;- DESeq(dds)
+res &lt;- results(dds)</code></pre>
+
+            <p>Este enfoque permite identificar funciones metabólicas significativamente diferencialmente abundantes entre condiciones.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de fermentación microbiana mediante metagenómica ofrece una ventana única para comprender la dinámica de los microbios en alimentos tradicionales. A partir de secuenciación de ADN directa, se puede reconstruir la composición taxonómica y funcional de las comunidades microbianas, identificar patrones clave en el proceso de fermentación y detectar diferencias asociadas a métodos de producción, tiempo de fermentación o ingredientes. Herramientas como <code>MetaPhlAn</code>, <code>MEGAHIT</code>, <code>DESeq2</code> y <code>HUMAnN3</code> son fundamentales en este flujo de trabajo. La integración de datos metagenómicos con conocimiento microbiológico y de procesos de fermentación permite no solo describir, sino también optimizar y preservar estas prácticas alimentarias ancestrales.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Control de contaminación:</strong> Asegurarse de que las muestras no estén contaminadas con ADN ambiental o de personas. Incluir controles negativos durante la extracción.</li>
+                <li><strong>Evitar sobrecarga de datos:</strong> No aplicar asamblea si solo se busca identificación taxonómica; usar herramientas como <code>MetaPhlAn</code> directamente sobre lecturas.</li>
+                <li><strong>Validar resultados:</strong> Usar múltiples herramientas para confirmar identificaciones taxonómicas (por ejemplo, comparar <code>MetaPhlAn</code> con <code>Kraken2</code>).</li>
+                <li><strong>Interpretación biológica:</strong> No asumir que la presencia de un microbio implica su participación activa; considerar la abundancia, la función y el contexto del proceso.</li>
+                <li><strong>Reproducibilidad:</strong> Documentar todos los pasos, parámetros y versiones de herramientas usadas. Usar entornos como <code>conda</code> o <code>Docker</code> para asegurar consistencia.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+    <li><a href="../docs/timflutre-trimmomatic.html">trimmomatic</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

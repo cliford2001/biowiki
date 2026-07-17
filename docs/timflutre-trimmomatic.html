@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>trimmomatic</title>
+  <meta name="categoria" content="Control de calidad">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>trimmomatic</h1>
+    <p class="meta">
+      <a href="https://github.com/timflutre/trimmomatic">https://github.com/timflutre/trimmomatic</a>
+      <span> · 152 estrellas · Java</span>
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>Trimmomatic es una herramienta de corte de lecturas para datos de secuenciación de próxima generación (NGS) de Illumina. Está diseñada para eliminar bases de baja calidad, secuencias de adaptadores y otras contaminaciones de los datos de secuenciación, mejorando así la calidad de los datos de entrada para análisis posteriores como alineamiento, ensamblaje o variantes.</p>
+
+    <h2>Instalación</h2>
+    <p>Trimmomatic está escrito en Java, por lo que requiere un entorno Java 8 o posterior. Puedes instalarlo directamente desde el repositorio oficial usando el siguiente comando:</p>
+    <pre><code>java -jar /ruta/a/trimmomatic-0.39.jar</code></pre>
+    <p>El archivo JAR se puede descargar desde la página de releases del repositorio GitHub: <a href="https://github.com/timflutre/trimmomatic/releases">https://github.com/timflutre/trimmomatic/releases</a>. Asegúrate de usar una versión compatible con tu sistema y datos.</p>
+
+    <h2>Uso básico</h2>
+    <p>Un ejemplo de uso típico de Trimmomatic para cortar lecturas paired-end (PE) con eliminación de adaptadores y filtros de calidad:</p>
+    <pre><code>java -jar trimmomatic-0.39.jar PE -phred33 \
+  input_R1.fastq.gz input_R2.fastq.gz \
+  output_R1_paired.fastq.gz output_R1_unpaired.fastq.gz \
+  output_R2_paired.fastq.gz output_R2_unpaired.fastq.gz \
+  ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 \ 
+  SLIDINGWINDOW:4:15 \ 
+  MINLEN:36</code></pre>
+    <p>Este comando realiza tres pasos:</p>
+    <ul>
+      <li><code>ILLUMINACLIP</code>: elimina adaptadores de Illumina usando el archivo de referencia <code>TruSeq3-PE.fa</code>.</li>
+      <li><code>SLIDINGWINDOW</code>: aplica una ventana deslizante de tamaño 4 para eliminar bases con calidad promedio inferior a 15.</li>
+      <li><code>MINLEN</code>: filtra lecturas que quedan con menos de 36 bases.</li>
+    </ul>
+    <p>Nota: La sintaxis exacta puede variar según la versión. Siempre verifica la documentación oficial del proyecto.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual de trabajo con Trimmomatic en un análisis de NGS es el siguiente:</p>
+    <figure>
+      <svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Input -->
+        <rect x="20" y="50" width="120" height="40" fill="#f0f0f0" stroke="#333" rx="5" />
+        <text x="80" y="75" text-anchor="middle" font-size="12" fill="#333">Lecturas raw</text>
+        <line x1="140" y1="70" x2="160" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Trimmomatic -->
+        <rect x="160" y="40" width="140" height="60" fill="#d0e8ff" stroke="#333" rx="5" />
+        <text x="230" y="75" text-anchor="middle" font-size="12" fill="#333">Trimmomatic</text>
+        <text x="230" y="90" text-anchor="middle" font-size="10" fill="#333">(corte adaptadores, calidad)</text>
+        <line x1="300" y1="70" x2="320" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Output -->
+        <rect x="320" y="50" width="120" height="40" fill="#f0f0f0" stroke="#333" rx="5" />
+        <text x="380" y="75" text-anchor="middle" font-size="12" fill="#333">Lecturas filtradas</text>
+
+        <!-- Arrow definition -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Diagrama del flujo de trabajo típico con Trimmomatic: lecturas crudas → corte y filtrado → lecturas de calidad para análisis posteriores.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Usar el archivo de adaptadores incorrecto</strong>: Asegúrate de seleccionar el archivo de adaptadores correcto (por ejemplo, <code>TruSeq3-PE.fa</code> para secuenciación TruSeq PE).</li>
+      <li><strong>Establecer umbrales demasiado estrictos</strong>: Filtros muy severos (como <code>MINLEN:50</code>) pueden eliminar demasiadas lecturas. Prueba valores razonables basados en tu tipo de secuenciación y longitud de lectura.</li>
+      <li><strong>No especificar el formato de calidad</strong>: Usa <code>-phred33</code> para datos de Illumina con calidad ASCII 33 (común en datos más antiguos) o <code>-phred64</code> para datos con calidad ASCII 64. El error más común es usar el formato equivocado.</li>
+      <li><strong>Ignorar el análisis de calidad previo</strong>: Antes de usar Trimmomatic, verifica la calidad de tus datos con herramientas como FastQC para entender el tipo de contaminación.</li>
+      <li><strong>Reutilizar archivos JAR sin verificar la versión</strong>: Siempre descarga la última versión disponible del repositorio para asegurarte de tener correcciones y mejoras.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">1 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42319349.html">The RNA binding protein ZFP36L2 displays tissue-selective mRNA targeting in mice.</a> <span class="date">2026-07-17</span> · <a href="https://doi.org/10.1080/15476286.2026.2690792" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrección de sesgos de composición en metagenómica con análisis de datos composicionales</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Corrección de sesgos de composición en metagenómica con análisis de datos composicionales</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>En metagenómica, el análisis de datos composicionales es fundamental debido a la naturaleza relativa de las secuencias de ADN obtenidas. Las técnicas de secuenciación generan datos en forma de frecuencias relativas (por ejemplo, porcentaje de lecturas asignadas a cada taxón), lo que introduce un sesgo conocido como <strong>sesgo de composición</strong>. Este sesgo afecta la inferencia de la verdadera abundancia microbiana, ya que un cambio en un taxón provoca una redistribución proporcional en todos los demás, incluso si su abundancia real no cambió. Este fenómeno es particularmente crítico en estudios de diversidad microbiana, diferencial, y en análisis de correlación.</p>
+      <p>La corrección de estos sesgos es esencial para obtener resultados biológicamente válidos. Métodos como <code>ANCOM-BC</code>, <code>ALDEx2</code>, <code>DESeq2</code> (con métodos de transformación), y <code>metagenomeSeq</code> han sido diseñados específicamente para abordar estas limitaciones. Este artículo explora las causas del sesgo, sus consecuencias, y presenta herramientas prácticas y buenas prácticas para corregirlo en estudios metagenómicos.</p>
+    </section>
+
+    <section>
+      <h2>Origen y efectos del sesgo de composición</h2>
+      <p>El sesgo de composición surge porque las mediciones de abundancia en metagenómica son <em>composicionales</em>: el total de lecturas por muestra se mantiene constante. Si un taxón aumenta, todos los demás deben disminuir proporcionalmente, aunque su abundancia real no cambie. Esto distorsiona métricas de diversidad como el <em>alpha</em> y <em>beta</em> diversidad, y puede generar correlaciones artificiales entre microorganismos.</p>
+      <p>Por ejemplo, en un estudio de microbioma humano, una disminución de un patógeno podría hacer que otros taxones parezcan aumentar en abundancia, simplemente por redistribución. Esto lleva a falsos positivos en análisis de asociación o en modelos predictivos.</p>
+    </section>
+
+    <section>
+      <h2>Herramientas y métodos de corrección</h2>
+      <p>Existen varios enfoques para mitigar el sesgo de composición, principalmente basados en transformaciones matemáticas o modelos estadísticos que consideran la naturaleza relativa de los datos.</p>
+
+      <h3>Transformación de ilogit (Centered Log-Ratio)</h3>
+      <p>El <strong>ilr</strong> (isometric log-ratio) y el <strong>clr</strong> (centered log-ratio) son transformaciones comunes. El clr transforma los datos mediante:</p>
+      <pre><code>clr(x_i) = log(x_i / G(x))
+</code></pre>
+      <p>donde <code>G(x)</code> es la media geométrica de todos los valores en la muestra. Esta transformación elimina la suma constante y permite análisis convencionales de regresión o PCA.</p>
+
+      <h3>ANCOM-BC</h3>
+      <p><code>ANCOM-BC</code> (Analysis of Composition of Microbiomes - Bias Correction) es una herramienta robusta que combina un modelo de regresión con una corrección de sesgo. Se basa en el modelo de Poisson con un término de corrección de sesgo. Ejemplo de uso en R:</p>
+      <pre><code>library(ANCOMBC)
+
+# Datos: data_matrix es una matriz de contadores (taxa x muestras)
+# group es el vector de grupos (por ejemplo, tratamiento vs control)
+
+results &lt;- ANCOMBC(data_matrix, group, nperm = 1000, alpha = 0.05)
+summary(results)
+</code></pre>
+
+      <h3>ALDEx2</h3>
+      <p><code>ALDEx2</code> (Analysis of Differential Abundance applying Linear Models) utiliza un enfoque bayesiano con transformación log-ratio y muestreo de Monte Carlo. Es particularmente útil para detectar diferencias de abundancia en estudios con baja potencia.</p>
+      <pre><code>library(ALDEx2)
+
+# data_matrix: matriz de abundancias relativas (0-1)
+# metadata: datos de muestra (factores)
+
+aldex_data &lt;- aldex(data_matrix, metadata, method = "bayes", b = 1000)
+results &lt;- aldex.test(aldex_data, "group")
+</code></pre>
+
+      <h3>DESeq2 con transformación</h3>
+      <p>Si se usan contadores absolutos (de herramientas como <code>kraken2</code> o <code>bracken</code>), se puede aplicar <code>DESeq2</code> tras una transformación de datos:</p>
+      <pre><code>library(DESeq2)
+
+# dds: objeto DESeqDataSet con contadores
+# Aplicar transformación con rlog
+rld &lt;- rlog(dds, blind = FALSE)
+
+# Análisis diferencial
+results &lt;- results(dds, contrast = c("condition", "treatment", "control"))
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El sesgo de composición es un desafío inherente al análisis de datos metagenómicos, pero no insuperable. Al usar herramientas especializadas como <code>ANCOM-BC</code>, <code>ALDEx2</code>, <code>DESeq2</code> con transformación <code>rlog</code>, o técnicas de transformación log-ratio como <code>clr</code> o <code>ilr</code>, es posible corregir este sesgo y obtener resultados biológicamente significativos. La elección del método depende del diseño del estudio, del tipo de datos (relativos vs absolutos) y de la pregunta de investigación.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>NO</strong> aplicar análisis de regresión directamente sobre abundancias relativas sin transformación.</li>
+        <li><strong>NO</strong> usar PCA o t-SNE directamente sobre datos composicionales: siempre transformar primero.</li>
+        <li><strong>SÍ</strong> usar <code>ANCOM-BC</code> para estudios de diferencial abundancia cuando se trabaja con datos de composición.</li>
+        <li><strong>SÍ</strong> validar resultados con métodos alternativos (por ejemplo, comparar ANCOM-BC con ALDEx2).</li>
+        <li><strong>SÍ</strong> reportar el método de transformación y el software utilizado en los métodos.</li>
+        <li><strong>NO</strong> asumir que un cambio en abundancia relativa implica un cambio biológico real.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

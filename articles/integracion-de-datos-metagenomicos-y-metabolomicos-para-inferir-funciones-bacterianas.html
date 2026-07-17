@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos metagenómicos y metabolómicos para inferir funciones bacterianas</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Integración de datos metagenómicos y metabolómicos para inferir funciones bacterianas</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: La convergencia de genómica y metabolómica</h2>
+      <p>La comprensión de la función microbiana en ecosistemas complejos, como el microbioma humano o el suelo, requiere un enfoque multivariado. La metagenómica permite caracterizar la composición taxonómica y el potencial genético de comunidades microbianas, mientras que la metabolómica ofrece una ventana directa sobre los productos bioquímicos que estas comunidades producen o consumen. Juntas, estas tecnologías proporcionan una visión más completa del funcionamiento metabólico de los microbios en su entorno natural.</p>
+      <p>La integración de datos metagenómicos y metabolómicos representa una estrategia poderosa para inferir funciones bacterianas a partir de datos de alto rendimiento. Aunque cada técnica tiene sus limitaciones —la metagenómica puede no captar functional capacity en tiempo real, y la metabolómica puede no identificar con precisión la fuente microbiana— su combinación permite validar inferencias, identificar rutas metabólicas activas y descubrir interacciones microbianas clave. Esta integración es fundamental para avanzar en aplicaciones como diagnóstico microbiológico, desarrollo de probióticos y biotecnología ambiental.</p>
+    </section>
+
+    <section>
+      <h2>Enfoques para la integración de datos</h2>
+      <p>Existen múltiples estrategias para integrar datos metagenómicos y metabolómicos, desde análisis complementarios hasta modelos predictivos integrados. Las estrategias más comunes incluyen:</p>
+      <ul>
+        <li><strong>Correlación entre abundancias taxonómicas y metabolitos:</strong> Se analiza si la presencia o abundancia de ciertas especies bacterianas se correlaciona con la concentración de metabolitos específicos en una muestra. Esto puede indicar funciones clave, como la producción de ácidos grasos de cadena corta (AGCC) por bacterias del género <em>Prevotella</em>.</li>
+        <li><strong>Inferecia de rutas metabólicas:</strong> Herramientas como <code>KEGG</code> y <code>MetaCyc</code> se usan para mapear genes identificados en datos metagenómicos a vías metabólicas. Estas rutas se pueden comparar con perfiles de metabolitos detectados para identificar vías activas.</li>
+        <li><strong>Modelos predictivos de función:</strong> Métodos como <code>PICRUSt2</code> y <code>Tax4Fun2</code> permiten predecir la función metabólica basada en la composición taxonómica. Estas predicciones pueden validarse o refinarse mediante datos de metabolómica.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Herramientas clave para el análisis integrado</h2>
+      <p>La disponibilidad de herramientas especializadas facilita esta integración. Algunas de las más utilizadas son:</p>
+
+      <h3>PICRUSt2 (Phylogenetic Investigation of Communities by Reconstruction of Unobserved States)</h3>
+      <p>PICRUSt2 permite predecir el perfil funcional de una comunidad microbiana a partir de secuencias 16S rRNA. Usa un modelo basado en árboles filogenéticos para inferir funciones ausentes en el genoma de referencia. Es particularmente útil cuando no se dispone de metagenómica de whole-genome.</p>
+
+      <h3>Tax4Fun2</h3>
+      <p>Similar a PICRUSt2, pero basado en una base de datos de funciones para proteínas de bacterias, y funciona también con datos de 16S. Es especialmente útil para obtener perfiles funcionales en términos de vías metabólicas.</p>
+
+      <h3>HUMAnN (HMP Unified Metabolic Analysis Network)</h3>
+      <p>HUMAnN es una plataforma completa para el análisis metagenómico que incluye la identificación de genes, funciones y rutas. Puede integrarse con datos de metabolómica para validar perfiles funcionales y correlacionarlos con metabolitos detectados.</p>
+
+      <h3>MetaboAnalyst</h3>
+      <p>MetaboAnalyst es una herramienta web robusta para el análisis de datos metabolómicos. Permite la visualización de perfiles metabólicos, análisis de rutas, y correlaciones con otros datos omicos, incluyendo datos metagenómicos.</p>
+
+      <p>Un ejemplo de integración puede ser: usar HUMAnN para obtener el perfil funcional de una muestra metagenómica, luego comparar los genes o funciones previstas con metabolitos detectados mediante MetaboAnalyst, y finalmente correlacionar la abundancia de especies (por ejemplo, mediante Tax4Fun2) con la presencia de ciertos metabolitos.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos metagenómicos y metabolómicos es una frontera clave en bioinformática microbiana. Permite inferir funciones bacterianas con mayor precisión que cualquier técnica aislada. Al combinar la capacidad de identificación taxonómica de la metagenómica con la detección directa de metabolitos, se puede reconstruir la red metabólica de un microbioma, identificar funciones clave y entender las interacciones microbianas. Herramientas como PICRUSt2, Tax4Fun2, HUMAnN y MetaboAnalyst facilitan este proceso, permitiendo análisis sistemáticos y reproducibles.</p>
+      <p>La clave está en un diseño experimental cuidadoso, análisis estadístico robusto y la interpretación crítica de los resultados, evitando inferencias causales sin evidencia empírica sólida.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>No confundir correlación con causalidad:</strong> Una correlación entre un microbio y un metabolito no implica que el primero lo produce. Es necesario validar con cultivos o ensayos funcionales.</li>
+        <li><strong>Verificar la calidad de los datos:</strong> Ambos tipos de datos requieren preprocesamiento riguroso. En metagenómica, asegurarse de que el mapeo y la anotación sean adecuados. En metabolómica, controlar la detección de picos y el tratamiento de datos (normalización, imputación).</li>
+        <li><strong>Usar bases de datos actualizadas:</strong> Las predicciones funcionales dependen fuertemente de la calidad y actualidad de las bases de datos de genes y rutas metabólicas.</li>
+        <li><strong>Considerar el contexto biológico:</strong> Las funciones pueden variar según el entorno. La misma bacteria puede tener un perfil metabólico diferente en el intestino humano versus el suelo.</li>
+        <li><strong>Evitar la sobreinterpretación:</strong> Las herramientas de predicción (como PICRUSt2) tienen limitaciones y no reemplazan la metagenómica completa ni el análisis experimental.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

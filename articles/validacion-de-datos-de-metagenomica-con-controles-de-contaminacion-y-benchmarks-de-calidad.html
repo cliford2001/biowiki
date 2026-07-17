@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de datos de metagenómica con controles de contaminación y benchmarks de calidad</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Validación de datos de metagenómica con controles de contaminación y benchmarks de calidad</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué la validación es fundamental</h2>
+            <p>En el análisis de metagenómica, los datos generados por secuenciación de alto rendimiento (NGS) son inherentemente complejos y susceptibles a múltiples fuentes de error. La calidad de los datos de entrada directamente impacta en la fiabilidad de los resultados, desde el perfil de microbioma hasta la inferencia de funciones metabólicas. Sin una validación rigurosa, el análisis puede estar sesgado por contaminación, bajo rendimiento de secuenciación o artefactos técnicos. Este artículo explora las estrategias clave para validar datos metagenómicos, con énfasis en la detección de contaminación y la evaluación cuantitativa de la calidad mediante benchmarks estandarizados.</p>
+        </section>
+
+        <section>
+            <h2>Controles de contaminación: identificación y mitigación</h2>
+            <p>La contaminación puede provenir de múltiples fuentes: reactivos, herramientas de laboratorio, contaminantes ambientales o incluso de la base de datos de referencia utilizada en el análisis. Los controles de contaminación son esenciales para asegurar que los hallazgos reflejen la verdadera composición del microbioma y no artefactos del proceso.</p>
+
+            <h3>Contaminación por reactivos y laboratorio</h3>
+            <p>Los controles negativos, como los "blank" o "no-template controls" (NTCs), deben incluirse en cada experimento para detectar contaminación de reactivos. Herramientas como <code>contam</code> o <code>decontam</code> en R permiten analizar estas muestras y estimar la fracción de lecturas atribuibles a contaminantes. Por ejemplo, una fracción de contaminación superior al 1% en un control negativo puede indicar problemas con los reactivos o el entorno de laboratorio.</p>
+
+            <h3>Contaminación por referencia y base de datos</h3>
+            <p>Las bases de datos de referencia (como RefSeq, UniRef, GTDB) pueden contener secuencias contaminadas o erróneas. Es crucial verificar la calidad de la referencia antes de usarla. Herramientas como <code>checkm</code> o <code>checkm-genome</code> permiten evaluar la integridad y contaminación de genomas de referencia. Además, métodos como <code>kraken2</code> o <code>Bracken</code> pueden ayudar a identificar lecturas que pertenecen a organismos no deseados, especialmente en el contexto de análisis de muestras humanas donde la contaminación por humano es común.</p>
+        </section>
+
+        <section>
+            <h2>Benchmarks de calidad: métricas y herramientas</h2>
+            <p>La evaluación cuantitativa de la calidad de los datos metagenómicos se realiza mediante una serie de benchmarks estandarizados. Estas métricas ayudan a comparar muestras, validar protocolos y decidir si los datos son adecuados para el análisis.</p>
+
+            <h3>Control de calidad en etapa de preprocesamiento</h3>
+            <p>Las herramientas como <code>FastQC</code> y <code>MultiQC</code> proporcionan un análisis exhaustivo de la calidad de las lecturas. <code>FastQC</code> genera informes detallados sobre métricas como el contenido de bases, calidad media por posición, longitudes de lectura y contaminación. <code>MultiQC</code> combina resultados de múltiples herramientas en un informe único. Por ejemplo, un valor de calidad media por posición inferior a Q20 puede indicar problemas en la secuenciación.</p>
+
+            <h3>Métricas de rendimiento y cobertura</h3>
+            <p>Para evaluar el rendimiento del ensayo, se utilizan métricas como el número de lecturas (reads), la cobertura promedio, el porcentaje de lecturas asignadas a taxones y la cantidad de secuencias únicas. Herramientas como <code>metabat2</code> o <code>maxbin2</code> dependen de una cobertura adecuada para la reconstrucción de genomas. Un bajo rendimiento puede indicar problemas en la extracción de ADN o en la librería.</p>
+
+            <h3>Validación de resultados: benchmarks de comparación</h3>
+            <p>La validación de resultados se puede realizar mediante benchmarks comparativos. Por ejemplo, la herramienta <code>metagenomeQC</code> permite comparar múltiples muestras y detectar outliers. Además, se pueden utilizar datos de referencia como los <em>Gold Standard Metagenomic Datasets</em> para evaluar la precisión de los pipelines de análisis. El uso de controles positivos y negativos en el análisis también proporciona una forma de validar el rendimiento del pipeline.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La validación de datos metagenómicos es un paso crítico que no puede omitirse. Incluir controles negativos en el laboratorio, utilizar herramientas como <code>FastQC</code>, <code>decontam</code>, <code>checkm</code> y <code>metagenomeQC</code> permite identificar y mitigar contaminaciones, mientras que los benchmarks de calidad como la cobertura, la calidad media y la asignación taxonómica garantizan que los datos sean adecuados para el análisis. Una validación rigurosa es la base de cualquier estudio metagenómico confiable.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Errores comunes:</strong>
+                    <ul>
+                        <li>Ignorar controles negativos en el laboratorio.</li>
+                        <li>Usar bases de datos de referencia no validadas.</li>
+                        <li>Analizar datos sin revisar los informes de <code>FastQC</code>.</li>
+                        <li>Asumir que todos los datos son igual de de calidad sin realizar validación.</li>
+                    </ul>
+                </li>
+                <li><strong>Buenas prácticas:</strong>
+                    <ul>
+                        <li>Incluir controles negativos en cada experimento.</li>
+                        <li>Validar la calidad de las bases de datos de referencia.</li>
+                        <li>Utilizar <code>FastQC</code> y <code>MultiQC</code> como primer paso de análisis.</li>
+                        <li>Aplicar <code>decontam</code> si hay sospecha de contaminación por reactivos.</li>
+                        <li>Documentar todos los pasos de validación para reproducibilidad.</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

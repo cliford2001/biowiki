@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anotación funcional de genes en microbiomas con KEGG y MetaCyc</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Anotación funcional de genes en microbiomas con KEGG y MetaCyc</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La anotación funcional de genes en microbiomas es un paso fundamental para transformar datos genómicos brutos en conocimiento biológico significativo. Tras el ensamblaje de genes o la identificación de genes en un metagenoma, el objetivo es determinar qué funciones biológicas desempeñan estos genes en sus respectivos microorganismos. Las bases de datos KEGG (Kyoto Encyclopedia of Genes and Genomes) y MetaCyc representan dos de las herramientas más ampliamente utilizadas para este propósito, ofreciendo una estructuración sistemática de las vías metabólicas, reacciones enzimáticas y funciones moleculares.</p>
+            <p>KEGG se centra en la representación de vías metabólicas a nivel de organismos y redes funcionales, mientras que MetaCyc ofrece un catálogo más amplio y detallado de vías metabólicas en múltiples organismos, incluyendo muchas en microorganismos no cultivados. Su combinación permite una anotación funcional profunda, especialmente útil en estudios de microbiomas donde se trabaja con datos incompletos o de organismos poco caracterizados.</p>
+        </section>
+
+        <section>
+            <h2>Conceptos clave: KEGG y MetaCyc</h2>
+            <h3>KEGG</h3>
+            <p>KEGG está organizado en niveles jerárquicos: <strong>Organismos</strong> → <strong>Campos funcionales</strong> → <strong>Vías metabólicas</strong> → <strong>Reacciones y genes</strong>. Cada vía está representada como un mapa visual (KEGG Pathway) que muestra los pasos, los enzimas y los genes asociados. Los datos funcionales se asignan mediante alineamiento de secuencias (BLAST) o comparación con perfiles de dominios (HMMER), y se mapean a rutas específicas.</p>
+
+            <h3>MetaCyc</h3>
+            <p>MetaCyc es una base de datos de vías metabólicas de alta calidad, mantenido por el SRI International. A diferencia de KEGG, no está centrado en organismos específicos, sino en vías metabólicas universales. Incluye más de 3.000 vías distintas, muchas de las cuales están respaldadas por evidencia experimental directa. Su estructura permite un análisis funcional más flexible, ideal para microbiomas donde la filogenia es incierta.</p>
+        </section>
+
+        <section>
+            <h2>Proceso de anotación funcional</h2>
+            <p>El flujo típico para la anotación funcional en microbiomas incluye los siguientes pasos:</p>
+            <ol>
+                <li><strong>Obtención de secuencias proteicas</strong> desde genes identificados en metagenómica (por ejemplo, mediante <code>prodigal</code> o <code>getorf</code>).</li>
+                <li><strong>Alcance de funciones mediante herramientas de alineamiento</strong> como <code>BLASTP</code> o <code>DIAMOND</code> contra los bancos de datos de KEGG y MetaCyc.</li>
+                <li><strong>Asignación de identificadores funcionales</strong> (KO para KEGG, MetaCyc IDs para MetaCyc).</li>
+                <li><strong>Enriquecimiento funcional</strong> y análisis de vías mediante herramientas como <code>KEGG-Profiler</code>, <code>clusterProfiler</code> (R) o <code>PathwayTools</code> (para MetaCyc).</li>
+            </ol>
+
+            <h3>Ejemplo práctico con DIAMOND y KEGG</h3>
+            <p>El siguiente flujo muestra cómo usar <code>DIAMOND</code> para alinear secuencias proteicas contra la base de datos KEGG:</p>
+            <pre><code>#!/bin/bash
+# Paso 1: Alinear secuencias proteicas con DIAMOND
+
+# Descargar base de datos KEGG (si no está disponible)
+diamond makedb --in proteins.fasta --db kegg.dmnd
+
+# Alineamiento
+
+diamond blastp --db kegg.dmnd \
+  --query proteins.fasta \
+  --out results.diamond \
+  --outfmt 6 qseqid sseqid pident evalue bitscore \
+  --max-target-seqs 1 \
+  --sensitive</code></pre>
+            <p>El resultado se puede procesar con herramientas como <code>KEGG-R</code> o scripts en Python para mapear KO IDs y generar un perfil funcional de los microbiomas.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La anotación funcional de genes en microbiomas mediante KEGG y MetaCyc es una herramienta esencial para desentrañar la complejidad funcional de comunidades microbianas. KEGG ofrece una visión integrada de vías metabólicas en contextos filogenéticos, mientras que MetaCyc proporciona un catálogo detallado y experimental de vías, ideal para el análisis de microorganismos no cultivados. Juntos, estos recursos permiten no solo identificar qué funciones están presentes, sino también inferir cómo interactúan en redes metabólicas, lo cual es clave en estudios de salud, medio ambiente y biotecnología.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar datos de referencia actualizados</strong>: Las bases de datos KEGG y MetaCyc se actualizan regularmente. Usar versiones obsoletas puede llevar a anotaciones incorrectas. Siempre verifica la fecha de la base de datos usada.</li>
+                <li><strong>Ignorar el contexto filogenético</strong>: KEGG es útil para organismos con representación completa, pero puede fallar en organismos desconocidos. Complementa con MetaCyc para aumentar la cobertura.</li>
+                <li><strong>Superar el umbral de significancia en el análisis funcional</strong>: Al usar enriquecimiento, evita falsos positivos. Asegúrate de ajustar el p-valor o FDR adecuadamente.</li>
+                <li><strong>Usar herramientas específicas</strong>: Para KEGG, considera <code>KEGG REST API</code> o <code>KEGG Mapper</code> para visualizar rutas. Para MetaCyc, <code>Pathway Tools</code> es altamente recomendado para análisis avanzado.</li>
+                <li><strong>Documentar el flujo</strong>: Registra cada paso del proceso de anotación, incluyendo versiones de herramientas y bases de datos, para reproducibilidad.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

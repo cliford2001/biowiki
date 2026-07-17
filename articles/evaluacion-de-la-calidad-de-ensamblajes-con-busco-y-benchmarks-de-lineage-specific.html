@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de la calidad de ensamblajes con BUSCO y benchmarks de lineage-specific</title>
+    <meta name="categoria" content="Control de calidad">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Evaluación de la calidad de ensamblajes con BUSCO y benchmarks de lineage-specific</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es un ensamblaje genómico y por qué es crucial evaluar su calidad?</h2>
+            <p>Un <strong>ensamblaje genómico</strong> es el proceso de reconstruir el genoma completo de un organismo a partir de millones de fragmentos cortos de secuencias de ADN, generados por tecnologías de secuenciación de próxima generación (NGS). Este es un paso fundamental en genómica, ya que el ensamblaje de alta calidad es la base para análisis posteriores: anotación de genes, estudios evolutivos, detección de variantes, y comprensión de la función genética.</p>
+            <p>La calidad de un ensamblaje no puede determinarse solo por el tamaño o el número de contigs. Un ensamblaje puede ser grande pero altamente fragmentado o contener errores de secuencia. Por ello, <strong>evaluar la calidad</strong> es esencial para decidir si un ensamblaje es confiable para su uso en investigaciones.</p>
+        </section>
+
+        <section>
+            <h2>Introducción a BUSCO: Benchmarking Universal Single-Copy Orthologs</h2>
+            <p>El <strong>tool BUSCO</strong> (Benchmarking Universal Single-Copy Orthologs) es una herramienta ampliamente utilizada para evaluar la calidad de ensamblajes genómicos. Busca una colección de genes que son universalmente presentes en un grupo taxonómico específico, son <strong>single-copy</strong> (no duplicados), y son <strong>orthólogos</strong> (homólogos derivados de una especie ancestral común).</p>
+            <p>El enfoque de BUSCO se basa en el principio de que, en un genoma completo y bien ensamblado, casi todos los genes únicos y conservados deben estar presentes. Busco compara el ensamblaje con una base de datos de estos genes clave y reporta:</p>
+            <ul>
+                <li><strong>Completo</strong>: genes encontrados de forma completa y correcta.</li>
+                <li><strong>Parcial</strong>: genes encontrados con fragmentos incompletos.</li>
+                <li><strong>Faltantes</strong>: genes que no se encontraron.</li>
+            </ul>
+            <p>Este resultado proporciona una métrica cuantitativa y comparativa de la calidad del ensamblaje.</p>
+        </section>
+
+        <section>
+            <h2>Uso de BUSCO con bases de datos lineage-specific</h2>
+            <p>El poder de BUSCO se maximiza cuando se usa con bases de datos <strong>lineage-specific</strong>, es decir, específicas de un grupo taxonómico (por ejemplo, <code>metazoa</code>, <code>vertebrata</code>, <code>fungi</code>, <code>plantae</code>, o incluso grupos más estrechos como <code>primates</code> o <code>homo_sapiens</code>).</p>
+            <p>Estas bases de datos contienen genes que son únicos y bien conservados en ese linaje, lo que hace que las métricas de BUSCO sean más relevantes y específicas. Usar una base de datos general (como <code>universallineage</code>) puede dar resultados menos precisos, ya que incluye genes que pueden no ser útiles para el grupo de interés.</p>
+            <p>Para ejecutar BUSCO con una base de datos específica, se utiliza el siguiente comando:</p>
+            <pre><code>busco -i ensamblaje.fasta -o busco_result -m genome -l metazoa -c 8 --offline</code></pre>
+            <p>Donde:</p>
+            <ul>
+                <li><code>-i</code>: archivo de entrada del ensamblaje.</li>
+                <li><code>-o</code>: nombre del directorio de salida.</li>
+                <li><code>-m genome</code>: modo genoma (vs. transcriptoma).</li>
+                <li><code>-l metazoa</code>: linaje específico.</li>
+                <li><code>-c 8</code>: número de núcleos.</li>
+                <li><code>--offline</code>: usar bases de datos locales (previamente descargadas).</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Interpretación de los resultados de BUSCO</h2>
+            <p>El informe de BUSCO muestra un resumen de los genes encontrados:</p>
+            <pre><code>Complete: 98.2% (621/632)
+Partial: 1.8% (11/632)
+Missing: 0.0% (0/632)</code></pre>
+            <p>Un ensamblaje con <strong>alto porcentaje de genes completos</strong> (más del 95%) y <strong>ningún gen faltante</strong> se considera de alta calidad. Un porcentaje de genes parciales mayor al 5% puede indicar fragmentación o errores en el ensamblaje.</p>
+            <p>Es importante comparar estos resultados con los de otros ensamblajes del mismo organismo o con ensamblajes de referencia. Un buen ensamblaje debe superar a otros en los parámetros de BUSCO.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar bases de datos lineage-specific</strong>: usar una base general puede llevar a conclusiones erróneas. Siempre elige la base más adecuada al linaje del organismo.</li>
+                <li><strong>No verificar la descarga de bases de datos</strong>: asegúrate de haber descargado la base de datos correctamente antes de usarla con <code>--offline</code>.</li>
+                <li><strong>Ignorar los genes parciales</strong>: un alto número de genes parciales puede indicar problemas de fragmentación. Revisa el ensamblaje con herramientas como <code>QUAST</code> o <code>CheckM</code> para profundizar.</li>
+                <li><strong>Usar BUSCO sin validación adicional</strong>: BUSCO es una métrica poderosa pero no la única. Combínalo con otros análisis como la calidad de las secuencias (qualimap), el N50, la cobertura, y la comparación con un genoma de referencia si existe.</li>
+            </ul>
+            <p>Una buena práctica es generar un informe comparativo de múltiples ensamblajes usando BUSCO con la misma base de datos, para elegir el mejor.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La evaluación de la calidad de un ensamblaje genómico es un paso crítico en cualquier estudio de genómica. BUSCO, especialmente cuando se usa con bases de datos lineage-specific, proporciona una métrica objetiva y ampliamente aceptada para medir la completitud del genoma. Un ensamblaje con alta tasa de genes completos y baja fragmentación es un indicador de alta calidad. Sin embargo, BUSCO debe usarse junto con otras herramientas y métricas para una evaluación completa. La elección de la base de datos adecuada y la interpretación cuidadosa de los resultados son clave para obtener conclusiones fiables.</p>
+        </section>
+    </article>
+</body>
+</html>
