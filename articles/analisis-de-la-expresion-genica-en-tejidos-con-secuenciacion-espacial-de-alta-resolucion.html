@@ -1,0 +1,42 @@
+  
+            </section>
+
+            <section>
+                <h2>Identificación de tipos celulares y mapeo espacial</h2>
+                <p>Una vez construida la matriz de conteo, se aplica una reducción de dimensionalidad (como PCA o UMAP) para visualizar la estructura de datos y detectar grupos celulares. <code>Seurat</code> y <code>Scanpy</code> son las plataformas más utilizadas. Tras el clustering (por ejemplo, con <code>Leiden</code> o <code>louvain</code>), se asignan etiquetas a los grupos basándose en la expresión de marcadores conocidos (como <code>CD3E</code> para linfocitos T o <code>CD34</code> para células madre).</p>
+                <p>El mapeo espacial consiste en superponer las etiquetas de tipo celular sobre la imagen del tejido (generalmente proporcionada por el fabricante del chip). Esto permite visualizar la distribución espacial de tipos celulares, detectar zonas de infiltración, identificar zonas de transición (como la frontera tumor-normal) y observar la arquitectura celular a escala microscópica.</p>
+            </section>
+
+            <section>
+                <h2>Identificación de gradientes y regiones funcionales</h2>
+                <p>La gran ventaja de ST es su capacidad para detectar gradientes de expresión. Se pueden identificar regiones con expresión diferencial de genes relacionados con procesos biológicos (por ejemplo, genes de inflamación, proliferación o diferenciación). Herramientas como <code>spatialDE</code> o <code>BayesSpace</code> permiten modelar expresión espacialmente variable, detectando genes cuya expresión cambia continuamente a través del tejido.</p>
+                <p>Además, el análisis de correlaciones espaciales (por ejemplo, con <code>SPARK</code>) permite identificar pares de genes cuyas expresiones están correlacionadas en espacios cercanos, lo que puede indicar interacciones funcionales o redes reguladoras locales.</p>
+            </section>
+
+            <section>
+                <h2>Resumen</h2>
+                <p>El análisis de la expresión génica en tejidos mediante secuenciación espacial de alta resolución representa una herramienta poderosa para la biología funcional. Permite recuperar no solo qué genes se expresan, sino <strong>dónde</strong> y <strong>cómo</strong> se expresan. El flujo de trabajo, desde el preprocesamiento hasta la interpretación biológica, requiere una combinación de herramientas especializadas en bioinformática (STAR, Seurat, Scanpy, spatialDE) y un enfoque riguroso en la validación de resultados. A pesar de los desafíos técnicos como el ruido de fondo, la baja profundidad en píxeles individuales o la falta de referencias genómicas para tejidos complejos, el potencial de esta tecnología para descubrir mecanismos celulares en su contexto real es incalculable.</p>
+            </section>
+
+            <section>
+                <h2>Errores comunes / buenas prácticas</h2>
+                <ul>
+                    <li><strong>No omitir la normalización</strong>: La profundidad de secuenciación varía entre píxeles. Si no se normaliza, se pueden obtener resultados sesgados.</li>
+                    <li><strong>Evitar el uso de datos sin validación</strong>: Las matrices de conteo de ST pueden contener muchos genes con conteo cero. Filtrar genes de baja expresión antes del clustering es crucial.</li>
+                    <li><strong>Usar herramientas específicas para ST</strong>: No aplicar métodos de scRNA-seq directamente a datos espaciales, ya que asumen independencia celular, lo cual no se cumple en ST.</li>
+                    <li><strong>Validar hallazgos con imágenes histológicas</strong>: Las etiquetas de tipo celular deben ser coherentes con los patrones anatómicos observados en secciones de tejido.</li>
+                    <li><strong>Considerar el tamaño de los píxeles</strong>: Un píxel puede contener múltiples células. El análisis debe tener en cuenta esta heterogeneidad.</li>
+                </ul>
+            </section>
+        <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+    </body>
+</html>

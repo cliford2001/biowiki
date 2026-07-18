@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de la calidad de reads con Trimmomatic y su impacto en el ensamblaje genómico</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de la calidad de reads con Trimmomatic y su impacto en el ensamblaje genómico</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué el control de calidad es crucial en el ensamblaje</h2>
+            <p>El ensamblaje genómico, proceso fundamental para reconstruir el genoma completo a partir de fragmentos cortos de secuenciación (reads), es extremadamente sensible a la calidad de los datos de entrada. Reads con contaminación, baja calidad o secuencias de adaptadores pueden introducir errores sistemáticos que se traducen en fragmentos cortos, falsas fusiones, duplicaciones o incluso en la generación de un genoma altamente fragmentado y con alta tasa de errores. <strong>Trimmomatic</strong> es una herramienta de software de código abierto diseñada específicamente para el preprocesamiento de datos de secuenciación de nueva generación (NGS), con foco en la eliminación de secuencias no deseadas y la mejora de la calidad de los reads, lo cual es un paso esencial antes de cualquier ensamblaje.</p>
+        </section>
+
+        <section>
+            <h2>¿Qué hace Trimmomatic y cómo funciona?</h2>
+            <p>Trimmomatic opera sobre pares de reads (PE) o reads únicos (SE) y aplica una serie de filtros de calidad en tiempo real. Sus principales funciones incluyen:</p>
+            <ul>
+                <li><strong>Eliminación de adaptadores:</strong> Identifica y elimina secuencias de adaptadores utilizadas durante el proceso de librería, que no pertenecen al genoma objetivo.</li>
+                <li><strong>Trimming de calidad:</strong> Elimina bases con baja puntuación de calidad (Q-score) desde el inicio o final de los reads, especialmente en los extremos, donde los errores son más comunes.</li>
+                <li><strong>Recorte por longitud mínima:</strong> Filtra reads que, tras el trimming, quedan por debajo de una longitud mínima definida, evitando el procesamiento de fragmentos demasiado cortos.</li>
+            </ul>
+            <p>La herramienta utiliza un algoritmo basado en una ventana móvil para evaluar la calidad promedio en segmentos de la secuencia. Si la calidad media dentro de una ventana cae por debajo de un umbral, se inicia el recorte. Además, puede aplicar filtros de calidad en el final de los reads, ajustando parámetros como el tamaño de la ventana y el umbral de calidad.</p>
+
+            <h3>Ejemplo de uso en la línea de comandos</h3>
+            <pre><code>trimmomatic PE -phred33 reads_1.fastq.gz reads_2.fastq.gz \
+    trimmed_1.fastq.gz unpaired_1.fastq.gz \
+    trimmed_2.fastq.gz unpaired_2.fastq.gz \
+    ILLUMINACLIP:adapters.fa:2:30:10:8:TRUE SLIDINGWINDOW:4:15 MINLEN:36</code></pre>
+            <p>Este comando realiza un ajuste típico para datos Illumina:</p>
+            <ul>
+                <li><code>ILLUMINACLIP</code>: Recorta adaptadores usando el archivo <code>adapters.fa</code> con parámetros de emparejamiento (2 de identidad mínima, 30 de longitud mínima).</li>
+                <li><code>SLIDINGWINDOW:4:15</code>: Aplica una ventana de 4 bases con umbral de calidad 15.</li>
+                <li><code>MINLEN:36</code>: Elimina reads de menos de 36 pares de bases tras el trimming.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Impacto del preprocesamiento en el ensamblaje genómico</h2>
+            <p>Los datos de entrada de alta calidad directamente impactan en la calidad del ensamblaje. Al eliminar reads de baja calidad y adaptadores, Trimmomatic reduce significativamente:</p>
+            <ul>
+                <li><strong>Las falsas uniones:</strong> Reads contaminados pueden alinearse erróneamente a secuencias distantes del genoma, induciendo fusiones falsas.</li>
+                <li><strong>Las fragmentaciones:</strong> Secuencias cortas o inestables pueden provocar cortes en el ensamblaje, generando un genoma altamente fragmentado.</li>
+                <li><strong>El ruido de fondo:</strong> La presencia de contaminantes disminuye la cobertura efectiva y reduce la eficiencia del algoritmo de ensamblaje.</li>
+            </ul>
+            <p>Herramientas como <strong>SPAdes</strong>, <strong>Velvet</strong>, <strong>MEGAHIT</strong> o <strong>Flye</strong> dependen de la cobertura uniforme y la homogeneidad de los reads. Un preprocesamiento inadecuado puede hacer que incluso los mejores ensambladores produzcan resultados subóptimos. Además, el número de reads después del trimming puede afectar la complejidad del genoma y la capacidad de los ensambladores para resolver repeticiones.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de calidad de reads mediante Trimmomatic no es un paso opcional, sino una condición previa esencial para un ensamblaje genómico exitoso. Al eliminar contaminantes, adaptadores y bases de baja calidad, se mejora la cobertura, se reduce el ruido y se previenen errores sistemáticos que comprometerían la integridad del genoma reconstruido. Implementar un flujo de trabajo riguroso con Trimmomatic y validar los resultados con herramientas como <strong>FastQC</strong> antes y después del proceso garantiza que los datos de entrada sean confiables y óptimos para el ensamblaje.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <h3>Errores frecuentes:</h3>
+            <ul>
+                <li>Ignorar el preprocesamiento y usar datos sin limpiar.</li>
+                <li>Aplicar umbrales demasiado estrictos, eliminando demasiados reads válidos.</li>
+                <li>No validar los resultados con FastQC antes y después del trimming.</li>
+                <li>Usar un archivo de adaptadores incorrecto o no proporcionado.</li>
+            </ul>
+            <h3>Buenas prácticas:</h3>
+            <ul>
+                <li>Siempre ejecutar <code>FastQC</code> antes y después del preprocesamiento.</li>
+                <li>Usar adaptadores específicos para el tipo de librería (Illumina, PacBio, etc.).</li>
+                <li>Probar diferentes parámetros y evaluar su impacto en el ensamblaje.</li>
+                <li>Documentar cada paso del flujo de trabajo para reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/timflutre-trimmomatic.html">trimmomatic</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Integración">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es la integración de datos de expresión con ATAC-seq?</h2>
+            <p>La integración de datos de expresión génica (RNA-seq) con datos de accesibilidad cromatina (ATAC-seq) permite una comprensión más profunda de la regulación génica en células individuales. Mientras que el RNA-seq revela qué genes están activos, el ATAC-seq muestra dónde está abierta la cromatina, lo que indica potencial actividad reguladora. Al combinar ambos datos, se puede inferir cómo los factores de transcripción (TFs) regulan la expresión génica en distintos estados celulares.</p>
+        </section>
+
+        <section>
+            <h2>Por qué es importante</h2>
+            <p>El análisis integrado permite:</p>
+            <ul>
+                <li>Identificar reguladores clave en poblaciones celulares específicas.</li>
+                <li>Construir redes de regulación génica (GRNs) a escala single-cell.</li>
+                <li>Explicar la heterogeneidad funcional en tejidos complejos, como el cerebro o el tumor.</li>
+                <li>Descubrir nuevas relaciones entre elementos reguladores y genes diana.</li>
+            </ul>
+            <p>Esta integración es fundamental para avanzar en el estudio del desarrollo, la diferenciación celular y la patología.</p>
+        </section>
+
+        <section>
+            <h2>Introducción a SCENIC y AUCell</h2>
+            <p>SCENIC (Single-Cell rEgulatory Network Inference and Clustering) es una herramienta robusta para inferir redes de regulación génica a partir de datos de expresión y ATAC-seq. Se basa en la premisa de que los factores de transcripción (TFs) que regulan genes en una célula también tienden a actuar en conjunto, generando patrones coherentes de actividad.</p>
+            <p>SCENIC utiliza dos pasos principales:</p>
+            <ol>
+                <li><strong>Inferencia de GRNs:</strong> A partir de las regiones promotoras (como las detectadas por ATAC-seq), SCENIC identifica los TFs potenciales que podrían estar regulando genes cercanos, usando datos de motivos de TFs (por ejemplo, de JASPAR o HOCOMOCO).</li>
+                <li><strong>Estimación de actividad de TFs (AUCell):</strong> Calcula una puntuación de actividad para cada TF en cada célula, basándose en la expresión de sus genes diana (es decir, genes con motivos en regiones accesibles).</li>
+            </ol>
+            <p>La herramienta AUCell (AUtomated Cell-type specific Expression) se utiliza para calcular estas puntuaciones de actividad. Es especialmente útil porque puede manejar datos de alta dimensionalidad y es robusta frente al ruido biológico.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo de integración</h2>
+            <p>El flujo típico sigue estos pasos:</p>
+            <ol>
+                <li><strong>Preprocesamiento:</strong> Normalización y filtrado de datos de RNA-seq (con herramientas como <code>Seurat</code> o <code>Scanpy</code>) y ATAC-seq (con <code>CellRanger</code>, <code>ArchR</code> o <code>Signac</code>).</li>
+                <li><strong>Construcción del GRN:</strong> Usar <code>SCENIC</code> para construir una red de regulación, combinando regiones accesibles con motivos TFs.</li>
+                <li><strong>Cálculo de puntuaciones de actividad:</strong> Aplicar <code>AUCell</code> para obtener puntuaciones de actividad de TFs en cada célula.</li>
+                <li><strong>Visualización y análisis:</strong> Clustering, visualización de la actividad de TFs (por ejemplo, con <code>UMAP</code> o <code>TSNE</code>), y correlación con expresión génica.</li>
+            </ol>
+            <p>Este enfoque permite no solo identificar poblaciones celulares, sino también inferir sus programas de regulación internos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <h3>Errores comunes</h3>
+            <ul>
+                <li><strong>Uso de datos sin preprocesar:</strong> No filtrar células de baja calidad o genes con baja expresión puede distorsionar las redes.</li>
+                <li><strong>Ignorar el ruido técnico:</strong> No considerar el sesgo de fragmentación en ATAC-seq puede llevar a falsos positivos en la detección de regiones accesibles.</li>
+                <li><strong>Modelos de motivos inadecuados:</strong> Usar motivos TFs no validados o no específicos del organismo puede generar redes poco fiables.</li>
+                <li><strong>Interpretación excesiva:</strong> Asumir que una alta puntuación de actividad de un TF implica necesariamente su regulación directa.</li>
+            </ul>
+
+            <h3>Buenas prácticas</h3>
+            <ul>
+                <li>Valida los resultados con datos externos (por ejemplo, ChIP-seq o perturbaciones funcionales).</li>
+                <li>Usa múltiples herramientas de validación (como <code>SCENIC</code> en Python o R).</li>
+                <li>Aplica corrección de múltiples pruebas al analizar la significancia de las puntuaciones.</li>
+                <li>Visualiza siempre las regiones de accesibilidad y sus genes diana asociados.</li>
+                <li>Considera el contexto biológico: un TF puede tener roles diferentes en distintos tejidos.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell es una estrategia poderosa para descifrar la regulación génica a nivel single-cell. Al combinar la accesibilidad cromatina con la expresión génica, se pueden inferir redes de regulación y estimar la actividad de factores de transcripción en cada célula, lo que permite explorar la heterogeneidad funcional de tejidos complejos. Aunque el método tiene sus desafíos, como el ruido técnico y la interpretación de los motivos, sigue siendo una herramienta indispensable en el arsenal del bioinformático moderno.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

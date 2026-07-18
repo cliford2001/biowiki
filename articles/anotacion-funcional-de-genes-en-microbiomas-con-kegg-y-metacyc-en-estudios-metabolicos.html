@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anotación funcional de genes en microbiomas con KEGG y MetaCyc en estudios metabólicos</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Anotación funcional">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Anotación funcional de genes en microbiomas con KEGG y MetaCyc en estudios metabólicos</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué es la anotación funcional en microbiomas?</h2>
+            <p>La anotación funcional de genes es el proceso de asignar funciones biológicas a secuencias genéticas identificadas en estudios metagenómicos. En el contexto de microbiomas, este paso es crucial para interpretar qué procesos metabólicos están activos en una comunidad microbiana, más allá de solo identificar qué microorganismos están presentes. Esta información permite conectar la composición microbiana con funciones clave como la fermentación de azúcares, la degradación de compuestos aromáticos, la fijación de nitrógeno o la producción de metabolitos beneficiosos para el hospedador.</p>
+        </section>
+
+        <section>
+            <h2>KEGG y MetaCyc: bases de datos clave para la anotación funcional</h2>
+            <p>Dos de las bases de datos más ampliamente utilizadas para la anotación funcional son <strong>KEGG</strong> (Kyoto Encyclopedia of Genes and Genomes) y <strong>MetaCyc</strong>. Ambas ofrecen mapas de vías metabólicas estructurados y funciones enzimáticas asociadas a genes, pero con enfoques distintos:</p>
+            <ul>
+                <li><strong>KEGG</strong> proporciona una representación altamente integrada de vías metabólicas, con una jerarquía clara (vía → ruta → enzima → gen) y una fuerte orientación hacia organismos modelo. Es especialmente útil para estudios que buscan comparar funciones entre distintos microbiomas o que desean modelar rutas de metabolismo a nivel de sistema.</li>
+                <li><strong>MetaCyc</strong> se centra en la colección de vías metabólicas descritas experimentalmente en múltiples organismos, con un enfoque más amplio y menos dependiente de organismos modelo. Incluye rutas de producción de compuestos secundarios, degradación de contaminantes y procesos de interés en biotecnología, lo que la hace valiosa para estudios de microbiomas ambientales o con aplicaciones industriales.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo típico para la anotación funcional</h2>
+            <p>El proceso de anotación funcional en microbiomas generalmente sigue estos pasos:</p>
+            <ol>
+                <li><strong>Identificación de genes</strong>: a partir de datos de secuenciación de metagenoma (como reads de shotgun), se ensamblan contigs o se mapean reads a un genoma de referencia (usando herramientas como <code>megahit</code>, <code>metaspades</code>, <code>bowtie2</code> o <code>kraken2</code>).</li>
+                <li><strong>Predicción de genes</strong>: se identifican los genes ab initio mediante herramientas como <code>Prodigal</code> o <code>MetaGeneMark</code>.</li>
+                <li><strong>Asignación funcional</strong>: se comparan las secuencias de genes con bases de datos de proteínas (como <code>UniProt</code>, <code>NCBI nr</code>) y se utilizan herramientas como <code>BLAST</code>, <code>DIAMOND</code> o <code>HMMER</code> para encontrar homologías con funciones conocidas. A continuación, se asignan los resultados a vías de KEGG o MetaCyc.</li>
+                <li><strong>Enriquecimiento funcional</strong>: se aplican análisis estadísticos (como pruebas de enriquecimiento) para determinar si ciertas vías metabólicas están sobrerepresentadas en un microbioma específico.</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>Implementación práctica con herramientas específicas</h2>
+            <p>La integración de KEGG y MetaCyc en el flujo de trabajo se puede automatizar mediante herramientas como <code>KEGG-KO</code>, <code>KEGG Mapper</code>, <code>eggNOG-mapper</code>, <code>MetaPhlAn</code> o <code>HUMAnN</code>. Ejemplo con <code>eggNOG-mapper</code>:</p>
+            <pre><code>emapper.py \
+    --query genes.fasta \
+    --output output \
+    --evalue 1e-5 \
+    --cpu 8 \
+    --override</code></pre>
+            <p>Este comando anota genes de un archivo FASTA utilizando el banco de datos eggNOG, que incluye asignaciones a KEGG Orthology (KO) y MetaCyc. Los resultados se pueden posteriormente cruzar con las bases de datos KEGG y MetaCyc para obtener mapas funcionales detallados.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La anotación funcional de genes en microbiomas mediante KEGG y MetaCyc permite desentrañar el potencial metabólico de comunidades microbianas complejas. Aunque KEGG ofrece una estructura jerárquica robusta y ampliamente utilizada, MetaCyc aporta una perspectiva más amplia sobre rutas metabólicas no modeladas en organismos clave. Juntas, estas bases de datos son herramientas esenciales para la biología metagenómica, permitiendo la interpretación funcional de datos de alto rendimiento y la generación de hipótesis sobre la dinámica de los microbiomas en salud, enfermedad o entornos naturales.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Evitar la interpretación directa de homologías</strong>: una asignación a una KO en KEGG no implica que la vía esté activa; considerar el contexto taxonómico y la expresión génica (si se dispone).</li>
+                <li><strong>Usar bases de datos actualizadas</strong>: KEGG y MetaCyc se actualizan regularmente. Verificar que las herramientas utilizadas (como <code>eggNOG</code> o <code>HUMAnN</code>) están sincronizadas con las versiones más recientes.</li>
+                <li><strong>Validar resultados con múltiples herramientas</strong>: comparar anotaciones de KEGG entre <code>eggNOG</code>, <code>KEGG profiler</code> y <code>MetaPhlAn</code> para verificar consistencia.</li>
+                <li><strong>Considerar la redundancia funcional</strong>: distintos genes pueden codificar enzimas con función similar. No asumir que cada vía está representada por un solo gen.</li>
+                <li><strong>Documentar el pipeline completo</strong>: incluir versiones de herramientas, bases de datos y parámetros usados para garantizar la reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

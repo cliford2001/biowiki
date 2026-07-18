@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimización de pipelines de metagenómica con Snakemake y contenedores Docker</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="General">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Optimización de pipelines de metagenómica con Snakemake y contenedores Docker</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: La complejidad de la metagenómica y la necesidad de pipelines automatizados</h2>
+      <p>La metagenómica permite estudiar la diversidad microbiana directamente desde muestras ambientales, sin necesidad de cultivo. Sin embargo, el análisis de datos metagenómicos —desde la calidad inicial de los reads hasta la identificación de funciones y taxonomía— implica múltiples herramientas, formatos y dependencias de software. Este flujo de trabajo es altamente complejo, susceptible a errores humanos, y difícil de reproducir.</p>
+      <p>Snakemake y Docker ofrecen una solución robusta y elegante: una herramienta de orquestación de pipelines (Snakemake) combinada con contenedores para garantizar la reproducibilidad y portabilidad (Docker). Esta combinación permite crear pipelines de metagenómica que son no solo automatizados, sino también optimizables, escalables y fácilmente compartibles.</p>
+    </section>
+
+    <section>
+      <h2>Arquitectura del pipeline: Snakemake como motor de orquestación</h2>
+      <p>Snakemake utiliza un lenguaje de reglas basado en Python para definir los pasos del pipeline. Cada regla describe una tarea (por ejemplo, alineamiento con <code>bowtie2</code>, ensamblaje con <code>metaspades</code>) y sus dependencias. Snakemake resuelve automáticamente el grafo de dependencias, ejecutando solo las tareas necesarias y evitando duplicaciones.</p>
+
+      <h3>Estructura básica de un archivo <code>Snakemake</code></h3>
+      <pre><code>rule all:
+    input:
+        "results/combined_abundance.tsv"
+
+rule quality_control:
+    input:
+        "data/raw/{sample}.fastq.gz"
+    output:
+        "data/trimmed/{sample}_trimmed.fastq.gz"
+    shell:
+        "fastp -i {input} -o {output} --detect_adapter_for_pe"
+
+rule align_to_ref:
+    input:
+        "data/trimmed/{sample}_trimmed.fastq.gz",
+        "references/genome.fasta"
+    output:
+        "results/alignments/{sample}.sam"
+    params:
+        index="references/genome"
+    shell:
+        "bowtie2 -x {params.index} -U {input[0]} -S {output}"
+</code></pre>
+
+      <p>Las reglas se definen con <code>rule</code>, y cada una tiene <code>input</code>, <code>output</code>, <code>params</code> (parámetros opcionales) y <code>shell</code> (comando ejecutable). La regla <code>all</code> define el objetivo final del pipeline.</p>
+    </section>
+
+    <section>
+      <h2>Contenedores Docker: La clave para la reproducibilidad</h2>
+      <p>La instalación manual de herramientas bioinformáticas (como <code>metaspades</code>, <code>kraken2</code>, <code>anvi'o</code>) es laboriosa, propensa a conflictos de dependencias, y difícil de mantener. Docker permite empaquetar todo el entorno (software, versiones, librerías) en una imagen contenedora.</p>
+
+      <h3>Construcción de una imagen Docker para metagenómica</h3>
+      <pre><code>FROM ubuntu:22.04
+
+LABEL maintainer="bioinformatics-team@example.com"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    wget \
+    bzip2 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install snakemake
+
+# Instalar herramientas
+RUN wget https://github.com/ablab/kraken2/releases/download/v2.4.0/kraken2-linux-2.4.0.tar.gz \
+    && tar -xzf kraken2-linux-2.4.0.tar.gz \
+    && mv kraken2 /opt/kraken2 \
+    && rm kraken2-linux-2.4.0.tar.gz
+
+ENV PATH="/opt/kraken2:$PATH"
+
+WORKDIR /workspace
+
+COPY . .
+
+ENTRYPOINT ["snakemake"]
+</code></pre>
+
+      <p>Este Dockerfile instala un sistema base, Python, Snakemake, y una herramienta clave como <code>kraken2</code>. La imagen se construye con <code>docker build -t metagenome-pipeline .</code>.</p>
+    </section>
+
+    <section>
+      <h2>Optimización del pipeline: estrategias clave</h2>
+      <p>Un pipeline bien diseñado no solo funciona, sino que lo hace eficientemente. Aquí algunas estrategias de optimización:</p>
+
+      <h3>1. Paralelización y uso de recursos</h3>
+      <p>Snakemake permite ejecutar múltiples reglas en paralelo. Usar <code>--cores</code> permite aprovechar múltiples núcleos. Para tareas que requieren mucha memoria, se puede usar <code>--memory-per-job</code> y <code>--resources</code> para gestionar asignación de recursos.</p>
+      <pre><code>snakemake --cores 8 --resources mem_mb=32000</code></pre>
+
+      <h3>2. Cache de resultados (reproducibilidad y velocidad)</h3>
+      <p>Snakemake puede almacenar resultados intermedios. Usar <code>--cache</code> o <code>--cache-remote</code> permite reutilizar outputs si los inputs no cambian, ahorrando tiempo en ejecuciones posteriores.</p>
+
+      <h3>3. Uso de <code>conda</code> o <code>bioconda</code> en Docker</h3>
+      <p>En lugar de instalar manualmente cada herramienta, se puede usar <code>bioconda</code> dentro del contenedor:</p>
+      <pre><code>conda install -c bioconda kraken2 anvi'o samtools</code></pre>
+
+      <h3>4. Validación de datos y errores</h3>
+      <p>Se deben incluir reglas para validar outputs (por ejemplo, verificar que un archivo SAM no esté vacío). También es útil añadir <code>checkpoints</code> para asegurar que los datos de entrada sean válidos antes de continuar.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La combinación de Snakemake y Docker transforma la metagenómica desde un flujo de trabajo manual y frágil en un pipeline automatizado, reproducible y escalable. Al definir reglas claras, empaquetar el entorno en contenedores, y aplicar estrategias de optimización (paralelización, cache, gestión de recursos), los investigadores pueden centrarse en la biología, no en la infraestructura.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Evita usar rutas absolutas</strong> en <code>shell</code> o <code>input/output</code>. Usa rutas relativas y variables como <code>{sample}</code>.</li>
+        <li><strong>Usa <code>params</code> para parámetros ajustables</strong> (por ejemplo, <code>min_length</code>, <code>threads</code>), no hardcodearlos.</li>
+        <li><strong>Valida siempre los outputs</strong>: verifica que los archivos generados tengan contenido, especialmente en tareas críticas como alineamiento o ensamblaje.</li>
+        <li><strong>No incluyas archivos grandes (como referencias) en el repositorio</strong>. Usa <code>data/</code> o descárgalos en tiempo de ejecución.</li>
+        <li><strong>Documenta el pipeline</strong> con comentarios y un README. Usa <code>snakemake --help</code> y <code>--dag</code> para visualizar el grafo de dependencias.</li>
+        <li><strong>Prueba con datos pequeños</strong> antes de ejecutar en producción.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/derrickwood-kraken2.html">DerrickWood/kraken2</a></li>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

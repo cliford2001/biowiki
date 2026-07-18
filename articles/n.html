@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>R</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="General">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>R</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El lenguaje esencial en bioinformática</h2>
+      <p>R es un entorno de programación y análisis estadístico ampliamente utilizado en la bioinformática, especialmente en el análisis de datos biológicos de alta dimensión, como secuenciación de nueva generación (NGS). Su poder radica en su ecosistema de paquetes, que abarca desde el control de calidad hasta el análisis de expresión diferencial, la integración de datos y la visualización de resultados. Aunque no es un lenguaje de programación tradicional, R es fundamental para transformar datos brutos en conocimiento biológico interpretable. Su sintaxis, orientada al análisis estadístico, facilita la implementación de métodos complejos con un bajo umbral de entrada, lo que lo convierte en la herramienta preferida por investigadores, bioinformáticos y estadísticos en el ámbito biológico.</p>
+    </section>
+
+    <section>
+      <h2>El ecosistema de paquetes de R</h2>
+      <p>El verdadero potencial de R se manifiesta a través de su extensivo repositorio de paquetes. Los paquetes, disponibles a través de <code>CRAN</code> (Comprehensive R Archive Network) y <code>bioconductor</code>, proporcionan funcionalidades especializadas para el análisis biológico. Por ejemplo, <code>DESeq2</code> y <code>edgeR</code> son herramientas estándar para el análisis de expresión diferencial en datos de RNA-seq. En el ámbito del análisis de células individuales, <code>Seurat</code> y <code>Scanpy</code> (su equivalente en Python) permiten la reducción de dimensionalidad, la clustering y la identificación de poblaciones celulares. Para el manejo y análisis de archivos de alineamiento, <code>Rsamtools</code> y <code>GenomicRanges</code> ofrecen acceso directo a datos en formato BAM, SAM o VCF. Este ecosistema modular permite a los usuarios combinar herramientas de forma flexible y eficiente.</p>
+    </section>
+
+    <section>
+      <h2>Uso práctico: análisis de expresión diferencial</h2>
+      <p>Un ejemplo clásico del uso de R en bioinformática es el análisis de expresión diferencial. A continuación se muestra un fragmento de código que ilustra el flujo típico con el paquete <code>DESeq2</code>:</p>
+      <pre><code>library(DESeq2)
+
+# Cargar el conteo de reads (por ejemplo, desde un archivo CSV)
+data &lt;- read.csv("counts.csv", row.names = "gene_id")
+
+# Crear el objeto DESeqDataSet
+dds &lt;- DESeqDataSetFromMatrix(countData = data,
+                              colData = sample_info,
+                              design = ~ condition)
+
+# Normalizar y ajustar el modelo
+dds &lt;- DESeq(dds)
+
+# Obtener resultados
+results &lt;- results(dds)
+
+# Filtrar genes significativos
+sig_genes &lt;- subset(results, padj &lt; 0.05)
+</code></pre>
+      <p>Este código muestra cómo el paquete <code>DESeq2</code> automatiza procesos como la estimación de la varianza, la normalización de datos y el ajuste de modelos lineales, lo que permite obtener resultados estadísticamente robustos. Además, R permite una visualización avanzada de los resultados mediante paquetes como <code>ggplot2</code> o <code>pheatmap</code>, esenciales para la interpretación biológica.</p>
+    </section>
+
+    <section>
+      <h2>Integración con otros lenguajes y herramientas</h2>
+      <p>R no funciona aislado. Su capacidad para integrarse con otros lenguajes y herramientas es clave en el flujo de trabajo moderno. Por ejemplo, es común que los datos de secuenciación se alineen con herramientas como <code>STAR</code> o <code>salmon</code>, que generan archivos de conteo. Estos archivos pueden ser cargados directamente en R mediante funciones de paquetes como <code>tximport</code>, que permite la importación de resultados de cuantificación. Asimismo, R puede comunicarse con Python mediante el paquete <code>reticulate</code>, lo que permite combinar el poder de <code>scanpy</code> y <code>pyranges</code> con el ecosistema de <code>bioc</code>. Esta interoperabilidad amplía considerablemente las posibilidades del análisis bioinformático.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>R es una herramienta fundamental en el análisis de datos biológicos. Su ecosistema de paquetes, su sintaxis orientada al análisis estadístico y su capacidad de integración lo convierten en un pilar del trabajo bioinformático. Desde el control de calidad hasta la visualización, R permite abordar tareas complejas con eficiencia y precisión. Aprender R no es solo adquirir un lenguaje de programación; es acceder a un entorno colaborativo, documentado y ampliamente validado por la comunidad científica.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar funciones de carga de datos en lugar de paquetes específicos.</strong> En lugar de leer archivos CSV directamente, usar <code>readRDS()</code> o <code>read.table()</code> con parámetros correctos.</li>
+        <li><strong>Ignorar la validación de datos antes del análisis.</strong> Siempre verificar la distribución de los conteos, la calidad de las muestras y la estructura del diseño experimental.</li>
+        <li><strong>Usar <code>attach()</code> o <code>globalenv()</code> sin precaución.</strong> Evitar el uso de <code>attach()</code> para no contaminar el entorno de trabajo.</li>
+        <li><strong>No documentar el código.</strong> Usar comentarios, funciones bien definidas y un flujo claro para facilitar la replicabilidad.</li>
+        <li><strong>Olvidar guardar resultados.</strong> Usar <code>saveRDS()</code> o <code>write.csv()</code> para exportar resultados y evitar tener que reejecutar análisis largos.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
