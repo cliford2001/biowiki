@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de variantes de deleción de gran tamaño con LUMPY y su validación con PacBio</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de variantes de deleción de gran tamaño con LUMPY y su validación con PacBio</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>Las deleciones de gran tamaño (Large Genomic Deletions, LGDs) son variantes genómicas que implican la pérdida de múltiples kilobases o incluso megabases de ADN. Estas alteraciones pueden tener consecuencias funcionales graves, incluyendo la pérdida de genes enteros, ruptura de elementos reguladores o desregulación de vías moleculares. Detectarlas con precisión es fundamental en estudios de genética humana, enfermedades raras y cáncer.</p>
+            <p>El análisis de estas variantes requiere herramientas especializadas capaces de interpretar señales derivadas de datos de secuenciación de nueva generación (NGS). En este contexto, <strong>LUMPY</strong> (Lambda Utility for Massively Parallel Sequencing) se ha consolidado como una de las herramientas más efectivas para el llamado de variantes estructurales (SVs), incluyendo deleciones, duplicaciones y translocaciones, a partir de datos de alineamiento de lecturas cortas (short-reads).</p>
+            <p>La validación de los hallazgos detectados por LUMPY es crítica, ya que los métodos basados en lecturas cortas pueden generar falsos positivos o subestimar la extensión real de una deleción. Aquí es donde <strong>PacBio</strong> (Pacific Biosciences), con sus tecnologías de secuenciación de largas lecturas (long-read sequencing), aporta un valor añadido insustituible, permitiendo confirmar la presencia, tamaño y exactitud del extremo de ruptura de una variante.</p>
+        </section>
+
+        <section>
+            <h2>Detalles técnicos del análisis con LUMPY</h2>
+            <p>LUMPY opera sobre archivos de alineamiento en formato BAM, analizando múltiples señales para inferir la presencia de variantes estructurales. Las principales evidencias incluyen:</p>
+            <ul>
+                <li><strong>Split reads</strong>: lecturas que se alinean a dos regiones genomicamente distantes.</li>
+                <li><strong>Misaligned pairs</strong>: pares de lecturas que presentan un tamaño de inserto inesperadamente alto o bajo.</li>
+                <li><strong>Read depth</strong>: variaciones en la profundidad de cobertura que indican eliminación o duplicación de material genético.</li>
+            </ul>
+            <p>El proceso típico de análisis con LUMPY involucra:</p>
+            <ol>
+                <li>Generar un archivo <code>lumpy</code> a partir de múltiples BAMs usando <code>lumpyexpress</code> (versión moderna y recomendada).</li>
+                <li>Obtener un archivo de resultados en formato VCF (Variant Call Format) con las variantes estructurales detectadas.</li>
+                <li>Filtrar los resultados según calidad, tipo de variante y soporte de evidencia.</li>
+            </ol>
+            <p>Un ejemplo de comando para generar llamados con LUMPY es:</p>
+            <pre><code>lumpyexpress \
+    -B sample1.sorted.bam,sample2.sorted.bam \
+    -S sample1.sorted.bam,sample2.sorted.bam \
+    -o lumpy_results.vcf \
+    -t 8 \
+    --min_mapping_qual 30 \
+    --min_split 2 \
+    --min_unique 2
+</code></pre>
+            <p>Este comando procesa los datos de dos muestras, utiliza 8 hilos, y requiere al menos dos lecturas separadas (split reads) y dos lecturas únicas para considerar una variante.</p>
+        </section>
+
+        <section>
+            <h2>Validación con PacBio</h2>
+            <p>Los datos de PacBio, generados mediante el sistema SMRT (Single Molecule, Real-Time) sequencing, ofrecen lecturas que pueden alcanzar decenas de miles de bases. Esta longitud extrema permite cubrir grandes regiones genómicas en una sola lectura, lo que facilita el análisis de estructuras complejas como las deleciones de gran tamaño.</p>
+            <p>Para validar una deleción detectada por LUMPY, se pueden seguir estos pasos:</p>
+            <ol>
+                <li>Obtener secuencias de PacBio de la muestra en cuestión.</li>
+                <li>Alinarse las lecturas de PacBio a un genoma de referencia usando <code>minimap2</code>:</li>
+            </ol>
+            <pre><code>minimap2 -ax map-pb reference.fa pacbio_reads.fq > pacbio_aligned.paf
+</code></pre>
+            <p>El archivo PAF (Pairwise Alignment Format) contiene información detallada sobre los alineamientos, incluyendo la posición de inicio y fin de cada lectura, y la presencia de rupturas.</p>
+            <ol start="3">
+                <li>Analizar el archivo PAF para identificar lecturas que se alinean de forma discontinua, indicando una deleción.</li>
+                <li>Comparar la posición y tamaño de la deleción detectada por LUMPY con los datos de PacBio.</li>
+            </ol>
+            <p>La ventaja de PacBio es que puede confirmar no solo la presencia de la variante, sino también su tamaño real, la exactitud del extremo de ruptura y la presencia de secuencias de microhomología o secuencias de inserción (indels) en los extremos, lo que aporta información sobre el mecanismo de formación de la deleción.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de deleciones de gran tamaño requiere una estrategia de doble verificación. <strong>LUMPY</strong> es una herramienta poderosa para el llamado inicial de variantes estructurales a partir de datos de lecturas cortas, aprovechando múltiples señales de alineamiento. Sin embargo, la precisión de estos llamados debe ser validada con tecnologías de lectura larga, como <strong>PacBio</strong>, que permiten confirmar la presencia, tamaño y estructura exacta de la variante. Esta combinación de métodos garantiza un análisis más robusto y fiable, esencial en contextos clínicos y de investigación de alto impacto.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No filtrar los resultados de LUMPY</strong>: siempre aplicar filtros de calidad, soporte mínimo y tipo de variante. Usar herramientas como <code>vcftools</code> o <code>bcftools</code> para limpiar el VCF.</li>
+                <li><strong>Ignorar el contexto biológico</strong>: no todos los llamados de SVs son relevantes. Comparar con bases de datos como DGV, dbVar o ClinVar para evaluar la frecuencia y posible patogenicidad.</li>
+                <li><strong>Usar datos de PacBio sin validación previa</strong>: asegurarse de que el archivo de secuencias de PacBio es de alta calidad (Q-score, profundidad) y alineado correctamente.</li>
+                <li><strong>Asumir que LUMPY detecta todo</strong>: LUMPY puede tener baja sensibilidad para deleciones muy grandes o en regiones repetitivas. Considerar complementar con otras herramientas como <code>Delly</code> o <code>GRIDSS</code>.</li>
+                <li><strong>Mejor práctica</strong>: mantener una pipeline integrada que combine LUMPY y PacBio, con pasos de validación cruzada y documentación clara de cada etapa.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

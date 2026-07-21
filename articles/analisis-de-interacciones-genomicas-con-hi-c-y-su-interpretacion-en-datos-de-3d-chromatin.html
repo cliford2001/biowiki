@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análisis de interacciones genómicas con Hi-C y su interpretación en datos de 3D chromatin</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="General" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de interacciones genómicas con Hi-C y su interpretación en datos de 3D chromatin</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: La estructura tridimensional del genoma</h2>
+      <p>
+        El genoma no es una cadena lineal pasiva: en las células eucariotas, el ADN se organiza en una estructura tridimensional dinámica conocida como <em>3D chromatin</em>. Esta organización espacial influye directamente en procesos clave como la regulación génica, la replicación y la reparación del ADN.
+      </p>
+      <p>
+        El análisis de interacciones genómicas mediante <strong>Hi-C</strong> ha revolucionado nuestra comprensión de esta arquitectura celular. Hi-C es una técnica de secuenciación de alta resolución que permite mapear de forma genómica las interacciones físicas entre regiones del ADN, generando matrices de contacto que reflejan la frecuencia con la que dos loci se encuentran cercanos en el espacio nuclear.
+      </p>
+      <p>
+        Este artículo explora los principios del análisis Hi-C, las herramientas clave para su procesamiento y la interpretación de datos 3D chromatin, con especial énfasis en los pasos críticos, buenas prácticas y errores comunes a evitar.
+      </p>
+    </section>
+
+    <section>
+      <h2>Procesamiento y análisis de datos Hi-C</h2>
+      <h3>Preprocesamiento: desde reads hasta matrices de contacto</h3>
+      <p>
+        El flujo de trabajo típico comienza con la alineación de los reads de secuenciación a un genoma de referencia usando herramientas como <code>bowtie2</code> o <code>STAR</code>. Sin embargo, el paso clave es el <em>mapping</em> de pares de fragmentos de ADN que provienen del mismo cruce de restricción.
+      </p>
+      <p>
+        Una vez alineados, se utiliza <code>HiC-pro</code> (una pipeline de Python/Perl) para realizar el filtro de calidad, la asignación de pares, y la construcción de la matriz de contacto. Esta matriz es una representación de la frecuencia de interacciones entre binning genómicos (por ejemplo, 10 kb, 25 kb, 50 kb).
+      </p>
+      <pre><code class="language-bash">
+# Ejemplo de comando para procesar con HiC-pro
+hicpro --config hicpro_config.txt --project my_hic_project
+</code></pre>
+
+      <h3>Normalización de matrices de contacto</h3>
+      <p>
+        Las matrices originales están sesgadas por factores técnicos como la densidad de restricción, la calidad de alineamiento y la distribución de GC. Para corregir esto, se aplican métodos de normalización.
+      </p>
+      <p>
+        Herramientas como <code>HiCExplorer</code> (usando <code>hicNormalize</code>) o <code>Juicer</code> ofrecen métodos robustos: 
+        <code>ICE</code> (Iterative Correction and Eigenvector decomposition), <code>VC</code> (Vector of Correlation) y <code>KR</code> (Knight-Ruiz). El método <code>ICE</code> es ampliamente recomendado por su capacidad para mantener las proporciones relativas de interacción.
+      </p>
+      <pre><code class="language-python">
+from hicexplorer import hicNormalize
+
+# Normalización ICE
+hicNormalize(
+    input_file="raw_contacts.h5",
+    output_file="normalized_contacts.h5",
+    method="ICE"
+)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Interpretación de estructuras 3D y análisis funcional</h2>
+      <h3>Identificación de dominios de interacción (TADs)</h3>
+      <p>
+        Una de las características más notables de los datos Hi-C es la presencia de <strong>Topologically Associating Domains</strong> (TADs): regiones genómicas auto-organizadas donde las interacciones internas son frecuentes, pero las interacciones entre TADs son raras. Esto sugiere un papel en la regulación génica local.
+      </p>
+      <p>
+        Para detectar TADs, se utilizan algoritmos como <code>Arrowhead</code> (integrado en <code>HiCExplorer</code>) o <code>Rao et al. 2014</code> en <code>Python</code>:
+      </p>
+      <pre><code class="language-python">
+# Ejemplo de detección de TADs con HiCExplorer
+from hicexplorer import hicFindTADs
+
+hicFindTADs(
+    input_file="normalized_contacts.h5",
+    output_file="tads.bed",
+    method="arrowhead",
+    resolution=25000
+)
+</code></pre>
+
+      <h3>Visualización y análisis 3D</h3>
+      <p>
+        Herramientas como <code>3D Genome Browser</code>, <code>HiGlass</code> o <code>Genome3D</code> permiten visualizar matrices de contacto en 2D y reconstruir modelos 3D del cromatina.
+      </p>
+      <p>
+        En <code>R</code>, <code>HiCExplorer</code> y <code>cooltools</code> ofrecen funciones para generar heatmaps y perfiles de contacto.
+      </p>
+      <pre><code class="language-r">
+# Visualización de matrices en R con HiCExplorer
+library(GenomicRanges)
+library(HiCExplorer)
+
+# Cargar matriz
+hicFile &lt;- "normalized_contacts.h5"
+
+# Dibujar heatmap
+hicPlotHeatmap(
+  hicFile,
+  cutAll = TRUE,
+  bins = 10000,
+  colorMap = "Reds"
+)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        El análisis de interacciones genómicas mediante Hi-C proporciona una ventana única sobre la arquitectura tridimensional del genoma. Desde el procesamiento de datos hasta la interpretación de TADs y la visualización 3D, las herramientas disponibles permiten descifrar cómo la organización espacial del cromatina influye en la función génica. La precisión en la normalización, la elección del binning y la validación de resultados son fundamentales para obtener conclusiones biológicas confiables.
+      </p>
+      <p>
+        Hi-C no es solo una técnica, sino un puente entre genómica lineal y biología funcional en 3D.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar un binning demasiado fino</strong>: puede generar ruido y sobreinterpretar interacciones artificiales. Se recomienda empezar con 25 kb o 50 kb.</li>
+        <li><strong>No normalizar los datos</strong>: las matrices sin normalización distorsionan la interpretación. Siempre aplicar ICE, KR o VC.</li>
+        <li><strong>Ignorar la calidad de los reads</strong>: asegúrese de filtrar reads duplicados, mala alineación y fragmentos cortos usando <code>HiC-pro</code> o <code>fastp</code>.</li>
+        <li><strong>Usar métodos de detección de TADs sin validar</strong>: comprobar con múltiples algoritmos (Arrowhead, insulation score) y visualizar manualmente.</li>
+        <li><strong>Analizar datos sin contexto biológico</strong>: correlacionar TADs con genes, enhancers, y regiones reguladoras usando herramientas como <code>ChromHMM</code> o <code>DeepBlue</code>.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

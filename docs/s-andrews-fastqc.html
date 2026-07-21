@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FastQC</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html" class="back-link">← Volver a Novedades</a>
+    <h1>FastQC</h1>
+    <p class="meta">
+      <a href="https://github.com/s-andrews/FastQC" target="_blank">Repositorio en GitHub</a>
+      · 611 estrellas · Java
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>FastQC es una herramienta de control de calidad diseñada para analizar datos de secuenciación de alta throughput (HTS), como los generados por plataformas como Illumina. Su objetivo principal es proporcionar un análisis rápido y automatizado que identifique posibles problemas en los datos de secuenciación, como baja calidad de las bases, contaminación, sobre-representación de secuencias o problemas de adaptadores. Es ampliamente utilizado como primer paso en cualquier flujo de análisis bioinformático para evaluar la calidad de los datos antes de proceder a alineamientos, ensamblajes o análisis posteriores.</p>
+
+    <h2>Instalación</h2>
+    <p>FastQC está escrito en Java, por lo que requiere un entorno Java 8 o superior instalado. Puedes instalarlo mediante el siguiente comando si tienes acceso a un gestor de paquetes como <code>apt</code>:</p>
+    <pre><code>sudo apt update
+sudo apt install fastqc</code></pre>
+
+    <p>Alternativamente, puedes descargar el archivo ejecutable (JAR) directamente desde el repositorio oficial:</p>
+    <pre><code>wget https://github.com/s-andrews/FastQC/releases/latest/download/FastQC.jar
+chmod +x FastQC.jar</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Una vez instalado, puedes ejecutar FastQC sobre uno o más archivos de secuenciación (por ejemplo, archivos FASTQ). El siguiente comando es ilustrativo; la sintaxis exacta puede variar según la versión y el sistema. Verifica siempre la documentación oficial para los comandos precisos:</p>
+    <pre><code>java -jar FastQC.jar -o ./salida /ruta/a/tus/datos/*.fastq</code></pre>
+    <p>Esto generará un archivo HTML con el informe de control de calidad para cada archivo de entrada.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo de trabajo habitual con FastQC incluye los siguientes pasos:</p>
+    <ol>
+      <li>Preparar los archivos de secuenciación (FASTQ) en formato adecuado.</li>
+      <li>Ejecutar FastQC sobre cada archivo o grupo de archivos.</li>
+      <li>Revisar los informes HTML generados para identificar posibles problemas.</li>
+      <li>Tomar decisiones de limpieza o filtrado basadas en los resultados (por ejemplo, usar herramientas como Trimmomatic si hay problemas con adaptadores).</li>
+      <li>Proseguir con el siguiente paso del análisis (alineamiento, ensamblaje, etc.).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="10" y="10" width="120" height="50" fill="#e0f7fa" stroke="#00796b" stroke-width="2" rx="8" />
+        <rect x="150" y="10" width="120" height="50" fill="#e0f7fa" stroke="#00796b" stroke-width="2" rx="8" />
+        <rect x="290" y="10" width="120" height="50" fill="#e0f7fa" stroke="#00796b" stroke-width="2" rx="8" />
+        <rect x="430" y="10" width="120" height="50" fill="#e0f7fa" stroke="#00796b" stroke-width="2" rx="8" />
+
+        <!-- Etiquetas -->
+        <text x="70" y="35" font-family="Arial" font-size="14" text-anchor="middle" fill="#004d40">Datos FASTQ</text>
+        <text x="210" y="35" font-family="Arial" font-size="14" text-anchor="middle" fill="#004d40">FastQC</text>
+        <text x="350" y="35" font-family="Arial" font-size="14" text-anchor="middle" fill="#004d40">Informe HTML</text>
+        <text x="490" y="35" font-family="Arial" font-size="14" text-anchor="middle" fill="#004d40">Análisis</text>
+
+        <!-- Flechas -->
+        <line x1="130" y1="35" x2="150" y2="35" stroke="#00796b" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="270" y1="35" x2="290" y2="35" stroke="#00796b" stroke-width="2" marker-end="url(#arrow)" />
+        <line x1="410" y1="35" x2="430" y2="35" stroke="#00796b" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#00796b" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de uso de FastQC en un análisis de secuenciación.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Java no encontrado:</strong> Asegúrate de tener Java 8 o superior instalado. Puedes verificar con <code>java -version</code>.</li>
+      <li><strong>Permisos de ejecución:</strong> Si usas el archivo JAR, no olvides dar permiso de ejecución con <code>chmod +x</code>.</li>
+      <li><strong>Archivos de entrada incorrectos:</strong> FastQC espera archivos FASTQ. Si intentas analizar un archivo en formato BAM o SAM, fallará.</li>
+      <li><strong>Resultados de calidad baja:</strong> Si el informe muestra muchas advertencias (como baja calidad en las bases o sobre-representación de secuencias), considera realizar limpieza previa con herramientas como Trimmomatic o Cutadapt.</li>
+      <li><strong>Automatización:</strong> Puedes integrar FastQC en pipelines automatizados (por ejemplo, con Nextflow o Snakemake) para análisis en lote.</li>
+    </ul>
+
+    <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">3 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42319349.html">The RNA binding protein ZFP36L2 displays tissue-selective mRNA targeting in mice.</a> <span class="date">2026-07-17</span> · <a href="https://doi.org/10.1080/15476286.2026.2690792" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42298353.html">Gut microbial markers of immunotherapy response in melanoma: a cross-cohort analysis including the first Russian dataset.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2681788" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42255492.html">Adipose-derived mesenchymal stem cells promote diabetic wound healing through ALDOA secretion.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1016/j.reth.2026.101148" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+  </article>
+</body>
+</html>

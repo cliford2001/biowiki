@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de variantes de deleción de gran tamaño con LUMPY y su validación con PacBio</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Detección de variantes de deleción de gran tamaño con LUMPY y su validación con PacBio</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>Las deleciones de gran tamaño (≥50 bp) son variantes genéticas significativas en el contexto de enfermedades hereditarias, cáncer y variabilidad fenotípica. Su detección precisa es crucial, pero desafiante debido a su tamaño y la complejidad de los datos de secuenciación. En este artículo se explora el uso combinado de <strong>LUMPY</strong> (Long-read, Unmapped, Paired-end, and Read-depth analysis) para la detección de estas variantes a partir de datos de secuenciación de corta lectura (Illumina), y su validación mediante tecnologías de lectura larga como <strong>PacBio</strong> (Pacific Biosciences), que proporcionan información sobre estructuras complejas y secuencias repetitivas.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+            <h3>Principios de detección con LUMPY</h3>
+            <p>LUMPY es una herramienta robusta para la identificación de variantes estructurales (SVs), incluyendo deleciones, inserciones, inversiones y translocaciones, utilizando múltiples señales genómicas:</p>
+            <ul>
+                <li><strong>Pares de lectura discordantes (discordant pairs):</strong> lecturas que no se alinean según la distancia esperada en el genoma de referencia.</li>
+                <li><strong>Lecturas no alineadas (unmapped reads):</strong> secuencias que no se alinean a la referencia, posiblemente debido a la ausencia de secuencia en el genoma de prueba.</li>
+                <li><strong>Densidad de lectura (read depth):</strong> disminución en el número de alineamientos en regiones donde se espera una deleción.</li>
+            </ul>
+            <p>Estos datos se combinan mediante un modelo probabilístico para generar una lista de variantes estructurales candidatas.</p>
+
+            <h3>Proceso de detección paso a paso</h3>
+            <p>El flujo de trabajo típico incluye:</p>
+            <ol>
+                <li>Alineación de lecturas a un genoma de referencia usando <code>bowtie2</code> o <code>bwa mem</code>.</li>
+                <li>Preparación de archivos de entrada para LUMPY con <code>samtools view</code> y <code>lumpy-sv</code>.</li>
+                <li>Ejecución de LUMPY con combinación de señales:</li>
+            </ol>
+
+            <pre><code>lumpy -B sample.bam -S sample.splitters -D sample.discordants -o variants.vcf
+</code></pre>
+
+            <p>Donde:</p>
+            <ul>
+                <li><code>-B</code>: archivo BAM con alineamientos.</li>
+                <li><code>-S</code>: archivos de lecturas que se dividen (splitters).</li>
+                <li><code>-D</code>: archivos de pares discordantes (discordants).</li>
+                <li><code>-o</code>: salida en formato VCF.</li>
+            </ul>
+
+            <h3>Validación con PacBio</h3>
+            <p>Los resultados de LUMPY son candidatos que requieren validación experimental. Los datos de PacBio, con lecturas de miles de nucleótidos (long reads), permiten confirmar la presencia de deleciones y determinar su tamaño exacto y límites. Además, permiten detectar estructuras complejas (como deleciones en regiones repetitivas) que los datos de corta lectura no pueden resolver.</p>
+            <p>El proceso de validación incluye:</p>
+            <ol>
+                <li>Alineación de lecturas de PacBio al genoma de referencia usando <code>pbmm2</code> o <code>minimap2</code>.</li>
+                <li>Identificación de regiones con baja cobertura y anomalías estructurales mediante herramientas como <code>sniffles</code> o <code>pbsv</code>.</li>
+                <li>Comparación de los sitios de deleción detectados por LUMPY con los identificados por PacBio, buscando concordancia.</li>
+            </ol>
+
+            <pre><code>minimap2 -ax map-pb reference.fasta pacbio_reads.fasta | samtools view -bS - | samtools sort -o pacbio.sorted.bam
+</code></pre>
+
+            <p>Este alineamiento es clave para el análisis posterior con herramientas especializadas en SVs de lectura larga.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La detección de deleciones de gran tamaño es un paso esencial en la genómica clínica y funcional. LUMPY proporciona una solución robusta y sensible para identificar estas variantes a partir de datos de secuenciación de corta lectura, integrando múltiples señales genómicas. Sin embargo, la alta tasa de falsos positivos requiere validación con tecnologías de lectura larga como PacBio, que ofrecen mayor precisión en la determinación de límites y tamaño de la deleción. Este enfoque combinado es el estándar actual para el descubrimiento y confirmación de variantes estructurales complejas.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar un genoma de referencia adecuado:</strong> asegúrate de que el genoma de referencia coincida con el organismo y versión utilizada en el análisis.</li>
+                <li><strong>No confiar solo en LUMPY:</strong> siempre validad resultados críticos con datos de lectura larga o PCR.</li>
+                <li><strong>Preparar bien los archivos de entrada:</strong> utiliza <code>samtools sort</code> y <code>samtools index</code> antes de pasar los archivos a LUMPY.</li>
+                <li><strong>Control de calidad de lecturas:</strong> elimina lecturas de baja calidad o contaminantes antes del alineamiento.</li>
+                <li><strong>Evitar el uso de datos de baja cobertura:</strong> las deleciones pueden ser mal detectadas si la cobertura es insuficiente en la región de interés.</li>
+                <li><strong>Considerar regiones repetitivas:</strong> las deleciones en zonas repetitivas son particularmente difíciles de resolver; PacBio es clave aquí.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="categoria" content="scRNA-seq">
+    <title>Modelado de redes de regulación génica en células madre con SCENIC y datos de ATAC-seq</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Modelado de redes de regulación génica en células madre con SCENIC y datos de ATAC-seq</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El poder de la regulación genética en el destino celular</h2>
+            <p>Las células madre poseen la capacidad única de diferenciarse en diversos tipos celulares, un proceso guiado en gran medida por redes complejas de regulación génica. Comprender cómo los factores de transcripción (TFs) controlan la expresión de genes en estas células es esencial para la biología del desarrollo, la regeneración tisular y el diseño de terapias celulares. El modelo SCENIC (Single-Cell rEgulon Inference and Cell type classification) permite inferir estas redes reguladoras a partir de datos de secuenciación de ARN en células individuales (scRNA-seq) y, cuando se combina con datos de ATAC-seq, ofrece una visión integrada y altamente resolutiva de la regulación en tiempo real y espacio.</p>
+            <p>El ATAC-seq (Assay for Transposase-Accessible Chromatin using sequencing) identifica regiones del genoma abiertas, indicando sitios potenciales de unión de factores de transcripción. Al superponer estos datos con perfiles de expresión génica desde scRNA-seq, SCENIC reconstruye las redes de regulación activas en cada célula individual, permitiendo no solo identificar qué TFs están activos, sino también cuáles genes están bajo su control y en qué contexto celular.</p>
+        </section>
+
+        <section>
+            <h2>Marco técnico: SCENIC, ATAC-seq y su integración</h2>
+            <p>El pipeline SCENIC se basa en tres etapas clave:</p>
+            <ol>
+                <li><strong>Construcción de regulones:</strong> Se infieren regulones a partir de datos de ATAC-seq. Para cada factor de transcripción, se identifican las regiones promotoras y enhancers cercanas a sus genes diana conocidos (basados en bases de datos como JASPAR o HOCOMOCO). Un regulón se define como un TF junto con sus regiones de unión activas en el genoma.</li>
+                <li><strong>Escalado de expresión y scoring de regulones (AUCell):</strong> Para cada célula, se calcula un score de activación para cada regulón basado en la expresión de sus genes diana en scRNA-seq. El método AUCell (Area Under the Curve) es ampliamente utilizado por su robustez y capacidad para capturar la actividad de regulones en células individuales.</li>
+                <li><strong>Clasificación celular y análisis de redes:</strong> Los scores de regulones se utilizan para clasificar células en tipos celulares (como células madre pluripotentes, progenitores mesodérmicos, etc.) y para construir redes de regulación a nivel de población o individual.</li>
+            </ol>
+            <p>La integración con ATAC-seq aporta una capa crítica de contexto. Mientras que scRNA-seq revela qué genes están expresados, ATAC-seq muestra qué regiones del genoma son accesibles, lo que indica la potencialidad de un TF para actuar. Esto reduce el ruido de inferencias basadas únicamente en expresión, ya que un TF con alta actividad reguladora no puede ser eficaz si sus sitios de unión están cerrados.</p>
+        </section>
+
+        <section>
+            <h3>Implementación con herramientas reales</h3>
+            <p>La implementación típica del pipeline SCENIC con datos ATAC-seq se realiza mediante el paquete <code>scenic</code> en R, que incluye herramientas como <code>scenic</code>, <code>gimmemotifs</code> y <code>AUCell</code>. Un flujo común incluye:</p>
+            <pre><code>library(scenic)
+library(Seurat)
+
+# Cargar datos
+atac_data &lt;- readRDS("atac_preprocessed.rds")
+scRNA_data &lt;- Read10X("path/to/filtered_feature_bc_matrix")
+scRNA_seurat &lt;- CreateSeuratObject(counts = scRNA_data)
+
+# Preparar datos
+atac_obj &lt;- prepare_atac_data(atac_data)
+scRNA_obj &lt;- prepare_scRNA_data(scRNA_seurat)
+
+# Construir regulones
+regulons &lt;- build_regulons(
+    atac_obj,
+    tf_names = "all",
+    motif_db = "JASPAR2020"
+)
+
+# Calcular scores de regulones
+regulon_scores &lt;- AUCell(
+    data = scRNA_obj,
+    regulons = regulons,
+    cores = 8
+)
+
+# Visualización
+plot_regulon_activity(regulon_scores, top_n = 10)
+</code></pre>
+            <p>Este código genera un perfil de actividad de regulones y permite visualizar qué TFs son activos en cada grupo celular. Además, se pueden identificar regulones específicos asociados a estados de células madre pluripotentes (como los regulones de OCT4, SOX2 o NANOG) o a transiciones hacia la diferenciación.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El modelado de redes de regulación génica en células madre usando SCENIC y datos de ATAC-seq combina la sensibilidad de la secuenciación de ARN en células individuales con la información epigenética de accesibilidad cromosómica. Este enfoque permite inferir con alta precisión los factores de transcripción activos, sus objetivos, y el contexto celular en el que operan. Es una herramienta fundamental para descifrar los mecanismos que controlan la pluripotencia, el mantenimiento celular y la diferenciación, con aplicaciones directas en biología del desarrollo y medicina regenerativa.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar datos sin preprocesamiento adecuado:</strong> Asegúrate de que los datos ATAC-seq y scRNA-seq estén correctamente normalizados y filtrados (por calidad de célula, profundidad, etc.) antes de aplicar SCENIC.</li>
+                <li><strong>Ignorar el contexto de las regiones de unión:</strong> No asumas que un TF está activo solo porque su regulón tiene un score alto. Verifica que sus sitios de unión estén accesibles (ATAC-seq) y que los genes diana estén expresados.</li>
+                <li><strong>Seleccionar bases de datos de motivos adecuadas:</strong> Usa bases de datos como JASPAR o HOCOMOCO que contengan motivos de TFs relevantes para el sistema biológico estudiado (por ejemplo, humanos vs. ratones).</li>
+                <li><strong>Evitar overfitting:</strong> No interpretes regulones con baja expresión de genes diana como activos. Usa un umbral estadístico (por ejemplo, p-value o FDR) para definir qué regulones son significativos.</li>
+                <li><strong>Visualización adecuada:</strong> Utiliza herramientas como <code>plot_regulon_activity</code> o <code>scenic</code> en combinación con Seurat para visualizar la actividad de regulones en el contexto de clusters celulares.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

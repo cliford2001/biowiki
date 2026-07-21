@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de la variabilidad genética en poblaciones con variant calling de alta resolución</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de la variabilidad genética en poblaciones con variant calling de alta resolución</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Por qué estudiar la variabilidad genética poblacional</h2>
+            <p>La variabilidad genética es la base de la evolución y la adaptación de las especies. En poblaciones naturales, la identificación precisa de variantes génicas (SNPs, indels, estructurales) permite entender procesos como selección natural, deriva genética, flujo génico y origen de enfermedades. El análisis de variantes de alta resolución, mediante herramientas de <em>variant calling</em> avanzadas, se ha convertido en un pilar fundamental en genética poblacional, genómica evolutiva y medicina personalizada.</p>
+            <p>Este artículo explora los principios, herramientas y buenas prácticas para llevar a cabo un análisis de variabilidad genética en poblaciones, enfocándose en el uso de pipelines robustos, el manejo de datos de alto volumen y la validación de resultados. Se centra en el uso de herramientas de referencia como <strong>GATK</strong>, <strong>samtools</strong>, <strong>bcftools</strong> y <strong>FreeBayes</strong>, con un enfoque en la precisión y reproducibilidad.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+
+            <h3>Preprocesamiento de datos: de reads a alineamientos</h3>
+            <p>El primer paso es el alineamiento de los reads de secuenciación (genéricamente, <em>reads</em>) a un genoma de referencia. Herramientas como <strong>STAR</strong> (para RNA-seq) o <strong>BWA-MEM</strong> (para DNA) generan archivos en formato BAM. A continuación, se recomienda realizar un preprocesamiento de calidad y ajuste de alineamientos mediante:</p>
+            <ul>
+                <li><code>samtools sort -o aligned.sorted.bam</code> para ordenar los alineamientos.</li>
+                <li><code>samtools index aligned.sorted.bam</code> para generar índices de acceso rápido.</li>
+                <li><code>samtools markdup</code> para marcar duplicados de secuenciación, especialmente relevante en datos de exoma o whole-genome.</li>
+            </ul>
+            <p>Este paso es crítico: un alineamiento defectuoso puede generar falsos positivos en variant calling.</p>
+
+            <h3>Variant calling: herramientas y estrategias</h3>
+            <p>El proceso de <em>variant calling</em> detecta diferencias entre los reads y el genoma de referencia. Existen múltiples enfoques:</p>
+            <ul>
+                <li><strong>FreeBayes</strong>: herramienta de llamado de variantes no paramétrica, útil para poblaciones con alta diversidad.</li>
+                <li><strong>GATK HaplotypeCaller</strong>: el estándar de facto para variant calling en datos de whole-genome o exoma. Usa un modelo de genotipado basado en <em>haplotypes</em>, lo que mejora la detección de variantes complejas como indels.</li>
+                <li><strong>bcftools mpileup</strong>: útil para análisis rápidos o específicos, aunque menos robusto que GATK.</li>
+            </ul>
+            <p>Para poblaciones, se recomienda usar <strong>GATK HaplotypeCaller en modo "--dont-use-soft-clipped-bases" y con "--standard-min-confidence-threshold-for-calling 30"</strong> para equilibrar sensibilidad y especificidad.</p>
+
+            <h3>Postprocesamiento y filtros de calidad</h3>
+            <p>Los llamados de variantes sin filtrar incluyen errores técnicos. Es esencial aplicar filtros:</p>
+            <pre><code>bcftools filter -i 'QUAL &gt;= 30 &amp;&amp; DP &gt;= 10 &amp;&amp; MQ &gt;= 40' -o filtered.vcf raw_variants.vcf</code></pre>
+            <p>Otras métricas clave: <em>Read Position</em> (evitar variantes solo en extremos), <em>Strand Bias</em> y <em>Allelic Balance</em>. Herramientas como <strong>GATK VariantFiltration</strong> permiten aplicar reglas complejas basadas en múltiples filtros.</p>
+
+            <h3>Estadísticas poblacionales y anotación</h3>
+            <p>Una vez filtradas las variantes, se calculan estadísticas clave:</p>
+            <ul>
+                <li><strong>AF (Frecuencia Alélica)</strong>: proporción de copias del alélico alternativo.</li>
+                <li><strong>PI (Polimorfismo interpopulacional)</strong>: medida de diversidad.</li>
+                <li><strong>Hardy-Weinberg Equilibrium (HWE)</strong>: para evaluar la adecuación de los datos.</li>
+            </ul>
+            <p>La anotación funcional se realiza con herramientas como <strong>VEP (Ensembl Variant Effect Predictor)</strong> o <strong>SnpEff</strong>, que asignan efectos (síncrono, sinónimo, truncante, etc.) y datos de frecuencias en poblaciones (gnomAD).</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de la variabilidad genética en poblaciones requiere un pipeline cuidadoso que combine alineamiento de alta calidad, variant calling robusto y filtros estadísticos rigurosos. GATK HaplotypeCaller, combinado con samtools y bcftools, ofrece un enfoque estandarizado y reproducible. La validación de resultados mediante métricas poblacionales y anotación funcional es esencial para interpretar correctamente los hallazgos. Este enfoque permite identificar variantes significativas en contextos evolutivos, poblacionales o clínicos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>NO usar el mismo genoma de referencia para poblaciones muy divergentes</strong>: puede generar falsos positivos.</li>
+                <li><strong>NO saltarse la etapa de marcado de duplicados</strong>: introduce sesgos en la frecuencia alélica.</li>
+                <li><strong>USAR filtros múltiples</strong> (QUAL, DP, MQ, FS) en lugar de uno solo.</li>
+                <li><strong>VALIDAR resultados con datos independientes</strong> cuando sea posible (por ejemplo, por Sanger o genotipado array).</li>
+                <li><strong>DOCUMENTAR cada paso</strong> y usar herramientas como Snakemake o Nextflow para reproducibilidad.</li>
+            </ul>
+            <p>La clave está en la combinación de herramientas bien establecidas, procesos rigurosos y una interpretación crítica de los resultados.</p>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

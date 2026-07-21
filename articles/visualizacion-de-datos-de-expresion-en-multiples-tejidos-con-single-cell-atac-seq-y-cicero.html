@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualización de datos de expresión en múltiples tejidos con Single-Cell ATAC-seq y Cicero</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="scRNA-seq">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Visualización de datos de expresión en múltiples tejidos con Single-Cell ATAC-seq y Cicero</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>La biología del desarrollo y la patología requieren comprender cómo se regulan los genes en contextos de tejidos específicos. La secuenciación de ATAC en células individuales (scATAC-seq) permite mapear la accesibilidad cromatina en millones de células individuales, revelando la regulación genómica a nivel de promotores, enhancers y otras regiones reguladoras. Sin embargo, la interpretación de estos datos es compleja, especialmente cuando se compara la regulación entre múltiples tejidos. En este artículo, exploramos cómo combinar scATAC-seq con el método <em>Cicero</em> para visualizar y analizar patrones de expresión regulada en múltiples tejidos, proporcionando una ventana hacia la arquitectura de red genética subyacente.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo</h2>
+
+      <h3>Primeros pasos: Preprocesamiento de datos scATAC-seq</h3>
+      <p>Antes de cualquier análisis de regulación, es esencial preprocesar los datos scATAC-seq. Esto incluye la alineación de reads, eliminación de contaminantes mitocondriales y de células basura, y la generación de matrices de accesibilidad. Herramientas como <code>cellranger-atac</code> (10x Genomics) o <code>scATAC-seq pipeline</code> basado en <code>bowtie2</code> y <code>macs2</code> son ampliamente utilizadas.</p>
+
+      <pre><code>cellranger-atac count --id=atac_pipeline \
+  --fastqs=/path/to/fastqs \
+  --reference=/path/to/reference \
+  --sample=sample1 \
+  --output-dir=./output</code></pre>
+
+      <h3>Construcción de redes reguladoras con Cicero</h3>
+      <p>Cicero, desarrollado por los laboratorios de <em>Chen et al.</em>, utiliza la correlación de accesibilidad entre regiones del genoma para predecir relaciones de regulación genómica entre <em>enhancers</em> y <em>promotores</em>. Al aplicar Cicero a múltiples tejidos, es posible identificar redes reguladoras específicas de tejido y sus diferencias.</p>
+
+      <pre><code>library(Cicero)
+
+# Cargar matriz de accesibilidad
+atac_data &lt;- readRDS("./output/atac_matrix.rds")
+
+# Construir red de regulación
+cicero_data &lt;- build_cicero_graph(atac_data, 
+                                  genome = "hg38", 
+                                  min_correlation = 0.6)
+
+# Guardar resultados
+saveRDS(cicero_data, "./output/cicero_network.rds")</code></pre>
+
+      <h3>Visualización en múltiples tejidos</h3>
+      <p>Para comparar redes entre tejidos, es fundamental normalizar y visualizar las predicciones de Cicero de forma integrada. <code>ggplot2</code> y <code>igraph</code> en R permiten crear mapas de redes ajustables que destacan diferencias de conectividad.</p>
+
+      <pre><code>library(ggplot2)
+library(igraph)
+
+# Cargar datos de múltiples tejidos
+tissue1 &lt;- readRDS("./output/cicero_tissue1.rds")
+				tissue2 &lt;- readRDS("./output/cicero_tissue2.rds")
+
+# Crear gráficos separados
+p1 &lt;- plot_cicero_network(tissue1, 
+                          title = "Tejido 1: Hígado")
+p2 &lt;- plot_cicero_network(tissue2, 
+                          title = "Tejido 2: Riñón")
+
+# Mostrar en paralelo
+library(gridExtra)
+ggarrange(p1, p2, ncol = 2)</code></pre>
+
+      <h3>Análisis de diferencias entre tejidos</h3>
+      <p>Construir matrices de diferencias de conectividad permite identificar <em>hub genes</em> o regiones reguladoras clave que varían entre tejidos. Estas diferencias pueden asociarse con funciones biológicas específicas.</p>
+
+      <pre><code># Calcular diferencias en conectividad
+conn_diff &lt;- compute_connectivity_difference(tissue1, tissue2)
+
+# Encontrar top 10 regiones más diferenciadas
+top_diff &lt;- head(sort(conn_diff, decreasing = TRUE), 10)
+
+# Visualizar
+barplot(top_diff, main = "Top 10 regiones diferenciadas entre tejidos")</code></pre>
+
+      <h3>Integración con datos de expresión genética</h3>
+      <p>Para vincular la accesibilidad cromatina con la expresión génica, se puede integrar Cicero con scRNA-seq. Herramientas como <code>Seurat</code> o <code>Scanpy</code> permiten alinear datos de ambos tipos y correlacionar las predicciones de Cicero con la expresión real.</p>
+
+      <pre><code># En Seurat
+library(Seurat)
+
+# Cargar datos scRNA-seq
+rna_data &lt;- Read10X("./rna_data/" )
+
+# Intercalar con datos de cicero
+joint_data &lt;- IntegrateData(
+  object1 = rna_data,
+  object2 = cicero_data,
+  dims = 1:30,
+  verbose = FALSE
+)
+
+# Visualizar en UMAP
+DimPlot(joint_data, group.by = "tissue")</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La combinación de scATAC-seq y Cicero ofrece una potente estrategia para visualizar y analizar la regulación genómica en múltiples tejidos. Mediante el análisis de redes de conectividad y su integración con datos de expresión, es posible descubrir circuitos genéticos específicos de tejido, identificar genes reguladores clave y comprender cómo la arquitectura cromatina varía entre condiciones biológicas. Esta aproximación es esencial para la investigación en biología del desarrollo, enfermedades y terapias génicas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Evitar correlaciones espurias</strong>: Fijar un umbral mínimo de correlación (por ejemplo, 0.6) en Cicero para evitar relaciones artificiales.</li>
+        <li><strong>Verificar calidad de datos</strong>: Usar <code>cellranger-atac</code> o <code>scATAC-seq QC</code> para evaluar la calidad de los datos antes de construir redes.</li>
+        <li><strong>Normalizar entre tejidos</strong>: Asegurarse de que las matrices de accesibilidad sean comparables mediante normalización (por ejemplo, con <code>scater</code> o <code>Seurat</code>).</li>
+        <li><strong>Validar predicciones</strong>: Utilizar datos de ChIP-seq o CRISPRi para validar las predicciones de regulación de Cicero.</li>
+        <li><strong>Visualizar con cuidado</strong>: Evitar superposiciones densas en gráficos de redes; usar herramientas como <code>ggraph</code> para mejor presentación.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

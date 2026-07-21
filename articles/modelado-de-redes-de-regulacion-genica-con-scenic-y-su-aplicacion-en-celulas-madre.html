@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelado de redes de regulación génica con SCENIC y su aplicación en células madre</title>
+  <meta name="categoria" content="Reducción de dimensionalidad">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Modelado de redes de regulación génica con SCENIC y su aplicación en células madre</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El poder de las redes reguladoras en biología celular</h2>
+      <p>La regulación génica es el proceso fundamental que determina qué genes se activan o desactivan en cada célula, en cada momento, y bajo cada condición. Aunque los datos de expresión génica (como los obtenidos mediante RNA-seq) nos muestran qué genes están activos, no nos revelan directamente quiénes son los reguladores que controlan esta actividad. Este es precisamente el desafío al que se enfrenta el análisis de <strong>scRNA-seq</strong> (secuenciación de ARN a nivel de célula única).</p>
+      <p>El modelo <strong>SCENIC</strong> (Single-Cell rEgulatory Network Inference and Clustering) surge como una herramienta poderosa para abordar esta limitación. SCENIC permite reconstruir redes de regulación génica a partir de datos de expresión de células únicas, identificando no solo qué genes se expresan, sino también qué factores de transcripción (TFs) podrían estar dirigiendo esa expresión. Su aplicación en el estudio de células madre es particularmente valiosa, ya que estas células tienen un estado de regulación altamente dinámico, y entender sus redes reguladoras es clave para desentrañar los mecanismos que controlan su pluripotencia, diferenciación y reprogramación.</p>
+    </section>
+
+    <section>
+      <h2>¿Cómo funciona SCENIC? Un enfoque basado en regulación y expresión</h2>
+      <p>SCENIC opera en dos etapas principales: la inferencia de reguladores y la construcción de redes reguladoras.</p>
+      <h3>1. Identificación de reguladores activos (Regulon Inference)</h3>
+      <p>SCENIC comienza por identificar qué factores de transcripción (TFs) están activos en cada célula. Para ello, utiliza una base de datos de <strong>motivos de unión a ADN</strong> (como <a href="https://www.cisbp-rna.org/" target="_blank">CISBP-RNA</a> o <a href="https://www.roadmapepigenomics.org/" target="_blank">Roadmap Epigenomics</a>) y analiza si los genes que se expresan en una célula tienen promotores con estos motivos. Si un TF tiene muchos genes objetivo con expresión alta, se considera que ese TF está activo en esa célula.</p>
+      <p>Este proceso genera lo que se conoce como un <strong>regulón</strong> (regulon): un conjunto de genes controlados por un TF específico. Cada célula tiene un perfil de regulones activos, que refleja su estado regulador.</p>
+      <h3>2. Construcción de la red reguladora</h3>
+      <p>Posteriormente, SCENIC utiliza el perfil de regulones activos en cada célula para realizar clustering (por ejemplo, con <strong>Leiden</strong> o <strong>louvain</strong>), lo que permite identificar grupos de células con estados reguladores similares. Esto es crucial para el análisis de células madre, donde pequeñas variaciones en la actividad de reguladores pueden marcar diferenciaciones incipientes.</p>
+      <p>Finalmente, se puede aplicar <strong>SCENIC+ (SCENIC+)</strong>, una extensión que combina la información de regulones con datos de <strong>epigenética</strong> (como ChIP-seq o ATAC-seq) para aumentar la precisión en la inferencia de redes.</p>
+    </section>
+
+    <section>
+      <h2>Aplicación en células madre: Descifrando la pluripotencia y la diferenciación</h2>
+      <p>Las células madre embrionarias (mESCs) y las células madre inducidas (iPSCs) representan un sistema ideal para aplicar SCENIC. Su estado de pluripotencia está mantenido por una red de reguladores clave, como <strong>Oct4</strong>, <strong>Sox2</strong>, <strong>Klf4</strong>, y <strong>c-Myc</strong> (los factores de Yamanaka).</p>
+      <p>Al aplicar SCENIC a un conjunto de células madre, se pueden identificar:</p>
+      <ul>
+        <li>Las células con un estado de pluripotencia robusto (alta actividad de Oct4/Sox2).</li>
+        <li>Las células en proceso de transición hacia la diferenciación (baja actividad de pluripotencia y aumento de reguladores de linajes específicos).</li>
+        <li>Subpoblaciones de células madre con distintas “fases” de reprogramación o estabilidad.</li>
+      </ul>
+      <p>Esto permite a los investigadores no solo clasificar las células, sino también proponer hipótesis sobre los factores críticos que desencadenan la diferenciación. Por ejemplo, si se observa que un regulón de <strong>Sox17</strong> se activa en un subconjunto de células, se puede inferir que es un candidato clave en la ruta de diferenciación hacia endodermo.</p>
+    </section>
+
+    <section>
+      <h2>Bloques de código clave en R y Python</h2>
+      <p>SCENIC está disponible principalmente como una suite de herramientas en <strong>R</strong> (paquete <code>SCENIC</code>) y <strong>Python</strong> (<code>scanpy</code> con el paquete <code>scenic</code>).</p>
+      <h3>En R (usando SCENIC)</h3>
+      <pre><code>library(SCENIC)
+
+# Cargar datos de expresión (matrix de genes x células)
+data &lt;- readRDS("expression.rds")
+
+# Generar la matriz de regulones
+regulon_matrix &lt;- createRegulonMatrix(data, 
+                                      motifs = "motifs.cisbp.rna", 
+                                      genome = "mm10")
+
+# Calcular el score de regulón para cada célula
+regulon_scores &lt;- calculateRegulonScores(regulon_matrix)
+
+# Clusterizar células basado en los scores
+clusters &lt;- clusterCells(regulon_scores)
+
+# Visualizar resultados
+plotRegulonScores(regulon_scores, clusters)</code></pre>
+
+      <h3>En Python (usando scanpy + scenic)</h3>
+      <pre><code>import scanpy as sc
+import pandas as pd
+
+# Cargar datos
+adata = sc.read_h5ad("expression.h5ad")
+
+# Preprocesamiento (normalización, logaritmo, selección de genes)
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+
+# Construir regulones
+sc.tl.rank_genes_groups(adata, groupby="clusters", method="t-test")
+
+# Aplicar SCENIC
+scenic = sc.tl.scenic(adata, 
+                      motif_database="cisbp_rna", 
+                      genome="mm10")
+
+# Clustering de células basado en regulones
+sc.tl.leiden(adata, resolution=0.8)
+
+# Visualizar
+sc.pl.umap(adata, color=["leiden", "regulon_score_Oct4"], legend_loc="on data")</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>SCENIC transforma el análisis de datos de células únicas al permitir la inferencia de redes de regulación génica, pasando de un enfoque puramente genómico (qué genes están expresados) a uno funcional (qué factores de transcripción los están regulando). Su aplicación en células madre es particularmente potente, ya que permite mapear los estados de pluripotencia y los primeros pasos de diferenciación con una resolución sin precedentes. Al integrar datos de expresión con información de motivos de unión, SCENIC ofrece una ventana única hacia los circuitos reguladores que definen el destino celular.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar una base de datos de motivos inadecuada:</strong> Asegúrese de elegir una base de datos que sea relevante para el organismo y el tipo celular (por ejemplo, <code>cisbp_rna</code> para humanos/murinos).</li>
+        <li><strong>Ignorar la calidad de los datos:</strong> SCENIC requiere datos de expresión bien procesados. No aplique SCENIC directamente a raw counts sin normalización.</li>
+        <li><strong>Asumir causalidad:</strong> SCENIC infiere correlaciones reguladoras, no causalidad. Un alto score de regulón no implica que el TF sea el causante directo.</li>
+        <li><strong>Suponer que todos los regulones son biológicamente relevantes:</strong> Filtrar por puntuación y número de genes objetivo para enfocarse en regulones fuertes.</li>
+        <li><strong>Olvidar validar con datos independientes:</strong> Si se tiene acceso a datos de ChIP-seq o ATAC-seq, utilícelos para validar las predicciones de SCENIC.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
