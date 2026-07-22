@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análisis de interacciones genómicas con Hi-C y su interpretación en datos de 3D cromatina</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="General" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" aria-label="Volver al índice">← Volver al índice</a>
+    <h1>Análisis de interacciones genómicas con Hi-C y su interpretación en datos de 3D cromatina</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: La cromatina en tres dimensiones</h2>
+      <p>
+        La cromatina no es un simple hilo de ADN enrollado; su organización tridimensional dentro del núcleo celular juega un papel fundamental en la regulación génica, la replicación del ADN y el mantenimiento de la estabilidad genómica. El análisis de interacciones genómicas mediante <strong>Hi-C</strong> ha revolucionado nuestra comprensión de esta organización 3D, permitiendo mapear de forma genómica y cuantitativa las frecuencias de interacción entre regiones distantes del genoma.
+      </p>
+      <p>
+        Este artículo explora los fundamentos del método Hi-C, los pasos clave en su análisis bioinformático, y la interpretación biológica de los datos obtenidos. Desde el diseño experimental hasta la visualización y validación de estructuras cromosómicas, abordaremos los desafíos y herramientas esenciales para extraer significado de los datos de 3D cromatina.
+      </p>
+    </section>
+
+    <section>
+      <h2>Principios del método Hi-C</h2>
+      <p>
+        Hi-C (High-throughput Chromosome Conformation Capture) es una técnica de secuenciación de próxima generación que permite capturar interacciones espaciales entre fragmentos de cromatina. El protocolo se basa en tres pasos principales:
+      </p>
+      <ol>
+        <li><strong>Formación de cruces intercromosómicos:</strong> Las células se fijan con formaldehído para congelar las interacciones espaciales de la cromatina.</li>
+        <li><strong>Corte con enzimas de restricción:</strong> Se utilizan enzimas como <em>Hi-C</em> (por ejemplo, <em>DNase I</em> o <em>MboI</em>) para cortar el ADN en sitios específicos.</li>
+        <li><strong>Ligación cruzada y secuenciación:</strong> Los fragmentos que están físicamente cercanos en el núcleo se ligan entre sí, y luego se secuencian mediante NGS.</li>
+      </ol>
+      <p>
+        El resultado es un <em>matriz de contactos</em> en la que cada entrada <code>(i, j)</code> representa el número de veces que el fragmento genómico <code>i</code> ha interactuado con el fragmento <code>j</code>. Esta matriz es la base para todas las siguientes analíticas.
+      </p>
+    </section>
+
+    <section>
+      <h2>Procesamiento y normalización de datos Hi-C</h2>
+      <p>
+        El análisis de datos Hi-C comienza con la alineación de los reads a un genoma de referencia usando herramientas como <strong>STAR</strong> o <strong>bowtie2</strong>. A continuación, se construye la matriz de contactos genómicos utilizando herramientas como <strong>HiC-Pro</strong> o <strong>Juicebox</strong>.
+      </p>
+
+      <h3>Normalización: Eliminar sesgos técnicos</h3>
+      <p>
+        Las matrices de contacto presentan sesgos sistemáticos: regiones con alta densidad de restricción tienden a tener más contactos, y la distancia entre fragmentos afecta la frecuencia de interacción. Para corregir estos efectos, se aplican técnicas de normalización:
+      </p>
+      <ul>
+        <li><strong>IC (Iterative Correction):</strong> Iterativamente ajusta las filas y columnas de la matriz para que sumen igual, eliminando sesgos de localización.</li>
+        <li><strong>VC (Vanilla Coverage):</strong> Normaliza por el número de sitios de restricción en cada región.</li>
+        <li><strong>KR (Knight-Ruiz):</strong> Un método más robusto que ajusta tanto filas como columnas mediante un algoritmo de balanceo.</li>
+      </ul>
+      <p>
+        El uso de <strong>KR</strong> o <strong>IC</strong> es habitual en estudios modernos debido a su capacidad para mejorar la resolución y la interpretación biológica.
+      </p>
+
+      <h3>Ejemplo de normalización con HiC-Pro</h3>
+      <pre><code>hicpro2matrix --input_dir data/hicpro_output --output_dir matrices --bin_size 10000 --norm kr --nproc 16</code></pre>
+    </section>
+
+    <section>
+      <h2>Interpretación biológica de estructuras 3D</h2>
+      <p>
+        Tras la normalización, se pueden identificar estructuras funcionales clave en la cromatina:
+      </p>
+
+      <h3>Domínios de aislamiento (TADs)</h3>
+      <p>
+        Los <em>TADs</em> (Topologically Associating Domains) son regiones del genoma que interactúan con frecuencia entre sí, pero rara vez con regiones externas. Su detección se realiza con algoritmos como <strong>Arrowhead</strong>, <strong>HiCExplorer</strong>, o <strong>IC-Loop</strong>. La presencia, tamaño y estabilidad de TADs están estrechamente relacionados con la regulación génica.
+      </p>
+
+      <h3>Interacciones a larga distancia</h3>
+      <p>
+        Los bucles de cromatina, como los formados por factores de transcripción (por ejemplo, <em>CTCF</em> y <em>cohesina</em>), permiten la interacción entre promotores y elementos reguladores distantes. Herramientas como <strong>HiC-Pro</strong>, <strong>Fit-Hi-C</strong>, o <strong>CHiCAGO</strong> identifican estas interacciones con alta confianza.
+      </p>
+
+      <h3>Visualización: Juicebox, HiGlass y TrackViewer</h3>
+      <p>
+        Las herramientas de visualización son esenciales para explorar y validar hallazgos. <strong>Juicebox</strong> permite navegar matrices de contacto y detectar patrones. <strong>HiGlass</strong> ofrece visualización interactiva en navegador web, ideal para compartir resultados. <strong>TrackViewer</strong> integra datos de cromatina, genes y modificaciones epigenéticas.
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        El análisis de interacciones genómicas mediante Hi-C proporciona una ventana única hacia la organización tridimensional del genoma. A través del procesamiento riguroso de datos, la normalización adecuada y la integración con otros datos funcionales, es posible identificar estructuras clave como TADs y bucles de cromatina. Estas estructuras están profundamente relacionadas con la regulación génica y su alteración se asocia con enfermedades como el cáncer.
+      </p>
+      <p>
+        Dominar las herramientas y principios detrás de Hi-C es fundamental para cualquier investigador en biología del genoma. La interpretación correcta de estos datos permite no solo describir la arquitectura cromosómica, sino también generar hipótesis funcionales sobre el control de la expresión génica en contextos normales y patológicos.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No usar normalización:</strong> Siempre aplicar IC, KR o VC. Sin normalización, los resultados son sesgados y difíciles de interpretar.</li>
+        <li><strong>Usar un tamaño de bin demasiado pequeño:</strong> Puede generar ruido y superposición. 10–100 kb es razonable para muchos estudios.</li>
+        <li><strong>Ignorar la calidad de los datos:</strong> Verificar el número de reads, el ratio de interacción, y la distribución de contactos.</li>
+        <li><strong>Repetir análisis sin validar:</strong> Usar herramientas como <em>HiCExplorer</em> para verificar la estabilidad de los TADs entre diferentes métodos.</li>
+        <li><strong>Integrar con otros datos:</strong> Combinar Hi-C con ChIP-seq, ATAC-seq o RNA-seq para contextualizar hallazgos funcionales.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

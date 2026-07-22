@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de variantes de fusión en datos clínicos con FusionCatcher y Arriba</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Variantes">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Validación de variantes de fusión en datos clínicos con FusionCatcher y Arriba</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: Fusión de genes en medicina clínica</h2>
+            <p>Las fusiones génicas son eventos genéticos que ocurren cuando dos genes distintos se unen, produciendo un nuevo gen quimérico con funciones potencialmente oncogénicas. Estas variantes son altamente relevantes en oncología, especialmente en tumores como el sarcoma de Ewing, leucemia mieloide aguda y cáncer de pulmón no pequeño. Su detección precisa y validación rigurosa es fundamental para el diagnóstico, pronóstico y selección de terapias dirigidas.</p>
+            <p>Dado su impacto clínico, se requieren métodos bioinformáticos robustos capaces de identificar fusiones a partir de secuenciación de RNA (RNA-seq). En este artículo, exploramos el uso combinado de <strong>FusionCatcher</strong> y <strong>Arriba</strong> para validar variantes de fusión en datos clínicos, destacando sus fortalezas, limitaciones y mejores prácticas para asegurar resultados fiables.</p>
+        </section>
+
+        <section>
+            <h2>Desarrollo</h2>
+
+            <h3>1. Flujo de trabajo: de los datos crudos a la fusión validada</h3>
+            <p>El proceso de validación de fusiones en datos clínicos requiere un pipeline integrado que combine detección, filtrado y verificación. FusionCatcher y Arriba se complementan perfectamente en este flujo:</p>
+            <ul>
+                <li><strong>FusionCatcher</strong>: Es un herramienta de detección de fusiones altamente sensible, que utiliza alineamientos de reads contra un genoma de referencia (por ejemplo, GRCh38) y analiza los patrones de alineamiento atípicos para identificar posibles fusiones.</li>
+                <li><strong>Arriba</strong>: Es una herramienta especializada en validar fusiones detectadas por otros pipelines, centrada en el análisis de reads de secuenciación que cruzan el punto de fusión. Arriba evalúa la calidad del soporte de datos y proporciona una puntuación de confianza para cada variante.</li>
+            </ul>
+
+            <h3>2. Ejecución de FusionCatcher: detección de fusiones potenciales</h3>
+            <p>El primer paso consiste en ejecutar FusionCatcher sobre los datos alineados (por ejemplo, archivos BAM generados con STAR o HISAT2). El siguiente comando es un ejemplo típico:</p>
+            <pre><code>fusioncatcher -i aligned_reads.bam \
+              -r /path/to/human_genome_reference \
+              -o fusion_results \
+              -t 8 \
+              --no-soft-clip</code></pre>
+            <p>Este comando genera varios archivos de salida, incluyendo:</p>
+            <ul>
+                <li><code>fusion_results.fusion_predictions.txt</code>: lista de fusiones detectadas con información de soporte, tipo de fusión y puntuación de confianza.</li>
+                <li><code>fusion_results.fusion_genes.txt</code>: resumen de genes implicados en fusiones.</li>
+                <li>Archivos HTML para visualización.</li>
+            </ul>
+
+            <h3>3. Validación con Arriba: evaluación de la evidencia de fusión</h3>
+            <p>Con las fusiones detectadas por FusionCatcher, se utiliza Arriba para realizar una validación más rigurosa. Arriba requiere un archivo BAM con reads alineados y el archivo de fusiones en formato de lista de genes (por ejemplo, desde FusionCatcher).</p>
+            <p>El siguiente comando muestra cómo usar Arriba:</p>
+            <pre><code>arriba --input aligned_reads.bam \
+       --fusion-list fusion_results.fusion_predictions.txt \
+       --genome hg38 \
+       --output arriba_validation \
+       --threads 8</code></pre>
+            <p>Arriba genera un reporte detallado que incluye:</p>
+            <ul>
+                <li>El número de reads que cruzan el punto de fusión (fusion-supporting reads).</li>
+                <li>La calidad de los alineamientos en los extremos de la fusión.</li>
+                <li>Una puntuación de confianza que combina múltiples métricas.</li>
+                <li>Posibles falsos positivos basados en artefactos de alineamiento.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La validación de variantes de fusión en datos clínicos requiere una estrategia multi-etapa que combine detección sensible con validación rigurosa. FusionCatcher ofrece una detección robusta de fusiones potenciales a partir de datos de RNA-seq, mientras que Arriba proporciona una evaluación de calidad detallada del soporte de reads para cada fusión candidata. Su uso conjunto permite reducir el número de falsos positivos y aumentar la confianza en los resultados, lo cual es esencial en un contexto clínico donde decisiones terapéuticas dependen de estos hallazgos.</p>
+            <p>El flujo de trabajo debe incluir preprocesamiento cuidadoso, validación de calidad de datos, y revisión manual de variantes con alto nivel de confianza. Además, es fundamental mantener un registro claro de los parámetros utilizados y los resultados generados para reproducibilidad y auditoría clínica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar referencias genómicas desactualizadas</strong>: Asegúrese de utilizar un genoma de referencia actualizado (GRCh38) y una base de datos de genes actualizada para evitar falsos negativos o falsos positivos.</li>
+                <li><strong>Ignorar filtros de calidad</strong>: Siempre revisar los resultados de Arriba y descartar fusiones con bajo soporte de reads (menos de 3-5 reads cruzando el punto de fusión) o con alineamientos de baja calidad.</li>
+                <li><strong>Confundir detección con validación</strong>: FusionCatcher es solo una herramienta de detección. Nunca use sus resultados directamente en informes clínicos sin validación adicional con Arriba o herramientas similares.</li>
+                <li><strong>No documentar el pipeline</strong>: Documente cada paso, parámetros y versiones de herramientas para cumplir con estándares clínicos y regulaciones (como CLIA o ISO 15189).</li>
+                <li><strong>Usar datos de baja calidad</strong>: Evite datos con bajo rendimiento de secuenciación, alta tasa de contaminación o mala calidad de los reads. Siempre validad la calidad del RNA previa a la secuenciación.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

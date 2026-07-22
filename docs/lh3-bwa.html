@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BWA</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Alineamiento">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>BWA</h1>
+    <p class="meta">
+      <a href="https://github.com/lh3/bwa">Ver repositorio</a> · 
+      1758 estrellas · C
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>BWA (Burrow-Wheeler Aligner) es una herramienta de alineamiento de lecturas cortas de secuencias de ADN o ARN contra un genoma de referencia. Está diseñada para alinear secuencias de alto rendimiento (short reads), típicamente generadas por plataformas de secuenciación de próxima generación como Illumina. BWA es ampliamente utilizado en proyectos de biología molecular, genómica y bioinformática clínica para identificar variaciones genéticas, análisis de expresión, y estudios de metagenómica.</p>
+
+    <h2>Instalación</h2>
+    <p>BWA está escrito en C y se compila desde el código fuente. El método recomendado es clonar el repositorio y compilarlo con <code>make</code>:</p>
+    <pre><code>git clone https://github.com/lh3/bwa.git
+cd bwa
+make</code></pre>
+    <p>Alternativamente, si tienes <code>conda</code> instalado, puedes instalarlo directamente desde el canal <code>bioconda</code>:</p>
+    <pre><code>conda install -c bioconda bwa</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Una vez compilado, BWA puede usarse en varias formas. El flujo más común implica dos pasos: primero, construir un índice del genoma de referencia; segundo, alinear las lecturas a ese índice. Aquí tienes un ejemplo ilustrativo:</p>
+    <pre><code># Paso 1: Construir índice del genoma de referencia
+bwa index hg38.fa
+
+# Paso 2: Alinear lecturas (pair-ended) a la referencia
+bwa mem hg38.fa reads_1.fastq reads_2.fastq > alineamiento.sam</code></pre>
+    <p><strong>Nota:</strong> La sintaxis exacta de los comandos puede variar dependiendo del tipo de entrada (pair-ended, single-ended) y del formato del genoma. Asegúrate de consultar la documentación oficial para el uso exacto según tu caso.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo típico de análisis con BWA sigue estos pasos:</p>
+    <ol>
+      <li>Obtener el genoma de referencia (por ejemplo, <code>hg38.fa</code>).</li>
+      <li>Crear un índice de BWA con <code>bwa index</code>.</li>
+      <li>Alinear las lecturas de secuenciación usando <code>bwa mem</code>.</li>
+      <li>Convertir el archivo SAM a BAM (formato binario) con <code>samtools view -bS alineamiento.sam -o alineamiento.bam</code>.</li>
+      <li>Ordenar el archivo BAM con <code>samtools sort</code>.</li>
+      <li>Índice del BAM final para su uso posterior.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Genoma de referencia -->
+        <rect x="50" y="20" width="100" height="30" fill="#0077cc" rx="5" />
+        <text x="100" y="40" font-size="12" text-anchor="middle" fill="white">Genoma</text>
+
+        <!-- Lecturas de secuenciación -->
+        <rect x="50" y="80" width="80" height="30" fill="#ff6600" rx="5" />
+        <text x="90" y="100" font-size="12" text-anchor="middle" fill="white">Lecturas</text>
+
+        <!-- Flecha de alineamiento -->
+        <line x1="130" y1="95" x2="150" y2="95" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- BWA -->
+        <rect x="150" y="60" width="100" height="40" fill="#77cc00" rx="5" />
+        <text x="200" y="85" font-size="12" text-anchor="middle" fill="black">BWA mem</text>
+
+        <!-- Salida SAM -->
+        <rect x="280" y="80" width="100" height="30" fill="#cc0077" rx="5" />
+        <text x="330" y="100" font-size="12" text-anchor="middle" fill="white">alineamiento.sam</text>
+
+        <!-- Flecha de salida -->
+        <line x1="250" y1="95" x2="280" y2="95" stroke="black" stroke-width="2" marker-end="url(#arrow)" />
+
+        <!-- Flecha de flecha (definición) -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de alineamiento con BWA: lecturas se alinean a un genoma de referencia usando el algoritmo BWA mem, produciendo un archivo SAM de salida.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Índice no generado:</strong> Asegúrate de ejecutar <code>bwa index</code> antes de usar <code>bwa mem</code>. Si no hay índice, BWA fallará con un error claro.</li>
+      <li><strong>Formato incorrecto de entrada:</strong> BWA requiere que las lecturas estén en formato FASTQ. Si usas otro formato, conviértelo primero con herramientas como <code>fastqc</code> o <code>seqtk</code>.</li>
+      <li><strong>Genoma de referencia no compatible:</strong> Usa un genoma de referencia que coincida con el conjunto de datos (por ejemplo, hg38 para humano, mm10 para ratón).</li>
+      <li><strong>No usar <code>bwa mem</code> para lecturas largas:</strong> BWA está optimizado para lecturas cortas. Para lecturas largas (como las de Nanopore o PacBio), utiliza <code>minimap2</code> en su lugar.</li>
+      <li><strong>Práctica recomendada:</strong> Siempre verifica la calidad de las lecturas antes del alineamiento con <code>fastqc</code> y corrige posibles contaminantes o secuencias de adaptadores con <code>trimmomatic</code> o <code>cutadapt</code>.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">6 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42324717.html">Deep mutational scanning reveals the antibody escape and infectivity landscape of SARS-CoV-2 Omicron JN.1 and XEC receptor-binding domains.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2686472" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42304944.html">The development of biologically contained Sudan virus as an alternative and safe tool for fundamental filovirus research.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2678654" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42319349.html">The RNA binding protein ZFP36L2 displays tissue-selective mRNA targeting in mice.</a> <span class="date">2026-07-17</span> · <a href="https://doi.org/10.1080/15476286.2026.2690792" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42298353.html">Gut microbial markers of immunotherapy response in melanoma: a cross-cohort analysis including the first Russian dataset.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2681788" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42255492.html">Adipose-derived mesenchymal stem cells promote diabetic wound healing through ALDOA secretion.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1016/j.reth.2026.101148" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42319089.html">Targeted activation of PPARG or AKT1 alleviates liver injury in mice with type 2 diabetes and sepsis by modulating inflammatory and metabolic pathways.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/07853890.2026.2684073" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.</p>
+</body>
+</html>

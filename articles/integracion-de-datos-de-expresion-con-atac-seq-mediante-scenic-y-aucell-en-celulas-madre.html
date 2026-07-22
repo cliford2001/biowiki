@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell en células madre</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Integración">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell en células madre</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El poder de integrar transcripción y accesibilidad cromosómica</h2>
+            <p>La biología celular moderna ha avanzado enormemente en la capacidad de estudiar la expresión génica (RNA-seq) y la accesibilidad cromosómica (ATAC-seq) a nivel de célula individual. Sin embargo, entender cómo estos dos niveles de regulación se coordinan en contextos biológicos complejos, como las células madre, requiere una integración funcional. En este artículo, exploramos cómo las herramientas <strong>SCENIC</strong> (Single-Cell rEgulatory Network Inference and Clustering) y <strong>AUCell</strong> (AUCell: AUtomatic Cell type Enrichment) permiten combinar datos de expresión y ATAC-seq para obtener una visión más completa de la regulación génica en células madre.</p>
+            <p>La integración de estos datos no es solo una cuestión de combinación de matrices, sino de reconstruir redes reguladoras y activar programas genéticos en función de la epigenética. Esta aproximación permite identificar factores de transcripción (TFs) clave, sus redes diana, y cómo la dinámica de la cromatina influye en la expresión de genes durante procesos como la auto-renovación, la diferenciación y el mantenimiento del estado pluripotente.</p>
+        </section>
+
+        <section>
+            <h2>Enfoque de SCENIC: Reconstrucción de redes reguladoras desde el ATAC-seq</h2>
+            <p>SCENIC se basa en el principio de que la accesibilidad del ADN en promotores y enhancers se correlaciona con la actividad de los factores de transcripción. El proceso comienza con el análisis del ATAC-seq para identificar regiones reguladoras diferencialmente accesibles (DARs). Estas regiones se agrupan en <em>peaks</em>, y para cada pico se busca un conjunto de motivos de TF (TF motifs) que puedan estar activos.</p>
+
+            <h3>Construcción del regulon</h3>
+            <p>Un <strong>regulon</strong> es un conjunto de genes cuyos promotores o enhancers están regulados por un mismo TF. SCENIC construye regulones al asociar cada pico de ATAC-seq con un motivo de TF, y luego identifica todos los genes que tienen ese motivo en sus proximidades. Esta información se combina con la expresión génica para calcular una puntuación de activación de regulon (AUCell score).</p>
+
+            <pre><code class="language-r">
+# Ejemplo de pipeline básico en R
+library(SCENIC)
+
+# Cargar datos de ATAC-seq (peaks) y expresión (genes)
+atac_matrix &lt;- readRDS("atac_peaks.rds")
+exp_matrix &lt;- readRDS("gene_expression.rds")
+
+# Construir el regulon
+regulon &lt;- buildSCENIC(atac_matrix, exp_matrix, 
+                      motif_db = "motifdb_hg38")
+            </code></pre>
+        </section>
+
+        <section>
+            <h2>Enfoque de AUCell: Activación de regulones en cada célula</h2>
+            <p>Una vez que se han definido los regulones, AUCell se utiliza para calcular la <strong>puntuación de activación de regulón (AUCell score)</strong> en cada célula individual. Esta puntuación refleja el nivel de actividad de un regulón específico en una célula, considerando tanto la expresión génica como la presencia de los motivos en regiones accesibles.</p>
+
+            <pre><code class="language-r">
+# Calcular scores de activación de regulón
+auc_scores &lt;- AUCell(atac_matrix, exp_matrix, 
+                    regulon, 
+                    method = "aucell")
+
+# Guardar resultados
+saveRDS(auc_scores, "auc_scores.rds")
+            </code></pre>
+
+            <p>Este paso transforma los datos de ATAC-seq y expresión en un espacio de regulones activos, donde cada célula tiene una firma de TFs activos. Esto permite comparar células no solo por su perfil de expresión, sino por su estado de regulación epigenética.</p>
+        </section>
+
+        <section>
+            <h2>Aplicación en células madre: ¿Qué podemos aprender?</h2>
+            <p>En el contexto de las células madre, esta integración permite responder preguntas clave:</p>
+            <ul>
+                <li><strong>¿Qué factores de transcripción sostienen el estado pluripotente?</strong> Se puede identificar si regulones de TFs como OCT4, SOX2 o NANOG están altamente activos en células madre sin diferenciar.</li>
+                <li><strong>¿Cómo se desactivan estos regulones durante la diferenciación?</strong> Al comparar células madre con precursores diferenciados, se observa una disminución en los AUCell scores de los regulones pluripotentes.</li>
+                <li><strong>¿Existen subpoblaciones de células madre con distintos estados epigenéticos?</strong> El clustering basado en AUCell scores puede revelar heterogeneidad funcional más allá del perfil de expresión.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La integración de datos de expresión con ATAC-seq mediante SCENIC y AUCell proporciona una ventana poderosa al sistema de regulación génica en células madre. Mientras que el RNA-seq revela qué genes están expresados, el ATAC-seq y SCENIC indican <em>por qué</em> están expresados, mostrando los factores de transcripción y las regiones reguladoras subyacentes. AUCell permite traducir esta información a un marco de análisis celular, donde cada célula tiene un perfil de regulón activo, facilitando la identificación de estados funcionales y transiciones reguladoras.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar datos de ATAC-seq sin preprocesamiento adecuado.</strong> Asegúrese de que los peaks estén bien llamados, filtrados por calidad, y que se utilicen bases de datos de motivos actualizadas (por ejemplo, HOCOMOCO, JASPAR).</li>
+                <li><strong>Evitar la inclusión de genes no expresados en el análisis de regulones.</strong> SCENIC y AUCell funcionan mejor cuando se analizan genes con expresión detectable.</li>
+                <li><strong>Validar los regulones con literatura biológica.</strong> No asuma que un motivo de TF activo en un pico significa que el TF está activo; siempre contrastar con datos funcionales o de ChIP-seq si están disponibles.</li>
+                <li><strong>Usar un conjunto de motivos adecuado para el organismo.</strong> Las bases de datos de motivos varían entre especies. Para humanos, use <code>motifdb_hg38</code> en SCENIC.</li>
+                <li><strong>No interpretar los AUCell scores como valores absolutos.</strong> Son relativos entre células y deben usarse en comparaciones dentro del mismo dataset.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cutadapt</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>cutadapt</h1>
+    <p class="meta">
+      <a href="https://github.com/marcelm/cutadapt">https://github.com/marcelm/cutadapt</a>
+      · 586 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>cutadapt es una herramienta de línea de comandos diseñada para eliminar secuencias de adaptadores de lecturas de secuenciación de ADN/RNA. Es especialmente útil en proyectos de secuenciación de nueva generación (NGS), donde las secuencias de adaptadores pueden interferir con el análisis posterior. Esta herramienta identifica y trunca automáticamente las secuencias de adaptadores en los extremos de las lecturas, mejorando así la calidad y precisión del análisis bioinformático.</p>
+
+    <h2>Instalación</h2>
+    <p>cutadapt está escrito en Python y se puede instalar fácilmente utilizando <code>pip</code>:</p>
+    <pre><code>pip install cutadapt</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Un uso básico de cutadapt implica especificar la secuencia del adaptador que se desea eliminar. Por ejemplo, si se tiene una lectura que comienza con un adaptador conocido, el comando podría ser:</p>
+    <pre><code>cutadapt -a ADAPTADOR=AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -o salida.fastq entrada.fastq</code></pre>
+    <p>Este comando elimina el adaptador <code>AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC</code> de la cabeza de cada lectura en el archivo <code>entrada.fastq</code>, guardando el resultado en <code>salida.fastq</code>. La sintaxis ilustrativa; verifica en la documentación oficial.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo habitual de trabajo con cutadapt es:</p>
+    <ol>
+      <li>Preparar el archivo de lecturas de entrada (fastq o fasta).</li>
+      <li>Identificar la secuencia del adaptador utilizado durante la librería de secuenciación.</li>
+      <li>Ejecutar cutadapt para eliminar los adaptadores de las lecturas.</li>
+      <li>Verificar la salida y proceder con el análisis posterior (alineamiento, ensamblaje, etc.).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="180" xmlns="http://www.w3.org/2000/svg">
+        <style>
+          .box { fill: #e0f7fa; stroke: #0277bd; stroke-width: 1.5; }
+          .arrow { stroke: #0277bd; stroke-width: 1.5; marker-end: url(#arrowhead); }
+          .label { font-size: 12px; font-family: sans-serif; fill: #01579b; }
+        </style>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#0277bd" />
+          </marker>
+        </defs>
+        <!-- Cajas -->
+        <rect x="50" y="50" width="120" height="40" class="box" />
+        <rect x="200" y="50" width="120" height="40" class="box" />
+        <rect x="350" y="50" width="120" height="40" class="box" />
+        <rect x="500" y="50" width="120" height="40" class="box" />
+        <!-- Flechas -->
+        <line x1="170" y1="70" x2="200" y2="70" class="arrow" />
+        <line x1="320" y1="70" x2="350" y2="70" class="arrow" />
+        <line x1="470" y1="70" x2="500" y2="70" class="arrow" />
+        <!-- Etiquetas -->
+        <text x="110" y="75" class="label" text-anchor="middle">Lecturas<br>de entrada</text>
+        <text x="260" y="75" class="label" text-anchor="middle">Identificar<br>adaptadores</text>
+        <text x="410" y="75" class="label" text-anchor="middle">Eliminar<br>adaptadores</text>
+        <text x="560" y="75" class="label" text-anchor="middle">Lecturas<br>limpias</text>
+      </svg>
+      <figcaption>Diagrama de flujo típico de un análisis con cutadapt: desde lecturas de entrada hasta lecturas sin adaptadores.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Adaptador mal especificado:</strong> Asegúrate de conocer exactamente la secuencia del adaptador utilizado en tu experimento. Un error en la secuencia puede hacer que cutadapt no detecte los adaptadores, o que elimine secuencias incorrectas.</li>
+      <li><strong>Uso de adaptadores múltiples:</strong> Si tu librería incluye adaptadores en ambos extremos, utiliza los parámetros <code>-a</code> y <code>-g</code> para especificar el adaptador 5' y 3' respectivamente.</li>
+      <li><strong>Revisar el informe de salida:</strong> cutadapt genera un archivo de informe con estadísticas sobre las lecturas procesadas. Revisa este informe para verificar que la eliminación de adaptadores fue exitosa.</li>
+      <li><strong>Evitar el uso excesivo de parámetros:</strong> No apliques filtros innecesarios en la línea de comandos a menos que sean necesarios. El uso de opciones como <code>--minimum-length</code> o <code>--max-n</code> debe ser justificado por el contexto del análisis.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta"><em>Aún no se han detectado papers asociados; se irán agregando solos.</em></p></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>
