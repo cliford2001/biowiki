@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de interacciones genómicas con Hi-C y su interpretación en redes de regulación</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="General">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de interacciones genómicas con Hi-C y su interpretación en redes de regulación</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: el genoma tridimensional y su importancia funcional</h2>
+      <p>El genoma humano no es una simple secuencia lineal de ADN; su organización tridimensional en el núcleo celular juega un papel crucial en la regulación génica. Las interacciones espaciales entre regiones genómicas distantes, que pueden estar separadas por millones de pares de bases en la secuencia lineal, son fundamentales para el control de la expresión génica, la replicación del ADN y la respuesta a señales celulares. El método <strong>Hi-C</strong> permite capturar estas interacciones a escala genómica, ofreciendo una visión sin precedentes de la arquitectura del genoma.</p>
+      <p>El análisis de datos Hi-C permite identificar estructuras funcionales como <em>topologically associating domains</em> (TADs), bucles promotor-promotor, y contactos entre enhancers y sus genes diana. Estas interacciones no son aleatorias: están relacionadas con la función biológica y su alteración puede estar asociada a enfermedades, especialmente trastornos del desarrollo y cáncer. Por ello, interpretar estos datos no solo es un desafío técnico, sino una clave para comprender la regulación génica en contextos normales y patológicos.</p>
+    </section>
+
+    <section>
+      <h2>Proceso experimental y preprocesamiento de datos Hi-C</h2>
+      <p>El protocolo Hi-C comienza con la fijación de las interacciones genómicas mediante formaldehído, seguida de corte con una enzima de restricción (como HindIII o DpnII) y ligadura de fragmentos vecinos. Tras la liberación de las interacciones, se secuencian los fragmentos ligados mediante secuenciación de próxima generación (NGS). El resultado es un <em>matrix</em> de contactos, donde cada entrada <em>(i,j)</em> representa el número de lecturas que conectan la región genómica <em>i</em> con la región <em>j</em>.</p>
+
+      <h3>Preprocesamiento: de los datos brutos al mapa de contactos</h3>
+      <p>El primer paso en el análisis es la conversión de los datos de secuenciación (archivos BAM o SAM) en una matriz de contactos. Herramientas como <code>Hi-C Pro</code> o <code>juicer</code> automatizan este proceso, que incluye:</p>
+      <ul>
+        <li>Alineamiento de lecturas (usando <code>bowtie2</code> o <code>STAR</code>)</li>
+        <li>Identificación de fragmentos de restricción y marcado de contactos</li>
+        <li>Generación de la matriz de contactos binaria (por ejemplo, a una resolución de 10 kb)</li>
+        <li>Corrección de sesgos (como el de fragmentos de restricción, GC content, y mapeo)</li>
+      </ul>
+
+      <p>Este preprocesamiento es crítico: una matriz de contacto mal corregida puede generar interpretaciones erróneas de las estructuras tridimensionales.</p>
+    </section>
+
+    <section>
+      <h2>Extracción de estructuras funcionales a partir del mapa de contactos</h2>
+      <p>Una vez obtenida la matriz de contactos, se pueden aplicar métodos estadísticos y de aprendizaje automático para identificar patrones estructurales. Algunas de las estructuras más relevantes son:</p>
+
+      <h3>Topologically Associating Domains (TADs)</h3>
+      <p>Los TADs son regiones del genoma que interactúan frecuentemente entre sí, pero rara vez con regiones externas. Su identificación puede realizarse mediante algoritmos como <code>directionality index</code> o herramientas como <code>cooltools</code> (con Python) o <code>Hi-C Explorer</code> (en R).</p>
+
+      <h3>Bucles y contactos específicos</h3>
+      <p>Los bucles, especialmente aquellos entre enhancers y promotores, son indicadores de regulación génica activa. Herramientas como <code>Fit-Hi-C</code> o <code>HiCPlus</code> permiten detectar estos contactos significativos mediante modelos estadísticos.</p>
+
+      <p>El análisis de interacciones específicas se puede complementar con datos de epigenética (ChIP-seq para CTCF, H3K27ac para enhancers) para validar que los contactos identificados están respaldados por marcas de actividad.</p>
+    </section>
+
+    <section>
+      <h2>Interpretación en redes de regulación</h2>
+      <p>Los datos Hi-C permiten construir redes de regulación en tres dimensiones. En estas redes, los nodos representan regiones genómicas (como TADs o genes) y los enlaces representan interacciones significativas. Estas redes pueden analizarse con herramientas de análisis de redes como <code>igraph</code> (R) o <code>networkx</code> (Python).</p>
+
+      <p>Por ejemplo, un análisis puede revelar que un TAD con alta actividad de enhancers se conecta con múltiples genes en un mismo camino de regulación. Además, se pueden comparar redes entre condiciones (por ejemplo, células sanas vs. cancerosas) para identificar alteraciones en la arquitectura del genoma asociadas a cambios de expresión génica.</p>
+
+      <h3>Ejemplo de código: identificación de contactos significativos en R</h3>
+      <pre><code class="language-r">
+# Cargar datos de Hi-C (en formato .cool)
+library(cooltools)
+library(ggplot2)
+
+# Cargar matriz de contactos
+hic <- cool.load("data/hic_data.cool")
+
+# Detectar bucles significativos
+loops <- detect_loops(hic, min_distance = 50000, max_distance = 2000000)
+
+# Visualizar
+plot_loops(loops, hic)
+</code></pre>
+
+      <h3>Ejemplo de código: construcción de red en Python</h3>
+      <pre><code class="language-python">
+import networkx as nx
+import numpy as np
+
+# Cargar matriz de contactos
+contact_matrix = np.load("data/contact_matrix.npy")
+
+# Crear red: solo incluir contactos por encima de un umbral
+G = nx.Graph()
+
+for i in range(contact_matrix.shape[0]):
+    for j in range(i+1, contact_matrix.shape[1]):
+        if contact_matrix[i, j] > 10:  # umbral de significancia
+            G.add_edge(i, j, weight=contact_matrix[i, j])
+
+# Analizar centralidad
+centrality = nx.degree_centrality(G)
+print("Nodos más centrales:", sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5])
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de interacciones genómicas mediante Hi-C ha revolucionado nuestra comprensión del genoma como un sistema tridimensional. Al identificar estructuras como TADs, bucles promotor-enhancer y redes de regulación, se puede correlacionar la arquitectura nuclear con la función génica. El proceso requiere un preprocesamiento riguroso y el uso de herramientas especializadas, como Hi-C Pro, juicer, cooltools y herramientas de análisis de redes. La integración de datos Hi-C con otros tipos de datos (epigenéticos, de expresión) permite una interpretación más profunda y biológicamente relevante.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Evita usar una resolución muy alta</strong>: puede generar ruido y falsos positivos. Una resolución de 10-50 kb suele ser adecuada para análisis funcionales.</li>
+        <li><strong>Corrige sesgos</strong>: no omitas la corrección de sesgos de fragmentos, GC content o mapeo, ya que alteran drásticamente la matriz de contacto.</li>
+        <li><strong>Valida con datos funcionales</strong>: los contactos identificados deben compararse con ChIP-seq para CTCF, H3K27ac, o expresión génica para validar su relevancia biológica.</li>
+        <li><strong>No interpretes la ausencia de contacto como inactividad</strong>: algunos genes pueden estar regulados por interacciones raras o dinámicas.</li>
+        <li><strong>Usa múltiples herramientas</strong>: compara resultados entre diferentes algoritmos (por ejemplo, Fit-Hi-C vs. HiCPlus) para aumentar la robustez.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

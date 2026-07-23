@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de variantes de deleción de gran tamaño con LUMPY y validación cruzada con PacBio</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Variantes">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de variantes de deleción de gran tamaño con LUMPY y validación cruzada con PacBio</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: Por qué las deleciones de gran tamaño importan</h2>
+      <p>Las deleciones estructurales de gran tamaño (genómicas) son eventos variantes que implican la pérdida de segmentos de ADN de más de 50 kilobases (kb), y desempeñan un papel crucial en la evolución, la patogénesis y la variabilidad fenotípica entre individuos. A diferencia de variantes de un solo nucleótido (SNVs) o inserciones/deleciones pequeñas (indels), las deleciones de gran tamaño pueden afectar múltiples genes, reguladores de genes o regiones de control, generando fenotipos complejos o enfermedades genéticas.</p>
+      <p>La detección precisa de estas variantes es un desafío técnico debido a la limitada capacidad de secuenciación de corta lectura (short-read sequencing), como las plataformas Illumina, que no pueden cubrir largas regiones de repetición o estructuras complejas. En este contexto, herramientas como <strong>LUMPY</strong> (LIgand-based Unification of Multiple k-mer-based approaches) emergen como soluciones clave, combinando múltiples tipos de evidencia de secuenciación (split reads, discordant pairs, read depth) para identificar deleciones estructurales con alta sensibilidad y especificidad.</p>
+    </section>
+
+    <section>
+      <h2>Enfoque con LUMPY: integración de señales de secuenciación de corta lectura</h2>
+      <p>LUMPY es una herramienta de análisis de variantes estructurales (SVs) desarrollada para detectar eventos como deleciones, duplicaciones, translocaciones y inversiones. Su fortaleza radica en su capacidad de integrar múltiples tipos de señal desde datos de secuenciación de corta lectura (WGS o WES).</p>
+      <p>El algoritmo utiliza una estrategia bayesiana para combinar evidencias de:</p>
+      <ul>
+        <li><strong>Split reads</strong>: fragmentos de ADN que se alinean a dos regiones genómicas distintas, indicando un punto de ruptura.</li>
+        <li><strong>Discordant read pairs</strong>: pares de lecturas que se alinean con un tamaño de inserto mucho mayor (o menor) del esperado, sugiriendo una deleción (o duplicación).</li>
+        <li><strong>Read depth</strong>: cambios en la profundidad de cobertura que pueden indicar la pérdida de una región genómica.</li>
+      </ul>
+      <p>Para ejecutar LUMPY, se requiere un archivo de alineación BAM (obtenido con herramientas como <em>bowtie2</em>, <em>STAR</em> o <em>BWA-MEM</em>) y un archivo de índice de referencia genómica (FASTA + índices). El flujo típico es:</p>
+      <pre><code>lumpy -B input.bam -S split_reads.txt -D discordant_pairs.txt -R ref.fasta -o variants.vcf</code></pre>
+      <p>Donde <code>split_reads.txt</code> y <code>discordant_pairs.txt</code> son archivos generados previamente con <em>lumpyexpress</em> (una interfaz simplificada).</p>
+    </section>
+
+    <section>
+      <h2>Validación cruzada con PacBio: el oro del oro para SVs</h2>
+      <p>Si bien LUMPY es muy útil, sus resultados deben ser validados, especialmente cuando se trata de deleciones de gran tamaño. Las lecturas de larga duración (long-read sequencing) de plataformas como <strong>PacBio</strong> (HiFi) ofrecen una ventaja insuperable: pueden cubrir regiones completas de ADN, incluyendo repeticiones, estructuras secundarias y secuencias de alta complejidad, lo que permite visualizar directamente las rupturas de los eventos estructurales.</p>
+      <p>La validación cruzada con PacBio implica:</p>
+      <ol>
+        <li>Secuenciación del mismo individuo con PacBio HiFi (long-reads).</li>
+        <li>Alineación de las lecturas de PacBio a la referencia con <em>PBMM2</em> o <em>minimap2</em>.</li>
+        <li>Identificación de variantes estructurales usando <em>Sniffles</em> o <em>PB-SC</em>.</li>
+        <li>Comparación de las regiones de deleción detectadas por LUMPY con las de PacBio mediante herramientas como <em>bcftools</em> o <em>pyvcf</em>, buscando concordancia en la posición, tamaño y extremos.</li>
+      </ol>
+      <p>Este enfoque permite distinguir verdaderas deleciones de falsos positivos, como artefactos de alineación o regiones con baja cobertura en secuenciación de corta lectura.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variantes de deleción de gran tamaño es un campo crítico en genómica funcional y clínica. <strong>LUMPY</strong> se posiciona como una herramienta poderosa para detectar estas variantes mediante la integración de múltiples señales de secuenciación de corta lectura. Sin embargo, su eficacia depende de una validación rigurosa, donde las tecnologías de lectura larga, como <strong>PacBio HiFi</strong>, proporcionan una prueba de oro para confirmar la existencia y exactitud de las deleciones detectadas.</p>
+      <p>El enfoque combinado de LUMPY + PacBio no solo mejora la fiabilidad del análisis, sino que también permite una caracterización precisa de los extremos de ruptura, esenciales para entender mecanismos moleculares y desarrollar terapias dirigidas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar LUMPY sin validación</strong>: Nunca confíes en un resultado de LUMPY como oro en bruto. Siempre verifica con datos de lectura larga o técnicas de PCR.</li>
+        <li><strong>Ignorar el tamaño de deleción</strong>: LUMPY puede detectar deleciones pequeñas, pero su sensibilidad cae en regiones con baja cobertura. Asegúrate de filtrar por tamaño mínimo (por ejemplo, >50 kb).</li>
+        <li><strong>Usar datos de WES en lugar de WGS</strong>: La secuenciación de exomas (WES) no cubre suficientemente la región genómica completa. Usa WGS para detectar SVs de gran tamaño.</li>
+        <li><strong>Procesar datos de PacBio sin ajustar parámetros</strong>: Herramientas como Sniffles requieren ajustes específicos para datos de PacBio HiFi (por ejemplo, <code>--minimap2-params</code>).</li>
+        <li><strong>Comparar directamente archivos VCF sin normalización</strong>: Usa herramientas como <em>vcflib</em> o <em>vcfconsensus</em> para normalizar variantes antes de comparar.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

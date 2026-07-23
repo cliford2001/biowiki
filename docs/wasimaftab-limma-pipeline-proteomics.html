@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wasimaftab/LIMMA-pipeline-proteomics</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Proteomica">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>wasimaftab/LIMMA-pipeline-proteomics</h1>
+    <p class="meta">
+      <a href="https://github.com/wasimaftab/LIMMA-pipeline-proteomics">https://github.com/wasimaftab/LIMMA-pipeline-proteomics</a>
+      · 32 estrellas · R
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      Este pipeline implementa el método LIMMA (Linear Models for Microarray and Sequencing Data), un enfoque bayesiano empírico, para comparar dos grupos en experimentos de proteómica.
+      Está diseñado para identificar proteínas diferencialmente expresadas entre condiciones (por ejemplo, muestras de control vs. tratadas), aprovechando el poder estadístico de los modelos lineales y la regularización empírica para mejorar la precisión en datos con bajo número de replicados.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>
+      Esta herramienta está desarrollada en R y requiere el paquete <code>limma</code> y sus dependencias. Puedes instalarlo usando <code>BiocManager</code>:
+    </p>
+    <pre><code>if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("limma")</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>
+      A continuación se muestra un ejemplo ilustrativo de cómo podrías usar el pipeline en un análisis realista:
+    </p>
+    <pre><code>library(limma)
+
+# Supongamos que tienes un objeto de datos de proteínas (expresión) en un data.frame
+# con columnas: gene_id, control_1, control_2, treatment_1, treatment_2
+# y una matriz de expresión (log2) de proteínas
+
+# Crear el diseño (diseño del experimento)
+design &lt;- model.matrix(~0 + group, data = metadata)
+
+# Nombrar las columnas
+colnames(design) &lt;- levels(metadata$group)
+
+# Ajustar el modelo lineal
+fit &lt;- lmFit(expression_matrix, design)
+
+# Contrastes: comparación entre tratamiento y control
+contrast_matrix &lt;- makeContrasts(
+  treatment_vs_control = treatment - control,
+  levels = design
+)
+
+# Ajustar contraste
+fit2 &lt;- contrasts.fit(fit, contrast_matrix)
+fit2 &lt;- eBayes(fit2)
+
+# Obtener resultados
+results &lt;- topTable(fit2, coef = "treatment_vs_control", number = Inf)
+
+# Ver los resultados
+head(results)</code></pre>
+    <p class="note">
+      <strong>Sintaxis ilustrativa:</strong> esta es una versión simplificada y esquemática del flujo típico.
+      La sintaxis exacta puede variar según el formato de entrada y el tipo de datos (por ejemplo, proteínas identificadas, intensidades). Verifica los detalles en la documentación oficial del paquete <code>limma</code>.
+    </p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>
+      El flujo habitual en un análisis con LIMMA en proteómica incluye:
+    </p>
+    <ol>
+      <li>Preparación de los datos: normalización, limpieza de valores faltantes.</li>
+      <li>Construcción del diseño experimental (matriz de diseño).</li>
+      <li>Ajuste del modelo lineal con <code>lmFit</code>.</li>
+      <li>Definición de contrastes entre grupos (usando <code>makeContrasts</code>).</li>
+      <li>Aplicación de la regularización bayesiana con <code>eBayes</code>.</li>
+      <li>Obtención de resultados diferencialmente expresados con <code>topTable</code>.</li>
+      <li>Validación: ajuste de p-valores (FDR), visualización (volcano plots, heatmaps).</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="20" y="20" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="80" y="45" font-size="12" text-anchor="middle">Datos de proteínas</text>
+
+        <rect x="20" y="100" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="80" y="125" font-size="12" text-anchor="middle">Normalización</text>
+
+        <rect x="180" y="20" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="240" y="45" font-size="12" text-anchor="middle">Diseño experimental</text>
+
+        <rect x="180" y="100" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="240" y="125" font-size="12" text-anchor="middle">Modelo lineal</text>
+
+        <rect x="340" y="20" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="340" y="45" font-size="12" text-anchor="middle">Contrastes</text>
+
+        <rect x="340" y="100" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="400" y="125" font-size="12" text-anchor="middle">Bayes empírico</text>
+
+        <rect x="500" y="20" width="120" height="40" fill="#f0f8ff" stroke="#333" />
+        <text x="560" y="45" font-size="12" text-anchor="middle">Resultados</text>
+
+        <!-- Flechas -->
+        <line x1="140" y1="40" x2="180" y2="40" stroke="#333" marker-end="url(#arrowhead)" />
+        <line x1="140" y1="120" x2="180" y2="120" stroke="#333" marker-end="url(#arrowhead)" />
+        <line x1="300" y1="40" x2="340" y2="40" stroke="#333" marker-end="url(#arrowhead)" />
+        <line x1="300" y1="120" x2="340" y2="120" stroke="#333" marker-end="url(#arrowhead)" />
+        <line x1="460" y1="40" x2="500" y2="40" stroke="#333" marker-end="url(#arrowhead)" />
+        <line x1="460" y1="120" x2="500" y2="120" stroke="#333" marker-end="url(#arrowhead)" />
+
+        <!-- Flecha -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>Flujo típico de un análisis de proteómica con LIMMA: desde los datos brutos hasta la identificación de proteínas diferencialmente expresadas.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>No verificar el diseño experimental:</strong> asegúrate de que el diseño <code>design</code> refleje correctamente el diseño del experimento (por ejemplo, grupos, bloques, factores). Un diseño incorrecto puede dar resultados erróneos.</li>
+      <li><strong>Olvidar normalización:</strong> los datos proteómicos deben ser normalizados (por ejemplo, con <code>limma::normalizeBetweenArrays</code> si se usan arrays, o con métodos como median, quantile, etc. para MS).</li>
+      <li><strong>Ignorar múltiples pruebas:</strong> siempre ajusta los valores p con FDR (False Discovery Rate) usando <code>topTable</code> con <code>p.value</code> o <code>adj.P.Val</code>.</li>
+      <li><strong>Usar datos sin replicación:</strong> aunque LIMMA es robusto para bajo número de replicados, los resultados son más confiables con al menos 3 replicados por grupo.</li>
+      <li><strong>Visualizar siempre:</strong> crea plots de volcán, heatmaps o PCA para verificar la calidad del análisis y la biología detrás de los resultados.</li>
+    </ul>
+
+    <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">6 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42470108.html">Lactobacillus johnsonii mediates the protective effects of pristimerin against ulcerative colitis and concomitant liver injury through remodeling hepatic lipid metabolism via LXRα-SCD1 axis.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2701349" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42464430.html">Enteric-colonized Cronobacter spp. can disrupt the central nervous system without translocation across the host barriers.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2694805" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42345382.html">Spatiotemporal dynamics of the unprecedented chikungunya outbreak in Guangdong, China.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2695536" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42338460.html">Menstrual blood-derived stromal cells exhibit superior protection against lung injury in myocardial Infarction-Induced heart failure in rats compared to bone marrow-derived stromal cells.</a> <span class="date">2026-07-09</span> · <a href="https://doi.org/10.1016/j.reth.2026.101127" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+      Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+    </p>
+  </article>
+</body>
+</html>

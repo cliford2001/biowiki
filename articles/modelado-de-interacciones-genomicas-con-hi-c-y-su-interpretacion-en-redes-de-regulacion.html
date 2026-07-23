@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="categoria" content="Integración">
+    <title>Modelado de interacciones genómicas con Hi-C y su interpretación en redes de regulación</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Modelado de interacciones genómicas con Hi-C y su interpretación en redes de regulación</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: la trama espacial del genoma</h2>
+            <p>El genoma humano no es una cadena lineal pasiva. Su organización tridimensional en el núcleo celular juega un papel fundamental en la regulación génica, la replicación y la reparación del ADN. Técnicas como Hi-C han revolucionado nuestro entendimiento al permitir la captura de interacciones espaciales entre regiones genómicas a gran escala. Este artículo explora el modelado de estas interacciones y su interpretación como redes de regulación, destacando herramientas clave, desafíos metodológicos y aplicaciones biológicas.</p>
+        </section>
+
+        <section>
+            <h2>De los datos a la matriz de interacciones</h2>
+            <p>El proceso comienza con la preparación de la muestra: se fija el ADN con formaldehído para conservar las interacciones físicas, se digiere con una enzima de restricción (como HindIII), y se liga por ligation de adhesión (proximity ligation) las fragmentos cercanos. Tras el secuenciado, los reads se alinean a un genoma de referencia usando herramientas como <code>STAR</code> o <code>bowtie2</code>. La información de alineación se procesa con <code>Hi-C tools</code> (por ejemplo, <code>HiC-Pro</code> o <code>HiCExplorer</code>) para generar una matriz de contactos.</p>
+
+            <p>Esta matriz es una representación de la frecuencia de interacciones entre binning genomicos (bins) de tamaño fijo (por ejemplo, 10 kb o 40 kb). Cada celda (i,j) contiene el número de reads que cruzan entre la región i y la región j. Las diagonales principales reflejan interacciones intra-cromosómicas, mientras que las interacciones entre cromosomas distintos se encuentran fuera de la diagonal.</p>
+        </section>
+
+        <section>
+            <h2>Modelado de interacciones: desde normalización hasta red de regulación</h2>
+            <p>Las matrices crudas presentan sesgos técnicos: se observa una fuerte dependencia de la distancia genómica (las regiones cercanas interactúan más), así como sesgos de secuenciación. Por ello, se aplican métodos de normalización, como <code>ICE</code> (Iterative Correction and Eigenvector decomposition) o <code>VG</code> (Vanilla Coverage), para obtener una estimación de la probabilidad real de interacción, independiente de estos factores.</p>
+
+            <p>Una vez normalizada, se pueden extraer características clave:</p>
+            <ul>
+                <li><strong>Compartmentes (A/B):</strong> Identificadas mediante análisis de correlación de valores de contacto entre binning. Las regiones A son activas y transcritas, mientras que las B son inactivas y heterocromáticas.</li>
+                <li><strong>Topologically Associating Domains (TADs):</strong> Regiones compactas de alta interacción interna y baja interacción externa, que actúan como unidades funcionales en la regulación génica.</li>
+                <li><strong>Interacciones largas alcance (long-range interactions):</strong> Puentes entre promotores y elementos reguladores distantes, a menudo mediados por factores de transcripción y cohesina.</li>
+            </ul>
+
+            <p>Estas estructuras pueden representarse como redes. Cada bin se convierte en un nodo. Las interacciones significativas (por ejemplo, con p-valor &lt; 0.05 tras prueba de significancia estadística como <code>HiCdiff</code> o <code>HiCRep</code>) se convierten en arcos. El peso del arco refleja la frecuencia de interacción.</p>
+        </section>
+
+        <section>
+            <h2>Interpretación biológica: redes de regulación</h2>
+            <p>La red de interacciones Hi-C no es solo una estructura espacial; es un mapa funcional. Las interacciones promotor-elemento regulador, en particular, proporcionan evidencia directa de regulación genética. Al integrar esta información con datos de ChIP-seq (factores de transcripción), ATAC-seq (región abierta) o RNA-seq (expresión), se pueden construir modelos de regulación más robustos.</p>
+
+            <p>Por ejemplo, un análisis combinado puede mostrar que un gen de oncogén está bajo la influencia de un enhancer distal que interactúa con su promotor en una TAD específica. Si esta interacción se pierde en un tumor, podría explicar la silenciamiento del gen. Herramientas como <code>ARIMA</code> o <code>SCENIC</code> (Single-Cell rEgulatory Network Inference and Clustering) permiten inferir reguladores a partir de estas redes.</p>
+
+            <p>Además, el modelado de cambios en la topología del genoma entre condiciones (por ejemplo, células sanas vs. tumorales) puede revelar dinámicas clave. Herramientas como <code>HiCRep</code> permiten comparar perfiles de contacto entre muestras y detectar diferencias significativas en la organización espacial.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El modelado de interacciones genómicas mediante Hi-C permite reconstruir la arquitectura tridimensional del genoma. A partir de matrices de contacto normalizadas, se identifican estructuras funcionales como comparten A/B y TADs. Estas estructuras se traducen en redes de interacción que reflejan relaciones reguladoras entre elementos genómicos. Al integrar datos multi-ómicos, estos modelos proporcionan una comprensión profunda de la regulación génica y su perturbación en enfermedades.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>Usar una matriz sin normalizar:</strong> Las conclusiones serán sesgadas por distancia y secuenciación. Siempre aplicar ICE, VG o métodos similares.</li>
+                <li><strong>Ignorar la resolución de binning:</strong> Una resolución demasiado gruesa puede ocultar estructuras funcionales. Evaluar múltiples resoluciones (10 kb, 25 kb, 50 kb).</li>
+                <li><strong>Interpretar sin datos complementarios:</strong> Una interacción espacial no implica necesariamente regulación funcional. Validar con ChIP-seq, ATAC-seq o perturbaciones genéticas.</li>
+                <li><strong>Comparar muestras sin control de varianza técnica:</strong> Asegurarse de que las diferencias sean biológicas y no técnicas. Usar herramientas como <code>HiCRep</code> para evaluar la reproducibilidad y <code>HiCdiff</code> para análisis diferencial.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/benlangmead-bowtie2.html">Bowtie2</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

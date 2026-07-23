@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de interacciones proteína-proteína con DeepWalk y redes neuronales gráficas</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Interacción proteína-proteína">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de interacciones proteína-proteína con DeepWalk y redes neuronales gráficas</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: el poder de las redes en biología molecular</h2>
+            <p>Las interacciones proteína-proteína (PPI, por sus siglas en inglés) son fundamentales para casi todos los procesos biológicos, desde la señalización celular hasta la formación de complejos macromoleculares. Comprender estas redes de interacción permite descifrar mecanismos de enfermedad, identificar dianas terapéuticas y modelar funciones biológicas a escala sistemática. Sin embargo, el análisis de estas redes a gran escala plantea desafíos computacionales y metodológicos significativos. En esta guía técnica, exploramos cómo combinar <strong>DeepWalk</strong>, un algoritmo de caminata aleatoria en grafos, con <strong>redes neuronales gráficas (GNNs)</strong> para extraer representaciones vectoriales de proteínas y descubrir patrones complejos en las interacciones proteína-proteína.</p>
+        </section>
+
+        <section>
+            <h2>Construcción del grafo de interacciones proteína-proteína</h2>
+            <p>El primer paso consiste en construir un grafo molecular donde cada <em>nodo</em> representa una proteína y cada <em>arista</em> indica una interacción física o funcional. Las fuentes de datos confiables incluyen <strong>STRING</strong> (Search Tool for the Retrieval of Interacting Genes/Proteins), <strong>IntAct</strong>, <strong>BioGRID</strong> y <strong>HI-union</strong>. En la práctica, se recomienda filtrar por confianza (p. ej., puntuación > 0.7) y preferir interacciones experimentales cuando sea posible.</p>
+
+            <h3>Obtener datos de interacciones con Python</h3>
+            <pre><code>import pandas as pd
+
+# Ejemplo: cargar datos de STRING desde un archivo tabular
+# Formato común: protein1, protein2, confidence
+interactions = pd.read_csv("data/string_interactions.tsv", sep='\t')
+
+# Filtrar por confianza mínima
+interactions = interactions[interactions['confidence'] &gt; 0.7]
+
+print(f"Número de interacciones tras filtrado: {len(interactions)}")</code></pre>
+        </section>
+
+        <section>
+            <h2>Generación de representaciones con DeepWalk</h2>
+            <p>DeepWalk simula caminatas aleatorias en el grafo de PPI para generar secuencias de nodos, que luego se usan para entrenar un modelo de lenguaje (como Word2Vec) y obtener vectores densos para cada proteína. Estas representaciones capturan relaciones de proximidad estructural y funcional.</p>
+
+            <h3>Ejecutar DeepWalk con Python</h3>
+            <pre><code>from deepwalk import DeepWalk
+import networkx as nx
+
+# Crear grafo a partir del DataFrame
+G = nx.Graph()
+for _, row in interactions.iterrows():
+    G.add_edge(row['protein1'], row['protein2'])
+
+# Inicializar DeepWalk
+model = DeepWalk(graph=G, walk_length=80, num_walks=10, dimensions=128, workers=4)
+
+# Entrenar el modelo
+model.train(window=10, iter=500)
+
+# Obtener representaciones
+embeddings = model.get_embeddings()
+
+print(f"Tamaño del espacio de representaciones: {len(embeddings)} proteínas")</code></pre>
+        </section>
+
+        <section>
+            <h2>Clasificación y predicción con redes neuronales gráficas (GNNs)</h2>
+            <p>Con las representaciones vectoriales de proteínas (embedding) generadas por DeepWalk, se puede aplicar un modelo de GNN, como <strong>GCN (Graph Convolutional Network)</strong> o <strong>GAT (Graph Attention Network)</strong>, para tareas de clasificación o predicción de interacciones. Estos modelos aprovechan la estructura del grafo y las representaciones iniciales para aprender representaciones de nivel de red más ricas.</p>
+
+            <h3>Implementar una GNN simple con PyTorch Geometric</h3>
+            <pre><code>import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
+from torch_geometric.data import Data
+
+# Suponiendo que embeddings es un diccionario: {"protein_id": [128-dim vector]}
+# Crear matriz de características
+features = torch.tensor([emb for emb in embeddings.values()], dtype=torch.float)
+
+# Crear lista de aristas
+edge_index = torch.tensor([[G.nodes().index(u), G.nodes().index(v)] for u, v in G.edges()], dtype=torch.long).t().contiguous()
+
+# Crear objeto Data
+data = Data(x=features, edge_index=edge_index)
+
+# Definir modelo GCN
+class GCN(nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels):
+        super(GCN, self).__init__()
+        self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, out_channels)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = self.conv2(x, edge_index)
+        return F.log_softmax(x, dim=1)
+
+# Inicializar y entrenar
+model = GCN(in_channels=128, hidden_channels=64, out_channels=2)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# Ejemplo de entrenamiento (suponiendo etiquetas para un subconjunto)
+model.train()
+for epoch in range(100):
+    optimizer.zero_grad()
+    out = model(data.x, data.edge_index)
+    loss = F.nll_loss(out, torch.tensor([0]*len(data.x)))  # Ejemplo simplificado
+    loss.backward()
+    optimizer.step()
+    if epoch % 10 == 0:
+        print(f'Epoch {epoch}, Loss: {loss.item():.4f}')</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de interacciones proteína-proteína mediante DeepWalk y GNNs combina técnicas de caminata aleatoria y aprendizaje profundo para extraer patrones funcionales y estructurales de redes biológicas complejas. DeepWalk proporciona representaciones semánticas iniciales, mientras que las GNNs permiten aprender relaciones de alto nivel, como la predicción de nuevas interacciones o la clasificación de funciones. Esta aproximación es particularmente útil cuando los datos experimentales son incompletos, permitiendo la generación de hipótesis para futuras validaciones.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Evitar grafos demasiado densos:</strong> Filtrar interacciones por confianza para reducir ruido.</li>
+                <li><strong>No mezclar datos de distintas fuentes sin normalización:</strong> Los diferentes conjuntos de datos (STRING, BioGRID) pueden tener escalas de confianza distintas.</li>
+                <li><strong>Validar con datos experimentales:</strong> Las predicciones de GNNs deben validarse con ensayos biológicos o literatura.</li>
+                <li><strong>Normalizar representaciones:</strong> Usar normalización L2 o similar antes de entrenar modelos supervisados.</li>
+                <li><strong>Usar herramientas especializadas:</strong> Para análisis más avanzado, considerar <strong>Netwalk</strong>, <strong>Protein2Vec</strong> o <strong>DeepGAP</strong>.</li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>

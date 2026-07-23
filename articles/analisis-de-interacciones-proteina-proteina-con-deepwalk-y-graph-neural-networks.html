@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de interacciones proteína-proteína con DeepWalk y Graph Neural Networks</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Reducción de dimensionalidad">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Análisis de interacciones proteína-proteína con DeepWalk y Graph Neural Networks</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: el poder de los modelos gráficos en biología de sistemas</h2>
+      <p>Las interacciones proteína-proteína (PPI) son fundamentales para casi todos los procesos celulares, desde la señalización hasta la respuesta inmune. Comprender estas redes es clave para desentrañar mecanismos de enfermedades, descubrir dianas terapéuticas y desarrollar fármacos. Sin embargo, las redes PPI son altamente complejas, con miles de interacciones en organismos como el humano o el ratón. Modelar estas interacciones no solo requiere grandes cantidades de datos, sino también técnicas avanzadas de análisis de grafos.</p>
+      <p>En esta era de la biología de sistemas, los métodos tradicionales como el clustering basado en dominios funcionales o el análisis de caminos se han visto complementados por técnicas de inteligencia artificial. Entre ellas, <strong>DeepWalk</strong> y los <strong>Graph Neural Networks (GNNs)</strong> han emergido como herramientas poderosas para representar, analizar y predecir interacciones proteína-proteína. Esta técnica permite transformar estructuras de redes complejas en vectores de baja dimensión, facilitando tareas como la clasificación de proteínas, la inferencia de interacciones faltantes y la identificación de módulos funcionales.</p>
+    </section>
+
+    <section>
+      <h2>DeepWalk: aprendiendo representaciones desde caminatas aleatorias</h2>
+      <p>DeepWalk es un modelo que combina ideas de <em>word2vec</em> y caminatas aleatorias en grafos. Aunque originalmente se desarrolló para redes sociales, su adaptación al contexto biológico ha sido transformadora. La idea central es simular caminatas aleatorias sobre el grafo de interacciones proteína-proteína, generando secuencias de nodos (proteínas) que se asemejan a oraciones en un texto.</p>
+
+      <p>Estas secuencias se usan como entrada para un modelo <em>word2vec</em>, que aprende representaciones vectoriales de cada proteína (embedding) de forma que proteínas con interacciones similares o que participan en procesos relacionados quedan próximas en el espacio vectorial. Este proceso captura no solo vecindades inmediatas, sino también estructuras de red más amplias.</p>
+
+      <pre><code>python
+# Ejemplo de uso de DeepWalk con un grafo PPI (usando NetworkX y gensim)
+import networkx as nx
+from gensim.models import Word2Vec
+
+# Cargar grafo PPI (por ejemplo, desde un archivo .edgelist)
+g = nx.read_edgelist('ppi_graph.edgelist')
+
+# Generar caminatas aleatorias
+walks = []
+for node in g.nodes():
+    walk = nx.random_walk(g, node, walk_length=80)
+    walks.append([str(n) for n in walk])
+
+# Entrenar modelo word2vec
+model = Word2Vec(walks, vector_size=128, window=5, min_count=1, workers=4)
+
+# Obtener embeddings
+embeddings = model.wv
+</code></pre>
+
+      <p>Este enfoque permite obtener una representación numérica de cada proteína, que puede utilizarse en tareas posteriores como clasificación o clustering.</p>
+    </section>
+
+    <section>
+      <h2>Graph Neural Networks (GNNs): propagación de información en grafos</h2>
+      <p>Mientras DeepWalk proporciona una representación estática, los GNNs permiten un aprendizaje más dinámico y profundo. A diferencia de redes neuronales tradicionales, los GNNs operan directamente sobre la estructura del grafo, propagando información entre nodos vecinos mediante iteraciones de agregación.</p>
+
+      <p>Un GNN típico sigue este proceso:</p>
+      <ol>
+        <li>Cada nodo inicia con un vector de características (por ejemplo, expresión génica, tipo funcional, etc.).</li>
+        <li>En cada capa, cada nodo actualiza su estado combinando su propia información con la de sus vecinos.</li>
+        <li>Este proceso se repite varias veces, permitiendo que la información se propague a través de múltiples saltos.</li>
+      </ol>
+
+      <p>Este tipo de modelo es especialmente útil para tareas como la predicción de interacciones faltantes, la identificación de proteínas clave (hub) o la clasificación de funciones en módulos biológicos.</p>
+
+      <pre><code>python
+# Ejemplo con PyTorch Geometric (PyG)
+import torch
+import torch.nn as nn
+from torch_geometric.nn import GCNConv
+
+class PPIGNN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.conv1 = GCNConv(input_dim, hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, output_dim)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = torch.relu(x)
+        x = self.conv2(x, edge_index)
+        return x
+
+# Supongamos que x es una matriz de características (n_proteinas x dim)
+# y edge_index es el grafo (2 x num_enlaces)
+model = PPIGNN(input_dim=100, hidden_dim=64, output_dim=16)
+output = model(x, edge_index)
+</code></pre>
+
+      <p>Los GNNs pueden ser entrenados con etiquetas (por ejemplo, si una interacción es verdadera o falsa) para mejorar su precisión en tareas de predicción.</p>
+    </section>
+
+    <section>
+      <h2>Resumen: desde el grafo a la biología funcional</h2>
+      <p>DeepWalk y los GNNs representan una revolución en el análisis de redes biológicas. Mientras DeepWalk ofrece una forma eficiente de obtener representaciones vectoriales a partir de caminatas aleatorias, los GNNs permiten un aprendizaje profundo y adaptable que explora relaciones complejas en múltiples niveles del grafo. Juntos, estos métodos transforman la red de interacciones proteína-proteína en un espacio vectorial interpretable, facilitando tareas como la predicción de nuevos interacciones, la identificación de módulos funcionales y el descubrimiento de dianas terapéuticas.</p>
+
+      <p>La integración de estas técnicas con datos experimentales (como proteómica de afinidad o CRISPR) amplía su potencial, permitiendo inferencias más precisas y biológicamente relevantes.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar datos de PPI de baja calidad:</strong> Asegúrate de emplear bases de datos confiables como STRING, BioGRID o IntAct, y filtra interacciones con baja confianza.</li>
+        <li><strong>Ignorar la normalización de datos:</strong> Antes de entrenar GNNs, normaliza las características de las proteínas (por ejemplo, expresión génica) para evitar que variables de escala dominen el aprendizaje.</li>
+        <li><strong>Seleccionar un tamaño de caminata inadecuado:</strong> Para DeepWalk, caminatas muy cortas no capturan estructura global, mientras que muy largas pueden introducir ruido. Prueba valores entre 40 y 100.</li>
+        <li><strong>No validar resultados biológicamente:</strong> Siempre verifica si las proteínas vecinas en el espacio de embeddings comparten funciones biológicas (por ejemplo, usando enriquecimiento funcional con <code>clusterProfiler</code> o <code>GOseq</code>).</li>
+        <li><strong>Subestimar el tamaño del grafo:</strong> Para redes grandes, considera usar técnicas de submuestreo o técnicas de agrupación para reducir el costo computacional.</li>
+      </ul>
+    </section>
+  </article>
+</body>
+</html>

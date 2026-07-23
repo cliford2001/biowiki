@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="categoria" content="Expresión diferencial">
+    <title>Análisis de expresión génica en tejidos con secuenciación espacial de alta resolución</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de expresión génica en tejidos con secuenciación espacial de alta resolución</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: El poder de la localización génica</h2>
+            <p>La secuenciación espacial de alta resolución (spatial transcriptomics) representa un avance fundamental en biología del desarrollo, oncología y neurociencia. A diferencia de los métodos convencionales de RNA-seq, que pierden la información geográfica del tejido, las plataformas como <strong>10x Genomics Visium</strong>, <strong>Slide-seq</strong> o <strong>Seq-Scope</strong> permiten obtener perfiles de expresión génica <em>en contexto anatómico</em>. Esto significa que cada lectura de secuenciación está asociada a una coordenada espacial específica en una sección tisular, abriendo la puerta a la identificación de microambientes celulares, zonas de activación genética y dinámicas de interacción entre células.</p>
+            <p>El análisis de estos datos no se limita a la simple detección de genes activos. El objetivo principal es <strong>reconstruir la arquitectura funcional del tejido</strong> a partir de su expresión génica, identificando regiones con patrones de activación distintos, correlacionando la expresión con características histológicas y, en última instancia, descifrando cómo la localización celular influye en su función.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo: De los datos brutos a la interpretación biológica</h2>
+            <h3>1. Preprocesamiento y alineamiento</h3>
+            <p>El primer paso consiste en procesar los datos crudos (lecturas en formato FASTQ) obtenidos de los sensores espaciales. Aunque las plataformas a menudo proporcionan pipelines de procesamiento integrados, es común utilizar herramientas robustas como <strong>STAR</strong> para el alineamiento a un genoma de referencia (por ejemplo, <code>GRCh38</code> para humanos), considerando el mapeo de lecturas con la información espacial (barcodes) asociada.</p>
+            <pre><code>STAR \
+  --genomeDir /path/to/genome \
+  --readFilesIn sample_R1.fastq sample_R2.fastq \
+  --outFileNamePrefix output/ \
+  --outSAMtype BAM SortedByCoordinate</code></pre>
+
+            <h3>2. Conteo de expresión</h3>
+            <p>Una vez alineadas las lecturas, se realiza el conteo de genes por bin espacial. Las herramientas <strong>Salmon</strong> o <strong>kallisto</strong>, con su modo de conteo basado en <em>quantification</em>, son ideales para este paso, ya que permiten estimar la abundancia de transcritos sin necesidad de una referencia de genes completa, y pueden integrar la información espacial.</p>
+            <pre><code>salmon quant \
+  --index /path/to/salmon_index \
+  --libType ISF \
+  --mates1 sample_R1.fastq \
+  --mates2 sample_R2.fastq \
+  --outDir output/ \
+  --useVBOpt</code></pre>
+
+            <h3>3. Normalización y análisis diferencial</h3>
+            <p>Los datos de conteo se someten a normalización para corregir sesgos técnicos (por ejemplo, profundidad de secuenciación). Herramientas como <strong>DESeq2</strong> y <strong>edgeR</strong> permiten comparar la expresión génica entre regiones espaciales (por ejemplo, núcleo vs. corteza en un tejido cerebral) y detectar genes diferencialmente expresados (DEGs). Es crucial aplicar métodos que consideren la estructura espacial, como el uso de modelos mixtos o análisis basados en gráficos.</p>
+            <pre><code>library(DESeq2)
+
+dds &lt;- DESeqDataSetFromMatrix(countData = counts,
+                            colData = metadata,
+                            design = ~ region)
+
+dds &lt;- DESeq(dds)
+results &lt;- results(dds)</code></pre>
+        </section>
+
+        <section>
+            <h2>Visualización y descubrimiento de patrones</h2>
+            <p>La visualización es clave en el análisis espacial. <strong>Scanpy</strong> (Python) y <strong>Seurat</strong> (R) ofrecen funciones poderosas para visualizar la expresión de genes en el mapa espacial. Se pueden superponer mapas de expresión, identificar clusters de células con perfiles similares (clustering espacial), y generar mapas de calor de genes DEGs.</p>
+            <pre><code># En Python con Scanpy
+import scanpy as sc
+
+adata = sc.read_h5ad('spatial_counts.h5ad')
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+sc.tl.pca(adata)
+sc.pp.neighbors(adata)
+sc.tl.leiden(adata, resolution=0.8)
+sc.pl.spatial(adata, color=['gene_of_interest', 'leiden'], img_key='hires')</code></pre>
+            <p>Además, se pueden utilizar herramientas especializadas como <strong>SpaGCN</strong> o <strong>SPOTlight</strong> para realizar clustering espacial y detección de regiones funcionales sin necesidad de un umbral previo de expresión.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de expresión génica en tejidos con secuenciación espacial de alta resolución permite desentrañar la arquitectura funcional de los tejidos a escala molecular. El flujo de trabajo incluye preprocesamiento con <strong>STAR</strong>, conteo con <strong>Salmon</strong> o <strong>kallisto</strong>, normalización y detección de DEGs mediante <strong>DESeq2</strong> o <strong>edgeR</strong>, seguido de visualización e interpretación con <strong>Scanpy</strong> o <strong>Seurat</strong>. Este enfoque revoluciona la biología de tejidos al integrar la expresión génica con la localización anatómica.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No ignorar la calidad espacial:</strong> Asegúrate de que el mapeo de los barcodes a las coordenadas es preciso y revisa los metadatos de calidad proporcionados por la plataforma.</li>
+                <li><strong>Evitar el sobreajuste en clustering:</strong> Usa resoluciones razonables y valida los clusters con marcadores biológicos conocidos.</li>
+                <li><strong>Considerar el sesgo de tamaño de bin:</strong> Las regiones con más células pueden mostrar más lecturas; normaliza adecuadamente (por ejemplo, con <code>sc.pp.normalize_total()</code> en Scanpy).</li>
+                <li><strong>Validación de resultados:</strong> Compara los DEGs con literatura existente o datos de expresión de tejidos públicos (como GTEx) para verificar la biología subyacente.</li>
+                <li><strong>Documenta todo:</strong> Registra los parámetros, versiones de herramientas y decisiones de análisis para reproducibilidad.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

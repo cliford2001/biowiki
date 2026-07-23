@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk_RNA-Seq_Workflow_Snakemake</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Transcriptomica">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../novedades.html">← Volver a Novedades</a>
+    <h1>Bulk_RNA-Seq_Workflow_Snakemake</h1>
+    <p class="meta">
+      <a href="https://github.com/YutingPKU/Bulk_RNA-Seq_Workflow_Snakemake">Repositorio</a> · 14 estrellas · Python
+    </p>
+  </header>
+
+  <article>
+    <h2>¿Qué es y para qué sirve?</h2>
+    <p>
+      <strong>Bulk_RNA-Seq_Workflow_Snakemake</strong> es un flujo de análisis completo para datos de secuenciación masiva de ARN (bulk RNA-seq) desarrollado en Python utilizando <em>Snakemake</em> como sistema de gestión de pipelines. 
+      Automatiza todo el proceso desde el alineamiento de lecturas hasta el análisis diferencial de expresión y la anotación funcional, integrando herramientas clave como <em>STAR</em>, <em>Cufflinks</em>, <em>DESeq2</em> y <em>GO analysis</em>. 
+      Ideal para investigadores que buscan un enfoque estandarizado, reproducible y escalable en el análisis de transcriptómica.
+    </p>
+
+    <h2>Instalación</h2>
+    <p>Este flujo de trabajo requiere Python y <em>Snakemake</em>. Instala el entorno usando <em>conda</em>:</p>
+    <pre><code>conda env create -f environment.yml
+conda activate bulk-rna-seq-workflow</code></pre>
+    <p>Alternativamente, si no tienes <em>conda</em>, instala <em>Snakemake</em> con <em>pip</em>:</p>
+    <pre><code>pip install snakemake</code></pre>
+
+    <h2>Uso básico</h2>
+    <p>Ejecuta el flujo de trabajo desde el directorio raíz con:</p>
+    <pre><code>snakemake --profile profiles/slurm</code></pre>
+    <p>Nota: El perfil <code>slurm</code> requiere una configuración previa en <code>profiles/slurm</code>. Asegúrate de que <code>config.yaml</code> contenga los parámetros correctos (campos de entrada, rutas, etc.) antes de ejecutar.</p>
+
+    <h2>Flujo de trabajo típico</h2>
+    <p>El flujo de trabajo típico sigue estos pasos:</p>
+    <ol>
+      <li>Alineamiento de lecturas con <em>STAR</em>.</li>
+      <li>Generación de archivos de expresión con <em>Cufflinks</em>.</li>
+      <li>Identificación de genes diferencialmente expresados usando <em>DESeq2</em>.</li>
+      <li>Análisis funcional mediante <em>GO analysis</em>.</li>
+    </ol>
+
+    <figure>
+      <svg width="600" height="200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cajas -->
+        <rect x="10" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <text x="70" y="45" font-size="14" text-anchor="middle" fill="#000">Lecturas</text>
+
+        <rect x="150" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <text x="210" y="45" font-size="14" text-anchor="middle" fill="#000">STAR</text>
+
+        <rect x="290" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <text x="350" y="45" font-size="14" text-anchor="middle" fill="#000">Cufflinks</text>
+
+        <rect x="430" y="20" width="120" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <text x="490" y="45" font-size="14" text-anchor="middle" fill="#000">DESeq2</text>
+
+        <rect x="150" y="120" width="360" height="40" fill="#f0f8ff" stroke="#0066cc" />
+        <text x="330" y="145" font-size="14" text-anchor="middle" fill="#000">GO analysis</text>
+
+        <!-- Flechas -->
+        <line x1="130" y1="40" x2="150" y2="40" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="270" y1="40" x2="290" y2="40" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="410" y1="40" x2="430" y2="40" stroke="#000" marker-end="url(#arrow)" />
+        <line x1="430" y1="60" x2="430" y2="120" stroke="#000" marker-end="url(#arrow)" />
+      </svg>
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+        </marker>
+      </defs>
+      <figcaption>Flujo de trabajo típico del pipeline: desde alineamiento hasta análisis funcional.</figcaption>
+    </figure>
+
+    <h2>Errores comunes y buenas prácticas</h2>
+    <ul>
+      <li><strong>Verifica los paths en <code>config.yaml</code>:</strong> Asegúrate de que las rutas a los datos y a las herramientas sean correctas y accesibles.</li>
+      <li><strong>Usa perfiles adecuados para el entorno:</strong> Si trabajas en un cluster, configura el perfil <code>slurm</code> o <code>lsf</code> correctamente. El uso incorrecto puede causar fallos de ejecución.</li>
+      <li><strong>Revisa la versión de las herramientas:</strong> <em>DESeq2</em> y <em>Cufflinks</em> tienen versiones específicas que pueden no ser compatibles. Usa la versión especificada en <code>environment.yml</code> o <code>requirements.txt</code>.</li>
+      <li><strong>Verifica el formato de los datos de entrada:</strong> Los archivos de secuenciación deben estar en formato <code>.fastq</code> o <code>.fq</code>, y las muestras deben estar bien etiquetadas en el archivo de diseño.</li>
+      <li><strong>Procesa grandes conjuntos con paralelización:</strong> Aprovecha el sistema <em>Snakemake</em> para ejecutar tareas en paralelo. Asegúrate de que el entorno de ejecución (como SLURM) tenga suficiente memoria y tiempo asignado.</li>
+    </ul>
+  </article>
+
+  <!--ASSOC_START-->
+<section class="associated-papers"><h2>📄 Papers que usan esta herramienta</h2>
+  <p class="meta">11 trabajo(s) detectado(s) automáticamente:</p>
+  <ul>
+    <li><a href="../reviews/wl-paper-med-42330053.html">CD69 blockade restores the bone marrow niche and delays leukemogenesis in a mouse model of Nras G12D-driven chronic myelomonocytic leukemia.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/15384047.2026.2692184" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42327006.html">Long-term expandable auricular chondrocytes reveal a conserved nine-gene decline module underlying senescence-independent dedifferentiation.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1016/j.reth.2026.101146" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42322272.html">Pooled analysis of 2 clinical trials of first-line chemoimmunotherapy for metastatic microsatellite stable colorectal cancer MEDITREME and METIMMOX studies.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/2162402x.2026.2671491" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42470108.html">Lactobacillus johnsonii mediates the protective effects of pristimerin against ulcerative colitis and concomitant liver injury through remodeling hepatic lipid metabolism via LXRα-SCD1 axis.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2701349" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42464430.html">Enteric-colonized Cronobacter spp. can disrupt the central nervous system without translocation across the host barriers.</a> <span class="date">2026-07-21</span> · <a href="https://doi.org/10.1080/19490976.2026.2694805" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42391291.html">Investigating the effect of preconception untreated subclinical hypothyroidism (TSH above normal range and below 6.0 mIU/L) on assisted reproductive technology (ART) outcomes.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/14647273.2026.2691185" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42384674.html">Divergent virulence and serological profiles reveal pathogenic evolution within the &amp;lt;i&amp;gt;Bandavirus&amp;lt;/i&amp;gt; genus.</a> <span class="date">2026-07-08</span> · <a href="https://doi.org/10.1080/21505594.2026.2696699" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42345382.html">Spatiotemporal dynamics of the unprecedented chikungunya outbreak in Guangdong, China.</a> <span class="date">2026-07-14</span> · <a href="https://doi.org/10.1080/22221751.2026.2695536" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-42338460.html">Menstrual blood-derived stromal cells exhibit superior protection against lung injury in myocardial Infarction-Induced heart failure in rats compared to bone marrow-derived stromal cells.</a> <span class="date">2026-07-09</span> · <a href="https://doi.org/10.1016/j.reth.2026.101127" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41645041.html">Deciphering the PgLEA2-50 interactome: implications for abiotic stress responses in Panax ginseng.</a> <span class="date">2026-07-23</span> · <a href="https://doi.org/10.1080/15592324.2026.2624961" target="_blank" rel="noopener">fuente ↗</a></li>
+    <li><a href="../reviews/wl-paper-med-41530924.html">Multi-platform analysis of the tumor immune microenvironment associated with breast cancer subtypes.</a> <span class="date">2026-07-23</span> · <a href="https://doi.org/10.1080/2162402x.2025.2610535" target="_blank" rel="noopener">fuente ↗</a></li>
+  </ul></section>
+<!--ASSOC_END-->
+<p class="disclaimer">
+    Documentación generada automáticamente a partir de fuentes públicas; verifica los comandos exactos en la documentación oficial del proyecto.
+  </p>
+</body>
+</html>

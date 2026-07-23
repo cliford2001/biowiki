@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos proteómicos y genómicos con proteomic Mendelian randomization</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos proteómicos y genómicos con proteomic Mendelian randomization</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>La integración de datos proteómicos y genómicos mediante <strong>proteomic Mendelian randomization (pMR)</strong> representa un avance clave en la investigación biológica funcional. A diferencia de los enfoques tradicionales que analizan asociaciones observacionales, el pMR permite inferir relaciones causales entre variantes genéticas, niveles proteicos y fenotipos clínicos, reduciendo el sesgo por confusión y efectos de pleiotropía.</p>
+      <p>Este enfoque combina datos de secuenciación de genoma (GWAS), perfiles proteómicos (por ejemplo, de ensayos de espectrometría de masas) y herramientas estadísticas avanzadas, ofreciendo una ventana más robusta para la descubrimiento de dianas terapéuticas y biomarcadores. Las tecnologías como <code>MassIVE</code>, <code>MaxQuant</code>, <code>LFQ</code> y <code>Proteome Discoverer</code> generan datos proteómicos de alta calidad, mientras que herramientas como <code>PLINK</code>, <code>SNPtest</code> y <code>PRSice</code> permiten el análisis genómico.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo</h2>
+
+      <h3>1. Fundamentos del pMR</h3>
+      <p>El pMR se basa en el principio de la <strong>aleatorización mendeliana</strong>, que utiliza variantes genéticas como instrumentos naturales para inferir causalidad. En el contexto proteómico, se seleccionan SNPs asociados con niveles proteicos (proteo-QTLs) como instrumentos para evaluar el efecto causal de proteínas específicas sobre fenotipos.</p>
+      <p>La metodología implica tres etapas principales:</p>
+      <ol>
+        <li><strong>Identificación de SNPs instrumentales</strong>: derivados de GWAS de niveles proteicos.</li>
+        <li><strong>Estimación de efectos</strong>: mediante regresión de efectos aleatorios o métodos de mínimos cuadrados generalizados.</li>
+        <li><strong>Validación y ajuste</strong>: para detectar sesgos de pleiotropía usando pruebas como el <em>MR-Egger</em> o <em>Weighted Median</em>.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h3>2. Integración de datos: desafíos y estrategias</h3>
+      <p>La integración de datos genómicos y proteómicos no es trivial. Diferencias en escalas de expresión, sesgos técnicos y heterogeneidad poblacional pueden comprometer los resultados.</p>
+
+      <h4>Preprocesamiento de datos</h4>
+      <p>Antes de aplicar pMR, es crucial realizar un preprocesamiento riguroso:</p>
+      <ul>
+        <li>Normalización de datos proteómicos (por ejemplo, con <code>limma</code> o <code>DESeq2</code>).</li>
+        <li>Corrección de factores de confusión (edad, sexo, tamaño corporal).</li>
+        <li>Eliminación de SNPs con baja calidad (MAF < 0.01, genotipado < 95%).</li>
+      </ul>
+
+      <h4>Enlace entre datos</h4>
+      <p>El enlace entre variantes genéticas y proteínas se realiza mediante:</p>
+      <ul>
+        <li>Asociación de SNPs con proteínas en estudios de proteo-QTLs.</li>
+        <li>Uso de bases de datos como <code>Phenotype-Genotype Integrator (PGI)</code> o <code>ProteomicsDB</code>.</li>
+      </ul>
+
+      <h3>3. Herramientas y pipelines</h3>
+      <p>Existen varias herramientas especializadas que automatizan el pMR:</p>
+      <ul>
+        <li><code>TwoSampleMR</code> en R: permite análisis de dos muestras (genómico y proteómico).</li>
+        <li><code>MR-Base</code>: plataforma con datos integrados y análisis en línea.</li>
+        <li><code>OpenMendelian</code>: herramienta para integrar múltiples datos.</li>
+      </ul>
+
+      <h4>Ejemplo de análisis con <code>TwoSampleMR</code></h4>
+      <pre><code>library(TwoSampleMR)
+
+# Cargar datos de GWAS proteómicos y fenotipo
+proteo_gwas &lt;- read_gwas("proteo_qtl_results.csv")
+feno_gwas &lt;- read_gwas("phenotype_gwas_results.csv")
+
+# Realizar pMR
+mr_results &lt;- mr(proteo_gwas, feno_gwas, method = "ivw")
+
+# Visualizar resultados
+plot(mr_results)</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos proteómicos y genómicos mediante proteomic Mendelian randomization permite inferir relaciones causales entre niveles proteicos y fenotipos clínicos con mayor rigurosidad que los métodos observacionales. Aunque el enfoque es poderoso, requiere cuidado en el preprocesamiento de datos, selección de instrumentos adecuados y validación estadística de los resultados.</p>
+      <p>Herramientas como <code>TwoSampleMR</code>, <code>MR-Base</code> y <code>OpenMendelian</code> facilitan su implementación, permitiendo a los investigadores explorar dianas terapéuticas y biomarcadores con mayor confianza.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No utilizar SNPs con alta pleiotropía</strong>: pueden sesgar los resultados. Verificar con <code>MR-Egger</code> y <code>leave-one-out</code>.</li>
+        <li><strong>Ignorar la heterogeneidad</strong>: usar métodos robustos como <code>Weighted Median</code> cuando haya alta heterogeneidad.</li>
+        <li><strong>Confundir asociación con causalidad</strong>: siempre validar con múltiples métodos.</li>
+        <li><strong>Usar datos de diferentes poblaciones sin ajuste</strong>: puede introducir sesgos.</li>
+        <li><strong>Preprocesar datos de forma inconsistente</strong>: asegurarse de que ambos conjuntos de datos (genómico y proteómico) sigan el mismo flujo.</li>
+        <li><strong>Publicar resultados sin considerar el valor de p ajustado</strong>: usar corrección de Bonferroni o FDR.</li>
+      </ul>
+      <p>La transparencia en el flujo de datos y la documentación completa son fundamentales para la reproducibilidad.</p>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

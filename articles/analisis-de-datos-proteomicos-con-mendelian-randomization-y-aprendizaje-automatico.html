@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de datos proteómicos con Mendelian randomization y aprendizaje automático</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Análisis de datos">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Análisis de datos proteómicos con Mendelian randomization y aprendizaje automático</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción: desde la proteómica a la causalidad con IA</h2>
+            <p>El análisis de datos proteómicos ha evolucionado desde la identificación de proteínas hacia la inferencia de relaciones funcionales y causales entre proteínas y fenotipos clínicos. Las técnicas tradicionales de análisis diferencial (como <code>DESeq2</code> o <code>edgeR</code>) son útiles para detectar cambios en niveles de proteínas, pero no permiten distinguir entre correlación y causalidad. Aquí es donde el <strong>análisis de Mendelian randomization (MR)</strong> y el <strong>aprendizaje automático (ML)</strong> se convierten en herramientas complementarias de primera línea.</p>
+            <p>El MR utiliza variantes genéticas como instrumentos para inferir relaciones causales entre un factor expuesto (por ejemplo, nivel de una proteína) y un resultado clínico (como riesgo de enfermedad). Combinado con modelos de ML, este enfoque permite no solo validar hipótesis causales, sino también descubrir patrones complejos en grandes conjuntos de datos proteómicos, mejorando la precisión en la identificación de blancos terapéuticos y biomarcadores.</p>
+        </section>
+
+        <section>
+            <h2>Enfoque integrado: Mendelian randomization como base causal</h2>
+            <p>El MR se basa en tres supuestos clave:</p>
+            <ol>
+                <li><strong>Relevancia:</strong> la variante genética está asociada con el factor expuesto (por ejemplo, expresión de una proteína).</li>
+                <li><strong>Independencia:</strong> la variante no está relacionada con factores de confusión que afecten el resultado.</li>
+                <li><strong>Exclusividad del efecto:</strong> el efecto de la variante sobre el resultado se ejerce exclusivamente a través del factor expuesto.</li>
+            </ol>
+            <p>En el contexto proteómico, se pueden utilizar datos de <code>GWAS</code> para identificar variantes asociadas con niveles de proteínas (proteína QTLs, pQTLs), y luego usar estas variantes como instrumentos para evaluar si el nivel de esa proteína afecta un fenotipo de interés. Herramientas como <code>TwoSampleMR</code> en R permiten ejecutar MR con múltiples métodos (IVW, MR-Egger, Weighted Median) para evaluar la robustez de los resultados.</p>
+            
+            <pre><code>library(TwoSampleMR)
+
+# Cargar datos de GWAS: exposición (proteína) y resultado (fenotipo)
+exposure_data &lt;- read_gwas("gwas_proteina.csv")
+outcome_data &lt;- read_gwas("gwas_enfermedad.csv")
+
+# Ejecutar MR con IVW
+mr_result &lt;- mr(exposure_data, outcome_data, method = "ivw")
+summary(mr_result)</code></pre>
+        </section>
+
+        <section>
+            <h2>Integración con aprendizaje automático: descubrimiento de patrones complejos</h2>
+            <p>Mientras que el MR proporciona inferencias causales unidimensionales, el ML permite explorar relaciones multivariadas y no lineales entre múltiples proteínas, variantes genéticas y fenotipos. Modelos como <code>Random Forest</code>, <code>XGBoost</code> o redes neuronales pueden ser entrenados para predecir fenotipos clínicos a partir de perfiles proteómicos, identificando conjuntos de proteínas que contribuyen significativamente al modelo.</p>
+            
+            <p>Un ejemplo potente es el uso de ML para <strong>validar resultados de MR</strong>. Si un MR sugiere que el nivel de la proteína <em>XYZ</em> causa aumento del riesgo de enfermedad, se puede construir un modelo predictivo que incluya <em>XYZ</em> como característica. Si el modelo mejora significativamente su precisión, esto refuerza la inferencia causal.</p>
+            
+            <pre><code>from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+import pandas as pd
+
+# Cargar datos proteómicos y fenotipo
+proteomics_data = pd.read_csv("proteomics_features.csv")
+labels = pd.read_csv("phenotype_labels.csv")
+
+# Entrenar modelo para predecir fenotipo
+X_train, X_test, y_train, y_test = train_test_split(
+    proteomics_data, labels, test_size=0.2, random_state=42
+)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Evaluar y obtener importancia de características
+importance = model.feature_importances_
+print("Importancia de las proteínas:", importance)</code></pre>
+        </section>
+
+        <section>
+            <h2>Resumen: la sinergia causal y predictiva</h2>
+            <p>El análisis de datos proteómicos moderno debe integrar métodos causales y predictivos. El <strong>Mendelian randomization</strong> proporciona un marco sólido para inferir relaciones causales, reduciendo el sesgo por confusión. El <strong>aprendizaje automático</strong>, por su parte, permite descubrir patrones complejos, identificar biomarcadores multivariados y validar resultados causales de manera empírica. La combinación de ambos enfoques maximiza la capacidad de descubrimiento, desde la identificación de blancos terapéuticos hasta la personalización del diagnóstico clínico.</p>
+            <p>En resumen, el futuro del análisis proteómico no es solo medir proteínas, sino entender su rol causal en la fisiopatología y predecir su impacto en la salud con modelos robustos y fundamentados en la genética.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>Ignorar los supuestos del MR:</strong> no validar que las variantes son relevantes y no están asociadas con factores de confusión. Usar <code>MR-Base</code> o <code>PhenoScanner</code> para verificar estas propiedades.</li>
+                <li><strong>Overfitting en ML:</strong> evitar modelos demasiado complejos sin validación cruzada. Usar <code>cross_val_score</code> o <code>GridSearchCV</code> para optimizar hiperparámetros.</li>
+                <li><strong>Confundir correlación con causalidad:</strong> nunca asumir que una relación estadística implica causalidad. Usar MR como validación, no como prueba definitiva.</li>
+                <li><strong>Uso inadecuado de datos:</strong> asegurarse de que los datos de exposición y resultado provienen de poblaciones similares (sin estratificación). Usar <code>harmonize_data</code> en <code>TwoSampleMR</code> cuando sea necesario.</li>
+                <li><strong>Transparencia:</strong> documentar todos los pasos, incluyendo los métodos MR usados, las características de entrada para ML, y los resultados de validación.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

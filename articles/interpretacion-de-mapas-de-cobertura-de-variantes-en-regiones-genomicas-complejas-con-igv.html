@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interpretación de mapas de cobertura de variantes en regiones genómicas complejas con IGV</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Variantes" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Interpretación de mapas de cobertura de variantes en regiones genómicas complejas con IGV</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>
+        Los mapas de cobertura de variantes son una herramienta fundamental en el análisis de datos genómicos, especialmente cuando se estudian regiones con alta complejidad estructural, como los <em>loci</em> de genes duplicados, regiones de expansión de repeticiones, o zonas con múltiples segmentos de duplicación (segmental duplications). En estos contextos, la interpretación precisa de los datos de secuenciación es crucial para evitar falsos positivos o negativos en la detección de variantes.
+      </p>
+      <p>
+        <strong>IGV (Integrative Genomics Viewer)</strong> es una herramienta de visualización de datos genómicos de código abierto ampliamente utilizada que permite explorar de forma interactiva los datos de profundidad de cobertura, llamados de variantes (VCF), alineamientos (BAM) y anotaciones. Este artículo explora las mejores prácticas para interpretar mapas de cobertura en regiones genómicas complejas, con énfasis en el uso de IGV para validar variantes y detectar artefactos comunes.
+      </p>
+    </section>
+
+    <section>
+      <h2>Desarrollo</h2>
+
+      <h3>Entorno de visualización en IGV</h3>
+      <p>
+        Antes de analizar una región, es esencial configurar correctamente el entorno de visualización en IGV. Asegúrate de:
+      </p>
+      <ul>
+        <li>Cargar el archivo de alineamiento (<strong>BAM</strong> o <strong>SAM</strong>) y el archivo de variantes (<strong>VCF</strong>).</li>
+        <li>Seleccionar el genoma de referencia correcto (hg38, hg19, etc.).</li>
+        <li>Activar la visualización de cobertura de profundidad (Coverage) en la barra de herramientas.</li>
+        <li>Usar el modo <em>"Split"</em> o <em>"Consensus"</em> para mejorar la legibilidad en regiones con alta variabilidad.</li>
+      </ul>
+
+      <h3>Patrones de cobertura en regiones complejas</h3>
+      <p>
+        En regiones genómicas complejas, se observan patrones de cobertura no uniformes que pueden ser fisiológicos o artefactos. Algunos patrones clave incluyen:
+      </p>
+      <dl>
+        <dt><strong>Disparidad de cobertura entre alineamientos</strong></dt>
+        <dd>En genes duplicados, algunos alineamientos pueden tener cobertura mucho más alta que otros, lo cual puede deberse a la presencia de múltiples copias. Esto es esperado si el gen es efectivamente duplicado.</dd>
+        
+        <dt><strong>Desplazamientos de alineamiento</strong></dt>
+        <dd>En regiones con repeticiones en tandem, los reads pueden alinearse incorrectamente a una copia, generando un "desplazamiento" de cobertura. Esto puede mimetizar una variante de inserción o de eliminación.</dd>
+        
+        <dt><strong>Cobertura anómala en zonas de alta repetitividad</strong></dt>
+        <dd>En regiones con secuencias repetitivas, la cobertura puede ser muy baja o muy alta debido a la imposibilidad de alinear correctamente los reads.</dd>
+      </dl>
+
+      <h3>Validación de variantes con IGV</h3>
+      <p>
+        Para validar una variante detectada en un VCF, se recomienda:
+      </p>
+      <ol>
+        <li>Buscar la coordenada del SNP o variante en IGV.</li>
+        <li>Verificar que los reads que apoyan la variante están alineados correctamente y no presentan desplazamientos.</li>
+        <li>Evaluar la cantidad de reads que apoyan el alelo alternativo frente al referencial.</li>
+        <li>Inspeccionar si hay desviaciones en la calidad de los reads (por ejemplo, baja calidad en extremos, o desigualdad en las bases).</li>
+      </ol>
+
+      <h3>Uso de comandos para análisis previo</h3>
+      <p>
+        Antes de abrir IGV, es útil procesar los datos con herramientas como <strong>samtools</strong> y <strong>bcftools</strong> para obtener un primer filtro:
+      </p>
+      <pre><code>#!/bin/bash
+# Calcular cobertura por región con samtools
+samtools depth -a -r chr17:41200000-41300000 sample.bam | head -10
+
+# Filtrar VCF por calidad y profundidad
+bcftools view -i 'QUAL &gt;= 30 &amp;&amp; AN &gt; 5' variants.vcf.gz | head -5</code></pre>
+
+      <p>
+        Estos comandos permiten identificar regiones con cobertura anómala o variantes de baja calidad antes de la visualización interactiva.
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        La interpretación de mapas de cobertura de variantes en regiones genómicas complejas requiere una combinación de herramientas bioinformáticas y análisis visual crítico. IGV es esencial para validar variantes, detectar artefactos de alineamiento y comprender el contexto biológico detrás de los patrones de cobertura. La clave está en no depender únicamente de los resultados automatizados, sino en complementarlos con una inspección manual cuidadosa.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Mal uso de referencia</strong>: Asegúrate de que el genoma de referencia coincida con el que se usó para el alineamiento.</li>
+        <li><strong>Ignorar cobertura anómala</strong>: Las regiones con cobertura muy baja o muy alta deben ser revisadas con atención, ya que pueden indicar errores de alineamiento.</li>
+        <li><strong>Confundir artefactos con variantes</strong>: Los desplazamientos de alineamiento en repeticiones en tandem son comunes y no siempre indican variaciones reales.</li>
+        <li><strong>Usar la profundidad como única métrica</strong>: La cobertura debe interpretarse junto con la calidad de los reads, el número de alineamientos, y el contexto genómico.</li>
+        <li><strong>Documentar hallazgos</strong>: Toma capturas de pantalla o anota observaciones clave en un archivo de notas para futura referencia.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

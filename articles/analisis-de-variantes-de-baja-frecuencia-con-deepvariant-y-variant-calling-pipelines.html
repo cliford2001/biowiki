@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análisis de variantes de baja frecuencia con DeepVariant y variant calling pipelines</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Variantes" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de variantes de baja frecuencia con DeepVariant y variant calling pipelines</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: ¿Qué son las variantes de baja frecuencia y por qué importan?</h2>
+      <p>En bioinformática, las <strong>variantes de baja frecuencia</strong> (o <em>low-frequency variants</em>) se refieren a cambios genéticos que están presentes en una proporción de lecturas de secuenciación inferior al 10-20%, dependiendo del contexto biológico y técnico. A diferencia de las variantes de alta frecuencia (como los SNVs o indels en heterocigotos), estas variantes pueden ser subclonales, somáticas, o producto de errores de secuenciación, y su detección es crítica en estudios de cáncer, infecciones virales, microbiomas y trastornos hereditarios de aparición tardía.</p>
+      <p>La detección precisa de variantes de baja frecuencia es un desafío debido a la alta tasa de falsos positivos generada por errores de base, variabilidad técnica en la secuenciación (como los errores de amplificación), y la limitada profundidad de cobertura. Herramientas convencionales como <code>bcftools call</code> o <code>GATK UnifiedGenotyper</code> no están optimizadas para este escenario, ya que suelen aplicar umbral de confianza alto que filtra variantes reales con baja frecuencia. En este artículo, exploramos cómo DeepVariant y pipelines de variant calling especializados permiten una detección más sensible y específica de estas variantes.</p>
+    </section>
+
+    <section>
+      <h2>DeepVariant: una alternativa basada en aprendizaje profundo</h2>
+      <p><strong>DeepVariant</strong> es una herramienta de llamado de variantes desarrollada por Google que utiliza redes neuronales profundas (CNN) para identificar SNVs e indels directamente desde los datos de alineamiento (BAM). A diferencia de los métodos tradicionales basados en reglas, DeepVariant aprende patrones de variación a partir de grandes conjuntos de datos de referencia, permitiendo una mayor sensibilidad y especificidad, especialmente en regiones difíciles (como repetitivas o con baja cobertura).</p>
+      <p>DeepVariant no se limita a variantes de alta frecuencia: al ajustar los umbrales de confianza y utilizar datos de secuenciación de alta profundidad (≥100x), puede identificar variantes de baja frecuencia con mayor precisión. Además, su modelo está entrenado para distinguir entre verdaderas variantes y artefactos técnicos, reduciendo significativamente el número de falsos positivos.</p>
+
+      <h3>Flujo de trabajo con DeepVariant</h3>
+      <p>El pipeline típico incluye:</p>
+      <ol>
+        <li>Alinamiento de lecturas con <code>STAR</code> o <code>BWA-MEM</code>.</li>
+        <li>Preprocesamiento del BAM con <code>samtools</code> y <code>picard</code> para marcar duplicados y realizar ajustes de calidad.</li>
+        <li>Generación de imágenes de entrada para DeepVariant usando <code>deepvariant/make_examples</code> (que crea una representación espacial de los alineamientos).</li>
+        <li>Ejecución del modelo con <code>deepvariant/call_variants</code>.</li>
+        <li>Postprocesamiento con <code>deepvariant/postprocess_variants</code> para filtrar por calidad y generar el VCF final.</li>
+      </ol>
+
+      <pre><code>python3 /path/to/deepvariant/make_examples \
+  --mode calling \
+  --ref hg38.fasta \
+  --reads aligned_sorted.bam \
+  --output_examples examples.tfrecord \
+  --interval_list regions.interval_list</code></pre>
+
+      <pre><code>python3 /path/to/deepvariant/call_variants \
+  --examples examples.tfrecord \
+  --output_vcf output.vcf \
+  --checkpoint_path /path/to/deepvariant/model.ckpt</code></pre>
+    </section>
+
+    <section>
+      <h2>Pipelines de variant calling especializados para variantes de baja frecuencia</h2>
+      <p>Además de DeepVariant, existen pipelines específicos diseñados para el análisis de variantes subclonales y de baja frecuencia:</p>
+      <ul>
+        <li><strong>VarScan2</strong>: ofrece opciones para detección de variantes de baja frecuencia mediante el uso de <code>varscan somatic</code> o <code>varscan mpileup2vcf</code> con umbral de frecuencia ajustable (por ejemplo, <code>--min-coverage 100 --min-allele-freq 0.05</code>).</li>
+        <li><strong>FreeBayes</strong>: es un llamador bayesiano que permite una alta sensibilidad. Puede configurarse para detectar variantes con frecuencias menores al 5% usando <code>--min-coverage</code> y <code>--p-allele-freq</code>.</li>
+        <li><strong>LoFreq</strong>: diseñado específicamente para variantes de baja frecuencia. Su enfoque estadístico basado en la distribución de errores permite distinguir entre variantes reales y artefactos con alta precisión. Es ampliamente utilizado en estudios de cáncer y virus (como HIV o SARS-CoV-2).</li>
+      </ul>
+
+      <p>Un enfoque recomendado es el uso de múltiples llamadores en paralelo seguido de un consenso (por ejemplo, con <code>vcflib</code> o <code>bcftools</code>), lo que mejora la confiabilidad de las variantes detectadas.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de variantes de baja frecuencia requiere herramientas y pipelines que superen las limitaciones de los métodos tradicionales. <strong>DeepVariant</strong>, con su base en aprendizaje profundo, ofrece una alternativa altamente precisa para la detección de variantes, especialmente cuando se combina con datos de alta profundidad. Complementariamente, herramientas como <code>LoFreq</code> y <code>FreeBayes</code> están diseñadas explícitamente para este propósito, permitiendo la identificación de variantes subclonales en cáncer, infecciones virales, y microbiomas. El uso combinado de múltiples llamadores y la validación posterior son claves para garantizar la calidad de los resultados.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li>Usar <strong>profundidad de cobertura insuficiente</strong> (menor a 100x) para detectar variantes de baja frecuencia: esto reduce la sensibilidad y aumenta el error de detección.</li>
+        <li>Ignorar el <strong>preprocesamiento de datos</strong>: no marcar duplicados, no realizar recalibración de calidad o no filtrar reads mal alineadas introduce artefactos que confunden los llamadores.</li>
+        <li>Aplicar <strong>umbral de frecuencia demasiado bajo</strong> sin validación: puede aumentar falsos positivos. Siempre validar con datos de control o con técnicas independientes (como Sanger).</li>
+        <li>Usar <strong>una sola herramienta</strong>: combinar múltiples llamadores (por ejemplo, DeepVariant + LoFreq) y usar consenso mejora la fiabilidad.</li>
+        <li>Descuidar la <strong>calidad de los datos de entrada</strong>: asegurarse de que el alineamiento sea correcto y que el BAM esté bien generado (con <code>samtools index</code> y <code>picard ValidateSamFile</code>).</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

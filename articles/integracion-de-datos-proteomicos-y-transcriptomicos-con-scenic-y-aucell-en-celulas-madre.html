@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos proteómicos y transcriptómicos con SCENIC y AUCell en células madre</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos proteómicos y transcriptómicos con SCENIC y AUCell en células madre</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El poder de la integración multivariada en biología celular</h2>
+      <p>Las células madre representan un campo clave en biología celular y regenerativa, donde la comprensión de su estado de pluripotencia y sus vías de diferenciación requiere un análisis integral de múltiples capas moleculares. Aunque el análisis transcriptómico mediante secuenciación de RNA (RNA-seq) ha sido el estándar durante años, la integración con datos proteómicos aporta una dimensión crítica: la función y regulación proteica, que puede no correlacionarse directamente con los niveles de mRNA debido a la regulación post-transcripcional.</p>
+      <p>En este contexto, herramientas como <strong>SCENIC</strong> (Single-Cell Regulatory Network Inference and Clustering) y <strong>AUCell</strong> (AUCell: a fast algorithm for calculating enrichment scores in single-cell data) se han posicionado como pilares para el análisis integrado. SCENIC permite reconstruir redes regulatorias a partir de datos transcriptómicos, identificando reguladores transcripcionales activos en cada célula. AUCell, por su parte, permite calcular puntuaciones de activación de estas regulaciones en un conjunto de datos, incluso cuando no se dispone de datos proteómicos directos. Esta combinación permite inferir la actividad de redes reguladoras de manera robusta, aportando una visión funcional más completa.</p>
+    </section>
+
+    <section>
+      <h2>Desarrollo: Estrategia para la integración de datos</h2>
+
+      <h3>1. Preprocesamiento de datos transcriptómicos y proteómicos</h3>
+      <p>El primer paso es asegurar que ambos conjuntos de datos (transcriptómico y proteómico) estén correctamente preprocesados y alineados en el mismo espacio de células. Para los datos transcriptómicos, se recomienda usar herramientas como <code>kallisto</code> o <code>salmon</code> para la cuantificación de expresión, seguido del uso de <code>Seurat</code> o <code>Scanpy</code> para el análisis de datos de secuenciación de célula única (scRNA-seq).</p>
+      <p>Para los datos proteómicos, técnicas como <code>mass spectrometry</code> (MS) generan datos de abundancia proteica. Estos deben ser normalizados y convertidos en un formato compatible con los datos transcriptómicos, a menudo mediante la creación de una matriz de expresión proteica donde las filas son proteínas y las columnas son células. Es crucial que ambas matrices compartan la misma etiqueta de célula (cell ID) para poder fusionarlas adecuadamente.</p>
+
+      <h3>2. Construcción de redes regulatorias con SCENIC</h3>
+      <p>SCENIC utiliza una combinación de análisis de coexpresión y predicción de sitios de unión para inferir redes regulatorias. El proceso comienza con la identificación de módulos de coexpresión (gene modules) a partir de los datos transcriptómicos. Luego, se utiliza un modelo de regresión para predecir qué factores de transcripción (TFs) podrían estar regulando esos módulos.</p>
+      <p>La herramienta <code>scenic</code> (implementada en R) permite ejecutar este pipeline completo. A continuación se muestra un fragmento de código R para construir la red regulatoria:</p>
+      <pre><code>library(SCENIC)
+
+# Cargar datos de expresión (exp_matrix) y metadata (meta)
+# exp_matrix: gene x cell, con genes como filas y células como columnas
+# meta: información adicional sobre las células
+
+# Construir el objeto SCENIC
+scenic_obj &lt;- createSCENICobject(
+  expressionMatrix = exp_matrix,
+  metadata = meta,
+  species = "human"  # o "mouse" según el organismo
+)
+
+# Calcular reguladores transcripcionales activos (GRN)
+scenic_obj &lt;- runSCENIC(scenic_obj, nCores = 8)
+</code></pre>
+
+      <h3>3. Evaluación de la activación de reguladores con AUCell</h3>
+      <p>Una vez construida la red regulatoria con SCENIC, se utiliza <code>AUCell</code> para calcular las puntuaciones de activación de los reguladores transcripcionales en cada célula. Esto permite identificar qué células están activando qué redes regulatorias, incluso si no se tiene acceso directo a datos proteómicos.</p>
+      <p>A continuación, un ejemplo de cómo se ejecuta AUCell en Python:</p>
+      <pre><code>import scanpy as sc
+import pandas as pd
+from auctool import aucell
+
+# Cargar el archivo de genes de reguladores (GRN) generado por SCENIC
+grn_df = pd.read_csv("grn.csv", index_col=0)
+
+# Cargar el objeto de expresión (AnnData)
+adata = sc.read("expression_data.h5ad")
+
+# Calcular puntuaciones con AUCell
+auc_scores = auctool.aucell(
+    adata.X,  # matriz de expresión
+    grn_df,   # GRN: TF x genes
+    min_n_genes=5,
+    n_jobs=8
+)
+
+# Añadir puntuaciones al anndata
+adata.obs["auc_scores"] = auc_scores
+</code></pre>
+
+      <h3>4. Integración con datos proteómicos</h3>
+      <p>El paso final es la integración de las puntuaciones de activación de reguladores (obtenidas por AUCell) con los datos proteómicos. Esto puede hacerse mediante análisis correlacionales entre las puntuaciones de AUCell y los niveles proteicos, o mediante métodos más avanzados como <code>multi-omics integration</code> en <code>Seurat</code> o <code>Scanpy</code>.</p>
+      <p>Por ejemplo, se puede usar una regresión para predecir la abundancia proteica a partir de la activación de reguladores transcriptómicos. Esto permite inferir cómo las redes reguladoras transcriptómicas influyen en la actividad proteica en células madre.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos proteómicos y transcriptómicos mediante SCENIC y AUCell ofrece una visión profunda de la regulación celular en células madre. SCENIC permite inferir redes regulatorias activas a partir de datos transcriptómicos, mientras que AUCell proporciona una estimación robusta de la activación de esas redes en cada célula. Al combinar estos resultados con datos proteómicos, se puede explorar la concordancia entre regulación transcriptómica y proteica, identificar reguladores clave en la pluripotencia y la diferenciación, y descubrir nuevas rutas funcionales. Esta estrategia es especialmente poderosa en escenarios donde los datos proteómicos son escasos o incompletos.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes y buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar datos sin normalización adecuada</strong>: Asegúrate de normalizar tanto los datos transcriptómicos como los proteómicos antes de cualquier análisis. El uso de datos sin normalizar puede generar sesgos significativos.</li>
+        <li><strong>Ignorar la calidad de los datos</strong>: Evalúa la calidad de los datos de secuenciación y de espectrometría de masas. Filtra células de baja calidad o con alto contenido mitocondrial.</li>
+        <li><strong>Suponer correlaciones directas</strong>: La expresión de mRNA no siempre se traduce en proteína. Asegúrate de interpretar las correlaciones entre AUCell y proteínas con cautela, y considera factores de regulación post-transcripcional.</li>
+        <li><strong>Usar un número insuficiente de células</strong>: Para construir redes regulatorias confiables, necesitas un número suficiente de células (generalmente > 500).</li>
+        <li><strong>No validar los resultados</strong>: Comprueba la biología detrás de los reguladores identificados. Usa herramientas como <code>Enrichr</code> o <code>Gene Ontology</code> para validar si los genes en un módulo están biológicamente relacionados.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

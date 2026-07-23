@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrección de artefactos de secuenciación en datos de larga lectura con Guppy y Medaka</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Control de calidad">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html">← Volver al índice</a>
+        <h1>Corrección de artefactos de secuenciación en datos de larga lectura con Guppy y Medaka</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>¿Qué son los artefactos de secuenciación y por qué importan en datos de larga lectura?</h2>
+            <p>En el ámbito de la secuenciación de nueva generación (NGS), especialmente con plataformas de lectura larga como <strong>Pacific Biosciences (PacBio)</strong> y <strong>Oxford Nanopore Technologies (ONT)</strong>, los artefactos de secuenciación son errores sistemáticos que distorsionan las secuencias reales del ADN o ARN. Estos errores no son aleatorios: incluyen inserciones, borrados y sustituciones que pueden ocurrir en regiones repetitivas, zonas con alta densidad de bases o durante el proceso de transcripción y amplificación.</p>
+            <p>La corrección de estos artefactos es fundamental porque afecta directamente a todas las etapas posteriores del análisis: alineamiento, ensamblaje, detección de variantes, y análisis de expresión. Sin una corrección adecuada, los resultados pueden ser sesgados, con falsos positivos o negativos, y con una baja precisión en la reconstrucción del genoma o transcriptoma.</p>
+        </section>
+
+        <section>
+            <h2>El papel de Guppy: base de la corrección en tiempo real</h2>
+            <p>El software <strong>Guppy</strong> (de Oxford Nanopore) es el componente clave del proceso de generación de datos de secuenciación de larga lectura. Es responsable de convertir la señal eléctrica directamente en secuencias de nucleótidos (raw reads) y, crucialmente, realiza una corrección en tiempo real (base calling) utilizando modelos de inteligencia artificial entrenados en datos de referencia.</p>
+            <p>El proceso comienza con el <em>base calling</em> por defecto, que ya corrige algunos errores comunes. Sin embargo, la calidad de estas secuencias puede variar significativamente dependiendo del tipo de experimento, del kit de cebadores, y de las condiciones de secuenciación. Por eso, Guppy permite la generación de reads crudos (raw) que pueden ser procesados posteriormente con herramientas más avanzadas como <strong>Medaka</strong>.</p>
+            <p>El uso de Guppy no se limita a la corrección inicial: también permite la detección de artefactos específicos como duplicaciones de secuencias por fragmentación o amplificación inadecuada, lo cual es clave para prevenir errores en etapas posteriores.</p>
+        </section>
+
+        <section>
+            <h2>Medaka: refinamiento de alta precisión con modelos de profundidad</h2>
+            <p>Después de obtener los reads crudos con Guppy, la herramienta <strong>Medaka</strong> se convierte en el pilar de la corrección de artefactos de alto nivel. Medaka utiliza modelos de aprendizaje profundo (deep learning) entrenados sobre datos reales de ONT para ajustar las secuencias base por base, mejorando así la precisión de las llamadas de nucleótidos.</p>
+            <p>El proceso de Medaka implica dos pasos fundamentales:</p>
+            <ol>
+                <li><strong>Alineamiento de los reads crudos</strong> a un genoma de referencia (usando <code>minimap2</code> o <code>ngmlr</code>).</li>
+                <li><strong>Aplicación del modelo de corrección</strong> sobre las regiones alineadas, ajustando la llamada de bases en función de la señal original y del contexto genómico.</li>
+            </ol>
+            <p>Medaka ofrece diferentes modelos preentrenados (como <code>r94.1.1</code>, <code>guppy4.4.1</code>, <code>guppy5.0.1</code>), y permite el uso de modelos personalizados si se dispone de datos de entrenamiento específicos. Este enfoque permite reducir las tasas de error de hasta un orden de magnitud, pasando de ~10% a menos del 1% en secuencias correctas.</p>
+        </section>
+
+        <section>
+            <h2>Flujo de trabajo recomendado: Guppy + Medaka</h2>
+            <p>La mejor práctica en el análisis de datos de larga lectura implica un flujo integrado que combina ambos herramientas. Un flujo típico es el siguiente:</p>
+            <pre><code># 1. Generar reads crudos con Guppy (base calling)
+$ guppy_basecaller --fast5_path ./raw_fast5/ \
+                   --output_path ./basecalled/ \
+                   --config dna_r9.4.1_450bps_fast.cfg \
+                   --save_path ./basecalled/ \
+                   --trim_adapters
+
+# 2. Alinear los reads con minimap2
+$ minimap2 -t 8 -x map-ont reference.fa basecalled/*.fastq | samtools sort -o aligned.bam -
+
+# 3. Corregir con Medaka
+$ medaka consensus -i aligned.bam -d reference.fa -o medaka_output -t 8
+</code></pre>
+            <p>Este flujo asegura que se aprovechen los beneficios de ambos sistemas: la eficiencia y la detección temprana de artefactos en Guppy, y la precisión refinada de Medaka.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>La corrección de artefactos en datos de larga lectura es una etapa crítica para garantizar la fiabilidad de los análisis bioinformáticos. <strong>Guppy</strong> proporciona la base inicial con su base calling en tiempo real, mientras que <strong>Medaka</strong> eleva la calidad mediante modelos de aprendizaje profundo que refinen las llamadas de base. La combinación de ambos herramientas es estándar en el campo y es esencial para cualquier proyecto que requiera alta precisión, desde ensamblajes de genomas hasta detección de variantes raras.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes y buenas prácticas</h2>
+            <ul>
+                <li><strong>No usar un modelo de Medaka adecuado para el kit de secuenciación</strong>: siempre verifica que el modelo (por ejemplo, <code>guppy4.4.1</code>) coincida con la versión del kit y del software de base calling.</li>
+                <li><strong>Ignorar el alineamiento previo</strong>: Medaka requiere un alineamiento de calidad. Asegúrate de usar <code>minimap2</code> o <code>ngmlr</code> con parámetros adecuados.</li>
+                <li><strong>Usar datos de referencia no actualizados</strong>: el modelo de Medaka depende de un genoma de referencia compatible. Actualiza siempre las referencias.</li>
+                <li><strong>Correr Medaka sin suficiente memoria</strong>: es un proceso computacionalmente intensivo. Usa un nodo con al menos 16 GB de RAM y múltiples núcleos.</li>
+                <li><strong>No validar la calidad después de la corrección</strong>: usa herramientas como <code>seqkit stats</code>, <code>quast</code> o <code>guppy_check</code> para comparar la calidad de los reads antes y después.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/samtools-samtools.html">samtools/samtools</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
