@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integración de datos multiplataforma del microambiente inmune tumoral en cáncer de mama</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Integración">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Integración de datos multiplataforma del microambiente inmune tumoral en cáncer de mama</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción: El microambiente inmune tumoral en el cáncer de mama</h2>
+      <p>El microambiente inmune tumoral (TME, por sus siglas en inglés) es un componente clave en la progresión, evasión inmune y respuesta a tratamientos del cáncer de mama. Comprender su complejidad requiere integrar datos de múltiples plataformas de secuenciación, como <strong>scRNA-seq</strong> para perfiles celulares, <strong>spatial transcriptomics</strong> para localización espacial, y <strong>bulk RNA-seq</strong> para análisis de expresión general. Cada tecnología ofrece una perspectiva única, pero también introduce heterogeneidad técnica, sesgos y ruido que dificultan la comparación directa. La integración de estos datos es, por tanto, esencial para obtener una visión holística del TME.</p>
+    </section>
+
+    <section>
+      <h2>Desafíos técnicos en la integración de datos multiplataforma</h2>
+      <p>La integración de datos multiplataforma plantea varios desafíos:</p>
+      <ul>
+        <li><strong>Varianza técnica:</strong> Diferencias entre plataformas (por ejemplo, 10x Genomics vs. Visium) en sensibilidad, cobertura y detección de genes.</li>
+        <li><strong>Desbalance de datos:</strong> Tamaños de muestra y profundidad de secuenciación variables entre estudios.</li>
+        <li><strong>Complejidad biológica:</strong> Heterogeneidad intratumoral, dinámica de las células inmunes y microambiente en constante evolución.</li>
+        <li><strong>Escalabilidad y rendimiento:</strong> Procesar grandes conjuntos de datos (millones de células) requiere herramientas eficientes y algoritmos escalables.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Herramientas clave para la integración</h2>
+      <p>Existen varias herramientas especializadas para superar estos desafíos. Las más utilizadas en el contexto del TME son:</p>
+      
+      <h3>Seurat (R)</h3>
+      <p>Seurat es una de las plataformas más ampliamente adoptadas para análisis de scRNA-seq. Su función <code>IntegrateData</code> permite integrar múltiples muestras o matrices usando el algoritmo <strong>CCA (Canonical Correlation Analysis)</strong> o <strong>RPCA (Robust PCA)</strong>. Para datos multiplataforma, Seurat puede integrar scRNA-seq y spatial transcriptomics mediante el uso de <code>FindIntegrationAnchors</code> y <code>IntegrateData</code> en una matriz de datos combinada.</p>
+      
+      <pre><code class="language-r">
+library(Seurat)
+
+# Cargar datos integrados
+seurat_obj &lt;- Read10X(data.dir = "path/to/10x_data")
+spatial_obj &lt;- Read10X(data.dir = "path/to/visium_data")
+
+# Integrar usando CCA
+anchors &lt;- FindIntegrationAnchors(object.list = list(scRNA, spatial), 
+                                 normalization.method = "SCT", dims = 1:30)
+integrated_data &lt;- IntegrateData(anchorset = anchors, dims = 1:30)
+</code></pre>
+
+      <h3>Scanpy (Python)</h3>
+      <p>Scanpy es la alternativa Python para análisis de scRNA-seq. Su función <code>pp.normalize_total</code> y <code>pp.mnn_correct</code> permiten normalizar y corregir datos técnicos entre muestras. Para integración de múltiples plataformas, <code>pp.mnn_correct</code> (Mutual Nearest Neighbors) es especialmente útil, ya que encuentra pares de células similares entre diferentes matrices, incluso con alta heterogeneidad técnica.</p>
+      
+      <pre><code class="language-python">
+import scanpy as sc
+
+# Cargar datos
+adata_sc = sc.read_h5ad("data/sc_rna.h5ad")
+adata_spatial = sc.read_h5ad("data/spatial.h5ad")
+
+# Normalizar
+sc.pp.normalize_total(adata_sc, target_sum=1e4)
+sc.pp.normalize_total(adata_spatial, target_sum=1e4)
+
+# Corrección MNN
+sc.tl.mnn_correct(adata_sc, adata_spatial, batch_key="dataset")
+</code></pre>
+
+      <h3>Harmony (R/Python)</h3>
+      <p>Harmony es un algoritmo diseñado para integrar datos de múltiples muestras o condiciones, minimizando el ruido técnico mientras preserva la variación biológica. Puede usarse como post-procesamiento tras integración con CCA o MNN. Su uso es común en estudios de TME para obtener una representación de baja dimensión sin sesgos técnicos.</p>
+      
+      <pre><code class="language-r">
+library(Harmony)
+
+# Ajustar la integración
+harmony_res &lt;- Harmony::RunHarmony(integrated_data, group.by = "batch")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Aplicación en cáncer de mama: casos prácticos</h2>
+      <p>En el cáncer de mama, la integración de datos ha revelado subtipos de TME con implicaciones terapéuticas. Por ejemplo, estudios han combinado datos scRNA-seq de tumores de mama con datos de Visium para:</p>
+      <ul>
+        <li>Identificar poblaciones de células T reguladoras (Tregs) y macrófagos M2 en zonas de infiltración peritumoral.</li>
+        <li>Reconstruir mapas moleculares del TME, mostrando la interacción entre células epiteliales y linfocitos.</li>
+        <li>Correlacionar la presencia de ciertos marcadores inmunes (como PD-1, CTLA-4) con la respuesta a inmunoterapia.</li>
+      </ul>
+      <p>Estas integraciones permiten modelar el TME como un sistema dinámico, donde la función de una célula depende no solo de su perfil genómico, sino también de su entorno espacial.</p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>La integración de datos multiplataforma es una herramienta fundamental para desentrañar la complejidad del microambiente inmune tumoral en el cáncer de mama. Herramientas como Seurat, Scanpy y Harmony permiten superar las barreras técnicas entre scRNA-seq, spatial transcriptomics y bulk RNA-seq, proporcionando una visión integral y biológicamente relevante. Esta capacidad es clave para descubrir nuevos biomarcadores, entender la evasión inmune y personalizar estrategias terapéuticas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Ignorar la normalización técnica:</strong> Siempre normalice los datos antes de la integración (por ejemplo, con <code>NormalizeData</code> en Seurat o <code>pp.normalize_total</code> en Scanpy).</li>
+        <li><strong>Usar demasiados genes:</strong> Seleccione genes diferencialmente expresados o genes de alta variabilidad para la integración.</li>
+        <li><strong>Ignorar el batch effect:</strong> Use métodos como CCA, MNN o Harmony para corregir efectos de batch.</li>
+        <li><strong>Interpretar sin validar:</strong> Valide resultados con marcadores celulares conocidos y análisis de supervivencia.</li>
+        <li><strong>Olvidar la reproducibilidad:</strong> Documente todos los pasos, versiones de herramientas y parámetros.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

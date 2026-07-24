@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de regionalización del mRNA en células gigantes mediante RNA-seq</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="categoria" content="Expresión diferencial">
+</head>
+<body>
+    <header class="article-header">
+        <a href="../index.html" class="back-link">← Volver al índice</a>
+        <h1>Análisis de regionalización del mRNA en células gigantes mediante RNA-seq</h1>
+    </header>
+
+    <article>
+        <section>
+            <h2>Introducción</h2>
+            <p>La regionalización del mRNA es un mecanismo clave en la regulación espacial de la expresión génica, especialmente en células con morfologías complejas como las células gigantes. Estas células, presentes en procesos fisiológicos como la formación de osteoclastos o en contextos patológicos como ciertos tumores, exhiben una organización subcelular altamente especializada. El análisis mediante secuenciación de RNA (RNA-seq) permite investigar cómo el transcripoma se distribuye no uniformemente dentro de la célula, lo cual es fundamental para funciones como la polarización, la síntesis localizada de proteínas y la respuesta a estímulos. Este artículo explora los enfoques bioinformáticos necesarios para detectar y caracterizar la regionalización del mRNA en células gigantes a partir de datos de RNA-seq.</p>
+        </section>
+
+        <section>
+            <h2>Conceptos clave: ¿Qué es la regionalización del mRNA?</h2>
+            <p>La regionalización del mRNA se refiere a la localización no aleatoria de transcripciones en distintas regiones subcelulares, como el soma, el axón, la dendrita, el citoplasma perinuclear o las zonas de contacto celular. En células gigantes, esta organización es crítica para la funcionalidad celular, ya que permite la síntesis localizada de proteínas en sitios donde son necesarias, reduciendo la difusión y aumentando la eficiencia. Esta distribución se regula mediante elementos cis en el ARN (como secuencias en el 3'UTR) y proteínas trans-acting que forman complejos de transporte y traducción local.</p>
+        </section>
+
+        <section>
+            <h2>Enfoques experimentales y datos de entrada</h2>
+            <p>La detección de regionalización del mRNA requiere datos de RNA-seq que reflejen la heterogeneidad espacial. Las estrategias comunes incluyen:</p>
+            <ul>
+                <li><strong>RNA-seq de células enteras</strong>: Aunque no permite resolver la localización, sirve como control de fondo.</li>
+                <li><strong>RNA-seq de fracciones celulares</strong>: Aislamiento de citoplasma, nucleo, membrana, etc., seguido de secuenciación.</li>
+                <li><strong>Microdiseción o FISH-RNA-seq</strong>: Técnicas que combinan microscopía con secuenciación para localizar transcripciones específicas.</li>
+            </ul>
+            <p>Para análisis bioinformático, se requiere un diseño experimental claro que permita comparar la abundancia de mRNA entre distintas fracciones celulares.</p>
+        </section>
+
+        <section>
+            <h2>Proceso analítico: desde la alineación hasta la detección de diferencias</h2>
+            <h3>1. Preprocesamiento y alineamiento</h3>
+            <p>El primer paso es la calidad de los datos. Se recomienda usar herramientas como <code>FastQC</code> y <code>MultiQC</code> para evaluar el contenido de base, el tamaño de los reads y la calidad. Posteriormente, el alineamiento de los reads a un genoma de referencia se realiza con <code>STAR</code> o <code>Hisat2</code>. Para cuentas de transcripción, <code>Salmon</code> o <code>kallisto</code> ofrecen métodos de alineamiento directo y cuantificación rápida.</p>
+
+            <h3>2. Cuantificación y normalización</h3>
+            <p>Se genera un archivo de cuentas (count matrix) por fracción celular. Para comparar entre fracciones, se aplica normalización como <code>DESeq2</code> o <code>edgeR</code>, que ajustan por la composición de la fracción y la longitud del gen. En el caso de datos de RNA-seq de fracciones, se recomienda el uso de <code>limma-voom</code> si se quiere modelar la variabilidad técnica.</p>
+
+            <h3>3. Detección de regionalización</h3>
+            <p>Se identifican genes con diferencias significativas de expresión entre fracciones. Esto se realiza mediante pruebas estadísticas (t-test, ANOVA) o modelos lineales. Se puede aplicar un filtro de <strong>fold change</strong> (por ejemplo, >2) y <strong>ajustar p-valores</strong> con <code>BH</code> o <code>BY</code> para controlar el FDR. La lista de genes diferencialmente expresados (DEGs) se convierte en el conjunto de genes candidatos para regionalización.</p>
+
+            <h3>4. Análisis funcional</h3>
+            <p>Los genes identificados se someten a análisis de anotación funcional con herramientas como <code>clusterProfiler</code> (R) o <code>gProfiler</code> para identificar vías biológicas enriquecidas, como transporte de ARN, dinámica del citoesqueleto o metabolismo local.</p>
+        </section>
+
+        <section>
+            <h2>Resumen</h2>
+            <p>El análisis de regionalización del mRNA en células gigantes mediante RNA-seq es un proceso multifásico que combina experimentación precisa con bioinformática rigurosa. A partir de datos de fracciones celulares, se puede detectar una distribución no uniforme de transcripciones, lo que aporta información clave sobre la regulación espacial de la expresión génica. Herramientas como <code>STAR</code>, <code>Salmon</code>, <code>DESeq2</code> y <code>clusterProfiler</code> son fundamentales para cada etapa del pipeline. Este enfoque permite desentrañar los mecanismos moleculares subyacentes a la funcionalidad celular en contextos fisiológicos y patológicos.</p>
+        </section>
+
+        <section>
+            <h2>Errores comunes / buenas prácticas</h2>
+            <ul>
+                <li><strong>No validar la integridad de las fracciones</strong>: Asegurarse de que no haya contaminación entre fracciones (por ejemplo, uso de marcadores como <code>ACTB</code> para citoplasma, <code>PGK1</code> para citoplasma, <code>U6</code> para núcleo).</li>
+                <li><strong>Usar métodos de normalización inapropiados</strong>: Evitar el uso de <code>TPM</code> o <code>FPKM</code> para comparaciones entre fracciones; usar métodos que ajusten por composición (como en DESeq2).</li>
+                <li><strong>Ignorar el diseño experimental</strong>: El número de biológicos, el tamaño de las fracciones y la técnica de aislamiento afectan directamente la robustez del análisis.</li>
+                <li><strong>Interpretar DEGs sin validación funcional</strong>: Siempre complementar con análisis de enriquecimiento funcional o experimentos in situ (como FISH).</li>
+                <li><strong>Reproducibilidad</strong>: Guardar todos los scripts, versiones de software y archivos de entrada.</li>
+            </ul>
+        </section>
+    <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/s-andrews-fastqc.html">FastQC</a></li>
+    <li><a href="../docs/daehwankimlab-hisat2.html">HISAT2</a></li>
+    <li><a href="../docs/combine-lab-salmon.html">salmon</a></li>
+    <li><a href="../docs/alexdobin-star.html">alexdobin/STAR</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

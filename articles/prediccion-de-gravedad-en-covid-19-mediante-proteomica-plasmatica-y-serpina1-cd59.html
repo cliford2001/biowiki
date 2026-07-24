@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predicción de gravedad en COVID-19 mediante proteómica plasmática y SERPINA1/CD59</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../style.css" />
+  <meta name="categoria" content="Control de calidad" />
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html">← Volver al índice</a>
+    <h1>Predicción de gravedad en COVID-19 mediante proteómica plasmática y SERPINA1/CD59</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>
+        La proteómica plasmática ha emergido como una herramienta clave en la caracterización de la respuesta inmune en enfermedades infecciosas, especialmente en el contexto del COVID-19. Aunque la carga viral y los factores clínicos tradicionales son predictores importantes de gravedad, la variabilidad individual en la respuesta inmune sugiere que biomarcadores moleculares pueden ofrecer un valor predictivo adicional. Entre los proteínas más estudiadas en este campo se encuentran SERPINA1 (α1-antitripsina) y CD59, dos proteínas con roles fundamentales en la regulación de la inflamación y la respuesta complementaria.
+      </p>
+      <p>
+        Esta artículo explora cómo el análisis de niveles plasmáticos de SERPINA1 y CD59 puede contribuir a la predicción de la gravedad del COVID-19, integrando datos proteómicos con enfoques bioinformáticos y estadísticos. Se abordan los fundamentos técnicos, los desafíos metodológicos y las implicaciones clínicas de esta estrategia, con énfasis en la precisión y reproducibilidad de los resultados.
+      </p>
+    </section>
+
+    <section>
+      <h2>Marco biológico de SERPINA1 y CD59</h2>
+      <p>
+        <strong>SERPINA1</strong> es una proteína inhibidora de serina proteasas, principalmente responsable de regular la actividad de elastasa neutrofílica. Su sobreexpresión está asociada con un estado inflamatorio crónico y puede contribuir a la liberación de citoquinas proinflamatorias durante la fase tardía de la infección por SARS-CoV-2. En pacientes con COVID-19 grave, se ha observado un aumento significativo de SERPINA1 en plasma, lo que sugiere su papel como mediador de la respuesta inflamatoria sistémica.
+      </p>
+      <p>
+        <strong>CD59</strong>, por otro lado, es un regulador de la vía del complemento. Actúa bloqueando la formación del complejo de ataque a la membrana (MAC), protegiendo así las células propias del ataque inmune. En el COVID-19, una disminución de CD59 en la superficie de los eritrocitos y endotelios ha sido relacionada con un mayor riesgo de trombosis microvascular — un hallazgo característico en casos graves. Por tanto, niveles bajos de CD59 en plasma podrían reflejar una disfunción del sistema de protección celular.
+      </p>
+    </section>
+
+    <section>
+      <h2>Enfoque proteómico y análisis bioinformático</h2>
+      <p>
+        El proceso de predicción comienza con la obtención de muestras plasmáticas de pacientes con COVID-19, clasificados según gravedad clínica (leve, moderado, grave). Las proteínas se extraen y se analizan mediante técnicas de <em>liquid chromatography-tandem mass spectrometry</em> (LC-MS/MS), como las implementadas en plataformas <strong>MaxQuant</strong> o <strong>Proteome Discoverer</strong>.
+      </p>
+      <p>
+        Tras la identificación y cuantificación, se realiza un análisis diferencial utilizando herramientas como <strong>DESeq2</strong> (adaptado para proteómica) o <strong>limma</strong> en R. Los datos se normalizan mediante métodos como <em>median of ratios</em> o <em>quantile normalization</em>. El filtro de significancia se aplica con un valor de <em>p</em> ajustado (FDR) inferior a 0.05, y se consideran cambios de expresión superiores a 1.5 veces en ambos sentidos.
+      </p>
+
+      <h3>Ejemplo de análisis en R</h3>
+      <pre><code>library(limma)
+library(dplyr)
+
+# Suponiendo que `proteomics_data` es una matriz con muestras como columnas
+# y proteínas como filas
+
+# Preparar diseño
+design &lt;- model.matrix(~0 + group, data = metadata)
+
+# Ajuste del modelo
+fit &lt;- lmFit(proteomics_data, design)
+
+# Contrastes: grave vs. leve
+contrast_matrix &lt;- makeContrasts(
+  grave_vs_leve = grave - leve,
+  levels = design
+)
+
+fit2 &lt;- contrastFit(fit, contrast_matrix)
+
+# Estadística y FDR
+results &lt;- eBayes(fit2)
+results_table &lt;- topTable(results, number = Inf, adjust = "fdr")
+
+# Filtrar proteínas relevantes
+significant_proteins &lt;- results_table %&gt;%
+  filter(adj.P.Val &lt; 0.05 &amp; abs(log2FC) &gt; 0.5)
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Modelos predictivos y validación</h2>
+      <p>
+        Para construir un modelo predictivo basado en SERPINA1 y CD59, se utilizan métodos de machine learning como <strong>Random Forest</strong>, <strong>Support Vector Machines</strong> (SVM), o <strong>Logistic Regression</strong>. Las variables predictoras incluyen niveles absolutos o relativos de ambas proteínas, junto con covariables clínicas (edad, comorbilidades, niveles de D-dímeros, etc.).
+      </p>
+      <p>
+        El modelo se entrena y valida mediante <em>cross-validation</em> (por ejemplo, 10-fold). Se evalúa su rendimiento con métricas como la <em>area under the ROC curve</em> (AUC), sensibilidad y especificidad. Un AUC superior a 0.8 generalmente se considera un buen rendimiento predictivo.
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>
+        La proteómica plasmática, y en particular el análisis de SERPINA1 y CD59, representa una vía prometedora para predecir la gravedad del COVID-19. Estas proteínas actúan como biomarcadores funcionales de inflamación sistémica y disfunción del sistema complementario, respectivamente. Su integración con enfoques bioinformáticos robustos permite la construcción de modelos predictivos con potencial para guiar decisiones clínicas en tiempo real.
+      </p>
+      <p>
+        A pesar de su promesa, es fundamental abordar desafíos como la heterogeneidad poblacional, la variabilidad técnica entre plataformas de LC-MS/MS, y la necesidad de validación en cohortes independientes. Además, el contexto clínico debe siempre complementar los análisis bioinformáticos.
+      </p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>No normalizar los datos</strong>: omitir la normalización puede introducir sesgos técnicos que distorsionan los resultados. Siempre aplicar métodos adecuados.</li>
+        <li><strong>Ignorar el FDR</strong>: realizar múltiples pruebas sin corrección de error infla falsos positivos. Ajustar el valor <em>p</em> es obligatorio.</li>
+        <li><strong>Usar datos sin validación</strong>: un modelo entrenado en una sola cohorte no debe generalizarse sin validación externa.</li>
+        <li><strong>Interpretar correlaciones como causalidad</strong>: la asociación entre niveles de proteínas y gravedad no implica relación causal.</li>
+        <li><strong>Verificar el formato del archivo</strong>: asegurarse de que el input para análisis (por ejemplo, archivo CSV) tenga encabezados correctos y no contenga valores faltantes no tratados.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>

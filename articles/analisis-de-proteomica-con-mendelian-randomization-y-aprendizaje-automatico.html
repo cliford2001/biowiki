@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análisis de proteómica con Mendelian randomization y aprendizaje automático</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <meta name="categoria" content="Análisis de datos">
+</head>
+<body>
+  <header class="article-header">
+    <a href="../index.html" class="back-link">← Volver al índice</a>
+    <h1>Análisis de proteómica con Mendelian randomization y aprendizaje automático</h1>
+  </header>
+
+  <article>
+    <section>
+      <h2>Introducción</h2>
+      <p>El análisis de proteómica integrado con <em>Mendelian randomization</em> (MR) y técnicas de <em>aprendizaje automático</em> (ML) representa una frontera prometedora en la investigación biomédica. Estas metodologías permiten explorar relaciones causales entre proteínas circulantes y enfermedades, superando limitaciones de los estudios observacionales. Mientras que la proteómica de alto rendimiento proporciona perfiles cuantitativos de proteínas en sueros, MR aprovecha variaciones genéticas como instrumentos para inferir causalidad, y el ML ayuda a modelar relaciones complejas, detectar patrones y predecir fenotipos.</p>
+    </section>
+
+    <section>
+      <h2>Fundamentos del análisis</h2>
+      <h3>Mendelian randomization: inferencia causal con marcadores genéticos</h3>
+      <p>MR se basa en el principio de que las variantes genéticas heredadas al azar (como SNPs) actúan como instrumentos naturales para evaluar la causalidad entre un factor expuesto (por ejemplo, niveles de una proteína) y un resultado clínico. En el contexto de la proteómica, se identifican SNPs asociados significativamente con niveles de proteínas específicas mediante GWAS (estudios de asociación del genoma completo). Luego, se evalúa si estos mismos SNPs están asociados con una enfermedad, lo que permite inferir si la proteína tiene un efecto causal sobre la enfermedad.</p>
+      <p>Herramientas clave: <code>TwoSampleMR</code> en R para análisis MR de dos muestras, <code>MR-Base</code> como banco de datos de GWAS, y <code>MR-Base API</code> para automatizar la consulta.</p>
+
+      <h3>Aprendizaje automático: modelado de relaciones complejas</h3>
+      <p>El ML permite abordar la alta dimensionalidad y complejidad inherente a los datos proteómicos. Algunas aplicaciones incluyen:</p>
+      <ul>
+        <li><strong>Clasificación:</strong> distinguir entre grupos de pacientes (por ejemplo, cáncer vs. control) usando perfiles proteómicos.</li>
+        <li><strong>Regresión:</strong> predecir niveles de proteínas a partir de datos genómicos o clínicos.</li>
+        <li><strong>Reducción de dimensionalidad:</strong> aplicar PCA, t-SNE o UMAP para visualizar relaciones entre muestras.</li>
+      </ul>
+      <p>Herramientas populares: <code>scikit-learn</code> (Python), <code>caret</code> (R), <code>Scanpy</code> y <code>Seurat</code> para análisis de datos de alta dimensión.</p>
+    </section>
+
+    <section>
+      <h2>Flujo de trabajo integrado</h2>
+      <p>Un enfoque integrado combina estas tres áreas en un proceso estructurado:</p>
+      <ol>
+        <li><strong>Preprocesamiento proteómico:</strong> calidad de datos (filtrado, normalización, imputación), usando herramientas como <code>limma</code>, <code>DESeq2</code> o <code>ProteoWizard</code>.</li>
+        <li><strong>Identificación de SNPs instrumentales:</strong> análisis GWAS para hallar SNPs asociados con proteínas, aplicando criterios de significancia (p &lt; 5×10⁻⁸) y pruebas de validación (colinealidad, heterogeneidad).</li>
+        <li><strong>Aplicación de MR:</strong> uso de <code>TwoSampleMR</code> para calcular efectos causales, con validación mediante métodos robustos (MR-Egger, weighted median).</li>
+        <li><strong>Modelado ML:</strong> entrenamiento de modelos predictivos (por ejemplo, Random Forest, SVM o redes neuronales) con datos proteómicos y clínicos, validados mediante <em>cross-validation</em>.</li>
+      </ol>
+
+      <h3>Ejemplo de código: análisis MR básico en R</h3>
+      <pre><code>library(TwoSampleMR)
+
+# Cargar datos de GWAS para proteína y enfermedad
+exposure_data &lt;- get_data("p12345", "protein")
+outcome_data &lt;- get_data("d67890", "disease")
+
+# Análisis MR con modelo de efectos fijos
+mr_results &lt;- mr(exposure_data, outcome_data, method = "inverse_variance")
+
+# Visualización
+plot(mr_results)
+</code></pre>
+
+      <h3>Ejemplo de código: clasificación con Random Forest en Python</h3>
+      <pre><code>import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
+
+# Cargar datos proteómicos y etiquetas
+X = pd.read_csv("proteomics_data.csv", index_col=0)
+y = pd.read_csv("labels.csv", index_col=0)["disease"]
+
+# Entrenar modelo
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+scores = cross_val_score(model, X, y, cv=5)
+
+print(f"Precisión media: {scores.mean():.3f} ± {scores.std():.3f}")
+</code></pre>
+    </section>
+
+    <section>
+      <h2>Resumen</h2>
+      <p>El análisis de proteómica combinado con Mendelian randomization y aprendizaje automático ofrece una estrategia poderosa para descubrir relaciones causales entre proteínas y enfermedades, predecir riesgos y descubrir biomarcadores. El enfoque requiere atención meticulosa al diseño del estudio, selección de instrumentos genéticos válidos y validación robusta de modelos ML. Esta integración es clave para avanzar hacia medicina personalizada y descubrimiento de dianas terapéuticas.</p>
+    </section>
+
+    <section>
+      <h2>Errores comunes / buenas prácticas</h2>
+      <ul>
+        <li><strong>Usar SNPs débiles como instrumentos:</strong> evitar SNPs con baja potencia estadística (F &lt; 10) para evitar sesgos.</li>
+        <li><strong>Ignorar la colinealidad entre SNPs:</strong> aplicar filtrado de LD (deshacimienta de linkage) antes de MR.</li>
+        <li><strong>Superposición entre exposición y resultado:</strong> asegurarse de que los datos de GWAS no estén contaminados por el mismo estudio.</li>
+        <li><strong>Evitar overfitting en ML:</strong> usar validación cruzada, regularización y evitar modelos excesivamente complejos.</li>
+        <li><strong>Documentar todo:</strong> mantener registro de los datos utilizados, versiones de software y parámetros del análisis para reproducibilidad.</li>
+      </ul>
+    </section>
+  <!--TOOLLINKS_START-->
+<section class="associated-papers"><h2>🔧 Herramientas relacionadas</h2>
+  <p class="meta">Documentación de programas mencionados en este artículo:</p>
+  <ul>
+    <li><a href="../docs/thelovelab-deseq2.html">DESeq2</a></li>
+    <li><a href="../docs/scverse-scanpy.html">Scanpy</a></li>
+    <li><a href="../docs/satijalab-seurat.html">Seurat</a></li>
+  </ul></section>
+<!--TOOLLINKS_END-->
+</article>
+</body>
+</html>
